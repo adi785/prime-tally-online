@@ -6,10 +6,25 @@ This directory contains the complete backend integration for the TallyPrime clon
 
 - **Authentication**: Complete auth system with email/password, sign up, sign in, password reset
 - **Database**: PostgreSQL with Row Level Security (RLS) for data isolation
-- **API Services**: RESTful API services for all CRUD operations
+- **API Services**: Modular service architecture with dedicated services for each domain
 - **Real-time**: Supabase Realtime for live updates
 - **File Storage**: Supabase Storage for document uploads
 - **Security**: Built-in security with RLS policies and JWT authentication
+
+## Modular Service Architecture
+
+The services are organized into dedicated modules for better maintainability:
+
+### Core Services
+- **Ledger Service** (`ledgerService`): Manage account ledgers and groups
+- **Voucher Service** (`voucherService`): Handle all voucher types and items
+- **Dashboard Service** (`dashboardService`): Calculate and provide dashboard metrics
+- **Stock Service** (`stockService`): Inventory management and stock items
+- **Company Service** (`companyService`): Company information management
+
+### Utility Services
+- **Utility Service** (`utilityService`): Common utilities and search functions
+- **Report Service** (`reportService`): Financial report generation
 
 ## Database Schema
 
@@ -52,29 +67,72 @@ The schema includes tables for:
 ## Usage
 
 ```typescript
-import { supabaseIntegration } from '@/integrations/supabase';
+import { ledgerService, voucherService, dashboardService } from '@/integrations/supabase/services';
 
-// Use hooks in components
-const { data: ledgers, isLoading } = supabaseIntegration.hooks.useLedgers();
-
-// Use services directly
-const newLedger = await supabaseIntegration.services.createLedger({
+// Use ledger service
+const ledgers = await ledgerService.getLedgers({ search: 'cash' });
+const newLedger = await ledgerService.createLedger({
   name: 'New Ledger',
-  group: 'sundry-debtors',
+  group: 'cash-in-hand',
   opening_balance: 1000,
 });
 
-// Use auth
-await supabaseIntegration.auth.signIn('user@example.com', 'password');
+// Use voucher service
+const vouchers = await voucherService.getVouchers({ type: 'sales' });
+const newVoucher = await voucherService.createVoucher({
+  type_id: 'sales',
+  date: '2024-12-26',
+  party_ledger_id: '123',
+  items: [{ ledger_id: '456', amount: 1000, type: 'debit' }],
+});
 
-// Use real-time subscriptions
-const subscription = supabaseIntegration.client
-  .channel('ledgers')
-  .on('postgres_changes', { event: '*', schema: 'public', table: 'ledgers' }, payload => {
-    console.log('Ledger changed:', payload);
-  })
-  .subscribe();
+// Use dashboard service
+const metrics = await dashboardService.getDashboardMetrics();
 ```
+
+## Service Methods
+
+### Ledger Service
+- `getLedgers(params?: LedgerQueryParams): Promise<Ledger[]>`
+- `getLedger(id: string): Promise<Ledger>`
+- `createLedger(data: CreateLedgerRequest): Promise<Ledger>`
+- `updateLedger(id: string, data: UpdateLedgerRequest): Promise<Ledger>`
+- `deleteLedger(id: string): Promise<void>`
+- `searchLedgers(query: string): Promise<Ledger[]>`
+- `getLedgerGroups(): Promise<Array<{ id: string; name: string }>>`
+
+### Voucher Service
+- `getVouchers(params?: VoucherQueryParams): Promise<Voucher[]>`
+- `getVoucher(id: string): Promise<Voucher>`
+- `createVoucher(data: CreateVoucherRequest): Promise<Voucher>`
+- `updateVoucher(id: string, data: UpdateVoucherRequest): Promise<Voucher>`
+- `deleteVoucher(id: string): Promise<void>`
+- `getVoucherTypes(): Promise<Array<{ id: string; name: string }>>`
+
+### Dashboard Service
+- `getDashboardMetrics(): Promise<DashboardMetricsResponse>`
+
+### Stock Service
+- `getStockItems(params?: StockQueryParams): Promise<StockItem[]>`
+- `getStockItem(id: string): Promise<StockItem>`
+- `createStockItem(data: CreateStockItemRequest): Promise<StockItem>`
+- `updateStockItem(id: string, data: UpdateStockItemRequest): Promise<StockItem>`
+- `deleteStockItem(id: string): Promise<void>`
+
+### Company Service
+- `getCompany(): Promise<Company>`
+- `updateCompany(data: UpdateCompanyRequest): Promise<Company>`
+
+### Utility Service
+- `searchLedgers(query: string): Promise<Ledger[]>`
+- `getVoucherTypes(): Promise<Array<{ id: string; name: string }>>`
+- `getLedgerGroups(): Promise<Array<{ id: string; name: string }>>`
+
+### Report Service
+- `getBalanceSheet(): Promise<any>`
+- `getProfitAndLoss(): Promise<any>`
+- `getTrialBalance(): Promise<any>`
+- `getDayBook(params: { startDate: string; endDate: string }): Promise<any>`
 
 ## Environment Variables
 
@@ -105,13 +163,14 @@ To set up the database schema:
 The integration supports real-time updates via Supabase Realtime:
 
 ```typescript
+import { realTimeService } from '@/integrations/supabase/realtime';
+
 // Subscribe to ledger changes
-const channel = supabase
-  .channel('ledgers')
-  .on('postgres_changes', { event: '*', schema: 'public', table: 'ledgers' }, payload => {
-    console.log('Ledger changed:', payload);
-  })
-  .subscribe();
+const subscription = realTimeService.subscribeToLedgers(
+  (ledger) => console.log('Ledger created:', ledger),
+  (ledger) => console.log('Ledger updated:', ledger),
+  (ledger) => console.log('Ledger deleted:', ledger)
+);
 ```
 
 ## Authentication
@@ -146,3 +205,11 @@ Optimized for performance with:
 - Efficient queries
 - Caching with React Query
 - Pagination support
+
+## Modular Benefits
+
+- **Separation of Concerns**: Each service handles a specific domain
+- **Testability**: Services can be tested independently
+- **Maintainability**: Changes to one service don't affect others
+- **Reusability**: Services can be reused across different components
+- **Scalability**: Easy to add new services or modify existing ones

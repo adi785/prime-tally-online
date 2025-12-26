@@ -2,7 +2,13 @@ import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from './client';
 import { toast } from 'sonner';
-import { supabaseService } from './services';
+import { 
+  ledgerService,
+  voucherService,
+  dashboardService,
+  stockService,
+  companyService
+} from './services';
 import { 
   Ledger, 
   Voucher, 
@@ -78,7 +84,7 @@ export const useLedgers = (params?: LedgerQueryParams) => {
   console.log('useLedgers called with params:', params);
   return useQuery<Ledger[], Error>({
     queryKey: ['ledgers', params],
-    queryFn: () => supabaseService.getLedgers(params),
+    queryFn: () => ledgerService.getLedgers(params),
     enabled: true,
   });
 };
@@ -87,7 +93,7 @@ export const useLedger = (id: string) => {
   console.log('useLedger called with id:', id);
   return useQuery<Ledger, Error>({
     queryKey: ['ledgers', id],
-    queryFn: () => supabaseService.getLedger(id),
+    queryFn: () => ledgerService.getLedger(id),
     enabled: !!id,
   });
 };
@@ -95,7 +101,7 @@ export const useLedger = (id: string) => {
 export const useCreateLedger = () => {
   const queryClient = useQueryClient();
   return useMutation<Ledger, Error, CreateLedgerRequest>({
-    mutationFn: (data) => supabaseService.createLedger(data),
+    mutationFn: (data) => ledgerService.createLedger(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['ledgers'] });
       queryClient.invalidateQueries({ queryKey: ['dashboardMetrics'] });
@@ -110,7 +116,7 @@ export const useCreateLedger = () => {
 export const useUpdateLedger = () => {
   const queryClient = useQueryClient();
   return useMutation<Ledger, Error, UpdateLedgerRequest>({
-    mutationFn: (data) => supabaseService.updateLedger(data.id, data),
+    mutationFn: (data) => ledgerService.updateLedger(data.id, data),
     onSuccess: (updatedLedger) => {
       queryClient.invalidateQueries({ queryKey: ['ledgers'] });
       queryClient.invalidateQueries({ queryKey: ['dashboardMetrics'] });
@@ -126,7 +132,7 @@ export const useUpdateLedger = () => {
 export const useDeleteLedger = () => {
   const queryClient = useQueryClient();
   return useMutation<void, Error, string>({
-    mutationFn: (id) => supabaseService.deleteLedger(id),
+    mutationFn: (id) => ledgerService.deleteLedger(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['ledgers'] });
       queryClient.invalidateQueries({ queryKey: ['dashboardMetrics'] });
@@ -144,7 +150,7 @@ export const useVouchers = (params?: VoucherQueryParams) => {
   console.log('useVouchers called with params:', params);
   return useQuery<Voucher[], Error>({
     queryKey: ['vouchers', params],
-    queryFn: () => supabaseService.getVouchers(params),
+    queryFn: () => voucherService.getVouchers(params),
     enabled: true,
   });
 };
@@ -153,7 +159,7 @@ export const useVoucher = (id: string) => {
   console.log('useVoucher called with id:', id);
   return useQuery<Voucher, Error>({
     queryKey: ['vouchers', id],
-    queryFn: () => supabaseService.getVoucher(id),
+    queryFn: () => voucherService.getVoucher(id),
     enabled: !!id,
   });
 };
@@ -161,7 +167,7 @@ export const useVoucher = (id: string) => {
 export const useCreateVoucher = () => {
   const queryClient = useQueryClient();
   return useMutation<Voucher, Error, CreateVoucherRequest>({
-    mutationFn: (data) => supabaseService.createVoucher(data),
+    mutationFn: (data) => voucherService.createVoucher(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['vouchers'] });
       queryClient.invalidateQueries({ queryKey: ['ledgers'] });
@@ -177,7 +183,7 @@ export const useCreateVoucher = () => {
 export const useUpdateVoucher = () => {
   const queryClient = useQueryClient();
   return useMutation<Voucher, Error, UpdateVoucherRequest>({
-    mutationFn: (data) => supabaseService.updateVoucher(data.id, data),
+    mutationFn: (data) => voucherService.updateVoucher(data.id, data),
     onSuccess: (updatedVoucher) => {
       queryClient.invalidateQueries({ queryKey: ['vouchers'] });
       queryClient.invalidateQueries({ queryKey: ['ledgers'] });
@@ -194,7 +200,7 @@ export const useUpdateVoucher = () => {
 export const useDeleteVoucher = () => {
   const queryClient = useQueryClient();
   return useMutation<void, Error, string>({
-    mutationFn: (id) => supabaseService.deleteVoucher(id),
+    mutationFn: (id) => voucherService.deleteVoucher(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['vouchers'] });
       queryClient.invalidateQueries({ queryKey: ['ledgers'] });
@@ -213,7 +219,7 @@ export const useDashboardMetrics = () => {
   console.log('useDashboardMetrics called');
   return useQuery<DashboardMetricsResponse, Error>({
     queryKey: ['dashboardMetrics'],
-    queryFn: () => supabaseService.getDashboardMetrics(),
+    queryFn: () => dashboardService.getDashboardMetrics(),
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
 };
@@ -224,7 +230,7 @@ export const useStockItems = (params?: StockQueryParams) => {
   console.log('useStockItems called with params:', params);
   return useQuery<StockItem[], Error>({
     queryKey: ['stockItems', params],
-    queryFn: () => supabaseService.getStockItems(params),
+    queryFn: () => stockService.getStockItems(params),
     enabled: true,
   });
 };
@@ -233,7 +239,7 @@ export const useStockItem = (id: string) => {
   console.log('useStockItem called with id:', id);
   return useQuery<StockItem, Error>({
     queryKey: ['stockItems', id],
-    queryFn: () => supabaseService.getStockItem(id),
+    queryFn: () => stockService.getStockItem(id),
     enabled: !!id,
   });
 };
@@ -241,7 +247,7 @@ export const useStockItem = (id: string) => {
 export const useCreateStockItem = () => {
   const queryClient = useQueryClient();
   return useMutation<StockItem, Error, CreateStockItemRequest>({
-    mutationFn: (data) => supabaseService.createStockItem(data),
+    mutationFn: (data) => stockService.createStockItem(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['stockItems'] });
       toast.success('Stock item created successfully.');
@@ -255,7 +261,7 @@ export const useCreateStockItem = () => {
 export const useUpdateStockItem = () => {
   const queryClient = useQueryClient();
   return useMutation<StockItem, Error, UpdateStockItemRequest>({
-    mutationFn: (data) => supabaseService.updateStockItem(data.id, data),
+    mutationFn: (data) => stockService.updateStockItem(data.id, data),
     onSuccess: (updatedItem) => {
       queryClient.invalidateQueries({ queryKey: ['stockItems'] });
       queryClient.invalidateQueries({ queryKey: ['stockItems', updatedItem.id] });
@@ -270,7 +276,7 @@ export const useUpdateStockItem = () => {
 export const useDeleteStockItem = () => {
   const queryClient = useQueryClient();
   return useMutation<void, Error, string>({
-    mutationFn: (id) => supabaseService.deleteStockItem(id),
+    mutationFn: (id) => stockService.deleteStockItem(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['stockItems'] });
       toast.success('Stock item deleted successfully.');
@@ -287,7 +293,7 @@ export const useCompany = () => {
   console.log('useCompany called');
   return useQuery<Company, Error>({
     queryKey: ['company'],
-    queryFn: () => supabaseService.getCompany(),
+    queryFn: () => companyService.getCompany(),
     staleTime: Infinity,
   });
 };
@@ -295,7 +301,7 @@ export const useCompany = () => {
 export const useUpdateCompany = () => {
   const queryClient = useQueryClient();
   return useMutation<Company, Error, UpdateCompanyRequest>({
-    mutationFn: (data) => supabaseService.updateCompany(data),
+    mutationFn: (data) => companyService.updateCompany(data),
     onSuccess: (updatedCompany) => {
       queryClient.invalidateQueries({ queryKey: ['company'] });
       toast.success('Company information updated successfully.');
