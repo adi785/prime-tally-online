@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { ledgers } from '@/data/mockData';
+import { ledgers as initialLedgers } from '@/data/mockData';
 import { Ledger, LedgerGroup } from '@/types/tally';
 import { cn } from '@/lib/utils';
 import { Search, Plus, Filter, Download, MoreVertical } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { CreateLedgerModal } from './CreateLedgerModal';
 
 const groupLabels: Record<LedgerGroup, string> = {
   'sundry-debtors': 'Sundry Debtors',
@@ -24,8 +25,26 @@ const groupLabels: Record<LedgerGroup, string> = {
 };
 
 export function LedgerList() {
+  const [ledgers, setLedgers] = useState<Ledger[]>(initialLedgers);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedGroup, setSelectedGroup] = useState<LedgerGroup | 'all'>('all');
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+
+  const handleAddLedger = (newLedger: {
+    name: string;
+    group: LedgerGroup;
+    openingBalance: number;
+  }) => {
+    const ledger: Ledger = {
+      id: `ledger-${Date.now()}`,
+      name: newLedger.name,
+      group: newLedger.group,
+      openingBalance: newLedger.openingBalance,
+      currentBalance: newLedger.openingBalance,
+    };
+    
+    setLedgers([...ledgers, ledger]);
+  };
 
   const filteredLedgers = ledgers.filter(ledger => {
     const matchesSearch = ledger.name.toLowerCase().includes(searchQuery.toLowerCase());
@@ -41,7 +60,6 @@ export function LedgerList() {
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     }).format(absAmount);
-    
     return amount < 0 ? `${formatted} Cr` : `${formatted} Dr`;
   };
 
@@ -55,24 +73,25 @@ export function LedgerList() {
           <h1 className="text-2xl font-bold text-foreground">Ledgers</h1>
           <p className="text-muted-foreground">Manage your account ledgers</p>
         </div>
-        <Button className="gap-2">
-          <Plus size={16} />
-          Create Ledger
+        <Button 
+          className="gap-2"
+          onClick={() => setIsCreateModalOpen(true)}
+        >
+          <Plus size={16} /> Create Ledger
         </Button>
       </div>
-
+      
       {/* Filters */}
       <div className="flex items-center gap-4 animate-fade-in">
         <div className="relative flex-1 max-w-md">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={16} />
           <Input 
-            placeholder="Search ledgers..."
+            placeholder="Search ledgers..." 
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-10"
           />
         </div>
-        
         <select
           value={selectedGroup}
           onChange={(e) => setSelectedGroup(e.target.value as LedgerGroup | 'all')}
@@ -83,7 +102,6 @@ export function LedgerList() {
             <option key={group} value={group}>{groupLabels[group]}</option>
           ))}
         </select>
-
         <Button variant="outline" size="icon">
           <Filter size={16} />
         </Button>
@@ -91,7 +109,7 @@ export function LedgerList() {
           <Download size={16} />
         </Button>
       </div>
-
+      
       {/* Ledger Table */}
       <div className="bg-card rounded-xl border border-border overflow-hidden animate-fade-in">
         <table className="w-full">
@@ -107,7 +125,7 @@ export function LedgerList() {
           <tbody className="divide-y divide-table-border">
             {filteredLedgers.map((ledger, index) => (
               <tr 
-                key={ledger.id}
+                key={ledger.id} 
                 className="hover:bg-table-row-hover transition-colors cursor-pointer animate-slide-in"
                 style={{ animationDelay: `${index * 20}ms` }}
               >
@@ -125,7 +143,9 @@ export function LedgerList() {
                 <td className="px-4 py-3 text-right">
                   <span className={cn(
                     "font-mono text-sm",
-                    ledger.openingBalance < 0 ? "amount-positive" : ledger.openingBalance > 0 ? "amount-neutral" : "text-muted-foreground"
+                    ledger.openingBalance < 0 ? "amount-positive" : 
+                    ledger.openingBalance > 0 ? "amount-neutral" : 
+                    "text-muted-foreground"
                   )}>
                     {ledger.openingBalance === 0 ? '-' : formatAmount(ledger.openingBalance)}
                   </span>
@@ -133,7 +153,9 @@ export function LedgerList() {
                 <td className="px-4 py-3 text-right">
                   <span className={cn(
                     "font-mono text-sm font-semibold",
-                    ledger.currentBalance < 0 ? "amount-positive" : ledger.currentBalance > 0 ? "amount-negative" : "text-muted-foreground"
+                    ledger.currentBalance < 0 ? "amount-positive" : 
+                    ledger.currentBalance > 0 ? "amount-negative" : 
+                    "text-muted-foreground"
                   )}>
                     {ledger.currentBalance === 0 ? '-' : formatAmount(ledger.currentBalance)}
                   </span>
@@ -147,14 +169,13 @@ export function LedgerList() {
             ))}
           </tbody>
         </table>
-
         {filteredLedgers.length === 0 && (
           <div className="p-12 text-center">
             <p className="text-muted-foreground">No ledgers found matching your criteria.</p>
           </div>
         )}
       </div>
-
+      
       {/* Summary Footer */}
       <div className="flex items-center justify-between text-sm text-muted-foreground animate-fade-in">
         <span>Showing {filteredLedgers.length} of {ledgers.length} ledgers</span>
@@ -163,6 +184,13 @@ export function LedgerList() {
           <span>Total Credit: <span className="font-mono font-semibold text-foreground">₹24,25,000</span></span>
         </div>
       </div>
+      
+      {/* Create Ledger Modal */}
+      <CreateLedgerModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        onAddLedger={handleAddLedger}
+      />
     </div>
   );
 }

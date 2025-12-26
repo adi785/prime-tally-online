@@ -1,26 +1,5 @@
 import { useState } from 'react';
-import { 
-  LayoutDashboard, 
-  FileText, 
-  BookOpen, 
-  BarChart3, 
-  Package, 
-  Settings, 
-  Users, 
-  Calculator,
-  ChevronDown,
-  ChevronRight,
-  Receipt,
-  CreditCard,
-  Wallet,
-  ArrowDownToLine,
-  ArrowUpFromLine,
-  FileSpreadsheet,
-  PieChart,
-  TrendingUp,
-  Building2,
-  HelpCircle
-} from 'lucide-react';
+import { LayoutDashboard, FileText, BookOpen, BarChart3, Package, Settings, Users, Calculator, ChevronDown, ChevronRight, Receipt, CreditCard, Wallet, ArrowDownToLine, ArrowUpFromLine, FileSpreadsheet, PieChart, TrendingUp, Building2, HelpCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface MenuItem {
@@ -40,76 +19,147 @@ const menuItems: MenuItem[] = [
   { 
     id: 'dashboard', 
     label: 'Dashboard', 
-    icon: <LayoutDashboard size={18} />,
-    shortcut: 'F1'
+    icon: <LayoutDashboard size={18} />, 
+    shortcut: 'F1' 
   },
   { 
     id: 'vouchers', 
     label: 'Vouchers', 
-    icon: <FileText size={18} />,
-    shortcut: 'V',
+    icon: <FileText size={18} />, 
+    shortcut: 'V', 
     children: [
-      { id: 'sales', label: 'Sales', icon: <ArrowUpFromLine size={16} />, shortcut: 'F8' },
-      { id: 'purchase', label: 'Purchase', icon: <ArrowDownToLine size={16} />, shortcut: 'F9' },
-      { id: 'payment', label: 'Payment', icon: <CreditCard size={16} />, shortcut: 'F5' },
-      { id: 'receipt', label: 'Receipt', icon: <Wallet size={16} />, shortcut: 'F6' },
-      { id: 'journal', label: 'Journal', icon: <Receipt size={16} />, shortcut: 'F7' },
-      { id: 'contra', label: 'Contra', icon: <Calculator size={16} />, shortcut: 'F4' },
-    ]
+      { 
+        id: 'sales', 
+        label: 'Sales', 
+        icon: <ArrowUpFromLine size={16} />, 
+        shortcut: 'F8' 
+      },
+      { 
+        id: 'purchase', 
+        label: 'Purchase', 
+        icon: <ArrowDownToLine size={16} />, 
+        shortcut: 'F9' 
+      },
+      { 
+        id: 'payment', 
+        label: 'Payment', 
+        icon: <CreditCard size={16} />, 
+        shortcut: 'F5' 
+      },
+      { 
+        id: 'receipt', 
+        label: 'Receipt', 
+        icon: <Wallet size={16} />, 
+        shortcut: 'F6' 
+      },
+      { 
+        id: 'journal', 
+        label: 'Journal', 
+        icon: <Receipt size={16} />, 
+        shortcut: 'F7' 
+      },
+      { 
+        id: 'contra', 
+        label: 'Contra', 
+        icon: <Calculator size={16} />, 
+        shortcut: 'F4' 
+      },
+    ] 
   },
   { 
     id: 'masters', 
     label: 'Masters', 
-    icon: <BookOpen size={18} />,
-    shortcut: 'M',
+    icon: <BookOpen size={18} />, 
+    shortcut: 'M', 
     children: [
-      { id: 'ledgers', label: 'Ledgers', icon: <BookOpen size={16} /> },
-      { id: 'groups', label: 'Groups', icon: <Users size={16} /> },
-      { id: 'stock-items', label: 'Stock Items', icon: <Package size={16} /> },
-    ]
+      { 
+        id: 'ledgers', 
+        label: 'Ledgers', 
+        icon: <BookOpen size={16} /> 
+      },
+      { 
+        id: 'groups', 
+        label: 'Groups', 
+        icon: <Users size={16} /> 
+      },
+      { 
+        id: 'stock-items', 
+        label: 'Stock Items', 
+        icon: <Package size={16} /> 
+      },
+    ] 
   },
   { 
     id: 'reports', 
     label: 'Reports', 
-    icon: <BarChart3 size={18} />,
-    shortcut: 'R',
+    icon: <BarChart3 size={18} />, 
+    shortcut: 'R', 
     children: [
-      { id: 'balance-sheet', label: 'Balance Sheet', icon: <FileSpreadsheet size={16} /> },
-      { id: 'profit-loss', label: 'Profit & Loss', icon: <TrendingUp size={16} /> },
-      { id: 'trial-balance', label: 'Trial Balance', icon: <PieChart size={16} /> },
-      { id: 'day-book', label: 'Day Book', icon: <FileText size={16} /> },
-    ]
+      { 
+        id: 'balance-sheet', 
+        label: 'Balance Sheet', 
+        icon: <FileSpreadsheet size={16} /> 
+      },
+      { 
+        id: 'profit-loss', 
+        label: 'Profit & Loss', 
+        icon: <TrendingUp size={16} /> 
+      },
+      { 
+        id: 'trial-balance', 
+        label: 'Trial Balance', 
+        icon: <PieChart size={16} /> 
+      },
+      { 
+        id: 'day-book', 
+        label: 'Day Book', 
+        icon: <FileText size={16} /> 
+      },
+    ] 
   },
   { 
     id: 'inventory', 
     label: 'Inventory', 
-    icon: <Package size={18} />,
-    shortcut: 'I'
+    icon: <Package size={18} />, 
+    shortcut: 'I' 
   },
 ];
 
 const bottomMenuItems: MenuItem[] = [
-  { id: 'company', label: 'Company Info', icon: <Building2 size={18} /> },
-  { id: 'settings', label: 'Settings', icon: <Settings size={18} /> },
-  { id: 'help', label: 'Help', icon: <HelpCircle size={18} />, shortcut: 'F1' },
+  { 
+    id: 'company', 
+    label: 'Company Info', 
+    icon: <Building2 size={18} /> 
+  },
+  { 
+    id: 'settings', 
+    label: 'Settings', 
+    icon: <Settings size={18} /> 
+  },
+  { 
+    id: 'help', 
+    label: 'Help', 
+    icon: <HelpCircle size={18} />, 
+    shortcut: 'F1' 
+  },
 ];
 
 export function TallySidebar({ activeSection, onSectionChange }: TallySidebarProps) {
   const [expandedItems, setExpandedItems] = useState<string[]>(['vouchers']);
-
+  
   const toggleExpand = (id: string) => {
     setExpandedItems(prev => 
       prev.includes(id) 
-        ? prev.filter(item => item !== id)
+        ? prev.filter(item => item !== id) 
         : [...prev, id]
     );
   };
-
+  
   const renderMenuItem = (item: MenuItem, isChild = false) => {
     const hasChildren = item.children && item.children.length > 0;
     const isExpanded = expandedItems.includes(item.id);
     const isActive = activeSection === item.id;
-
+    
     return (
       <div key={item.id}>
         <button
@@ -144,7 +194,6 @@ export function TallySidebar({ activeSection, onSectionChange }: TallySidebarPro
             </span>
           )}
         </button>
-        
         {hasChildren && isExpanded && (
           <div className="animate-fade-in">
             {item.children?.map(child => renderMenuItem(child, true))}
@@ -153,7 +202,7 @@ export function TallySidebar({ activeSection, onSectionChange }: TallySidebarPro
       </div>
     );
   };
-
+  
   return (
     <aside className="w-64 h-screen bg-sidebar flex flex-col border-r border-sidebar-border">
       {/* Logo Header */}
@@ -168,19 +217,19 @@ export function TallySidebar({ activeSection, onSectionChange }: TallySidebarPro
           </div>
         </div>
       </div>
-
+      
       {/* Main Menu */}
       <nav className="flex-1 py-4 overflow-y-auto tally-scrollbar">
         <div className="space-y-1">
           {menuItems.map(item => renderMenuItem(item))}
         </div>
       </nav>
-
+      
       {/* Bottom Menu */}
       <div className="border-t border-sidebar-border py-2">
         {bottomMenuItems.map(item => renderMenuItem(item))}
       </div>
-
+      
       {/* Version Info */}
       <div className="p-4 border-t border-sidebar-border">
         <p className="text-sidebar-muted text-xs text-center">
