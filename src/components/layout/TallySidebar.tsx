@@ -24,6 +24,7 @@ import {
 import { cn } from '@/lib/utils';
 import { VoucherType } from '@/types/tally';
 import { VoucherForm } from '@/components/vouchers/VoucherForm';
+import { useCreateVoucher } from '@/integrations/supabase/hooks';
 
 interface MenuItem {
   id: string;
@@ -103,6 +104,8 @@ export function TallySidebar({ activeSection, onSectionChange }: TallySidebarPro
     type: null
   });
 
+  const { mutate: createVoucher, isPending: isCreating } = useCreateVoucher();
+
   const toggleExpand = (id: string) => {
     setExpandedItems(prev => 
       prev.includes(id) 
@@ -116,7 +119,7 @@ export function TallySidebar({ activeSection, onSectionChange }: TallySidebarPro
   };
 
   const handleSaveVoucher = (voucherData: any) => {
-    console.log('Saving voucher:', voucherData);
+    createVoucher(voucherData);
     setVoucherForm({ isOpen: false, type: null });
   };
 

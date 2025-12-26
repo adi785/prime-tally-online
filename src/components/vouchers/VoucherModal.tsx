@@ -3,8 +3,7 @@ import { X, Plus, Trash2, Save, Calculator } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { VoucherType } from '@/types/tally';
-import { ledgers } from '@/data/mockData';
-import { cn } from '@/lib/utils';
+import { useCreateVoucher } from '@/integrations/supabase/hooks';
 import { VoucherForm } from './VoucherForm';
 
 interface VoucherModalProps {
@@ -14,11 +13,11 @@ interface VoucherModalProps {
 }
 
 export function VoucherModal({ type, isOpen, onClose }: VoucherModalProps) {
+  const { mutate: createVoucher, isPending: isCreating } = useCreateVoucher();
   const [showForm, setShowForm] = useState(false);
 
   const handleSaveVoucher = (voucherData: any) => {
-    console.log('Saving voucher:', voucherData);
-    // In a real app, this would call an API or update state management
+    createVoucher(voucherData);
   };
 
   if (!isOpen) return null;

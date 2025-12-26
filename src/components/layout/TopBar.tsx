@@ -2,7 +2,7 @@ import { Search, Bell, Calendar, User, Building2, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { company } from '@/data/mockData';
-import { useAuthState } from '@/integrations/nhost/hooks';
+import { useAuthState } from '@/integrations/supabase/hooks';
 import { useState } from 'react';
 
 interface TopBarProps {

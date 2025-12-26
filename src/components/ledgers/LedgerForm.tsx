@@ -9,6 +9,7 @@ import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { Ledger, LedgerGroup } from '@/types/tally';
+import { useCreateLedger, useUpdateLedger } from '@/integrations/supabase/hooks';
 
 interface LedgerFormProps {
   isOpen: boolean;
@@ -53,6 +54,9 @@ const groupOptions: { value: LedgerGroup; label: string; }[] = [
 
 export function LedgerForm({ isOpen, onClose, ledger, onSave }: LedgerFormProps) {
   const { toast } = useToast();
+  const { mutate: createLedger, isPending: isCreating } = useCreateLedger();
+  const { mutate: updateLedger, isPending: isUpdating } = useUpdateLedger();
+  
   const [formData, setFormData] = useState({
     name: ledger?.name || '',
     group: ledger?.group || 'sundry-debtors' as LedgerGroup,
@@ -116,7 +120,11 @@ export function LedgerForm({ isOpen, onClose, ledger, onSave }: LedgerFormProps)
         email: formData.email.trim(),
       };
 
-      onSave(ledgerData);
+      if (ledger) {
+        updateLedger({ id: ledger.id, ...ledgerData });
+      } else {
+        createLedger(ledgerData);
+      }
       
       toast({
         title: ledger ? "Ledger Updated" : "Ledger Created",
@@ -155,7 +163,7 @@ export function LedgerForm({ isOpen, onClose, ledger, onSave }: LedgerFormProps)
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 animate-fade-in">
-      <div className="bg-card w-full max-w-2xl rounded-xl shadow-2xl overflow-hidden animate-scale-in">
+      <div className="bg-card w-full max-w-2xl h-[90vh] rounded-xl shadow-2xl overflow-hidden animate-scale-in">
         {/* Header */}
         <div className="px-6 py-4 border-b border-border bg-muted/50">
           <div className="flex items-center justify-between">
