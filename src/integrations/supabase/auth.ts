@@ -11,7 +11,7 @@ export interface AuthUser {
 export const authService = {
   async signIn(email: string, password: string): Promise<void> {
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
@@ -30,13 +30,11 @@ export const authService = {
 
   async signUp(email: string, password: string, userData?: any): Promise<void> {
     try {
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
-          data: {
-            display_name: userData?.displayName,
-          },
+          data: userData,
         },
       });
 
@@ -44,7 +42,11 @@ export const authService = {
         throw error;
       }
 
-      toast.success('Account created successfully');
+      if (data.user?.confirmed_at) {
+        toast.success('Account created successfully');
+      } else {
+        toast.success('Account created! Please check your email to confirm your account.');
+      }
     } catch (error) {
       console.error('Sign up error:', error);
       toast.error('Failed to create account. Please try again.');
@@ -88,7 +90,7 @@ export const authService = {
 
   async updatePassword(newPassword: string): Promise<void> {
     try {
-      const { error } = await supabase.auth.updateUser({
+      const { data, error } = await supabase.auth.updateUser({
         password: newPassword,
       });
 
@@ -106,10 +108,8 @@ export const authService = {
 
   async updateProfile(updates: Partial<AuthUser>): Promise<void> {
     try {
-      const { error } = await supabase.auth.updateUser({
-        data: {
-          display_name: updates.displayName,
-        },
+      const { data, error } = await supabase.auth.updateUser({
+        data: updates,
       });
 
       if (error) {
@@ -131,16 +131,74 @@ export const authService = {
     return {
       id: user.id,
       email: user.email || '',
-      displayName: user.user_metadata?.display_name,
-      avatarUrl: user.user_metadata?.avatar_url,
+      displayName: user.user_metadata?.displayName,
+      avatarUrl: user.user_metadata?.avatarUrl,
     };
   },
 
   isAuthenticated(): boolean {
-    return !!supabase.auth.getUser().data.user;
+    const session = supabase.auth.getSession().data.session;
+    return !!session;
   },
 
   getJWTToken(): string | null {
-    return supabase.auth.getSession().data.session?.access_token || null;
+    const session = supabase.auth.getSession().data.session;
+    return session?.access_token || null;
+  },
+
+  async confirmEmail(tokenHash: string): Promise<void> {
+    try {
+      const { error } = await supabase.auth.verifyOtp({
+        type: 'email',
+        token_hash: tokenHash,
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      toast.success('Email confirmed successfully');
+    } catch (error) {
+      console.error('Email confirmation error:', error);
+      toast.error('Failed to confirm email. Please try again.');
+      throw error;
+    }
+  },
+
+  async resendConfirmationEmail(email: string): Promise<void> {
+    try {
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email: email,
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      toast.success('Confirmation email sent. Please check your inbox.');
+    } catch (error) {
+      console.error('Resend confirmation error:', error);
+      toast.error('Failed to resend confirmation email. Please try again.');
+      throw error;
+    }
+  },
+
+  async changeEmail(newEmail: string): Promise<void> {
+    try {
+      const { error } = await supabase.auth.updateUser({
+        email: newEmail,
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      toast.success('Email update request sent. Please check your new email to confirm.');
+    } catch (error) {
+      console.error('Change email error:', error);
+      toast.error('Failed to update email. Please try again.');
+      throw error;
+    }
   },
 };

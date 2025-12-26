@@ -2,7 +2,7 @@ import { Search, Bell, Calendar, User, Building2, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { company } from '@/data/mockData';
-import { useAuthState } from '@/integrations/nhost/hooks';
+import { useAuthState } from '@/integrations/supabase/hooks';
 import { useState } from 'react';
 
 interface TopBarProps {
@@ -10,8 +10,34 @@ interface TopBarProps {
 }
 
 export function TopBar({ currentDate }: TopBarProps) {
-  const { user, signOut } = useAuthState();
+  const { isAuthenticated, isLoading, user, signOut } = useAuthState();
   const [showUserMenu, setShowUserMenu] = useState(false);
+
+  if (isLoading) {
+    return (
+      <header className="h-14 bg-card border-b border-border flex items-center justify-between px-6">
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 text-muted-foreground">
+            <Building2 size={18} />
+            <span className="font-semibold text-foreground">{company.name}</span>
+          </div>
+          <span className="text-muted-foreground text-sm">|</span>
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Calendar size={14} />
+            <span>FY: {company.financialYearStart.split('-')[0]}-{company.financialYearEnd.split('-')[0].slice(2)}</span>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-4">
+          <div className="text-right">
+            <p className="text-sm font-medium">{currentDate}</p>
+            <p className="text-xs text-muted-foreground">Current Period</p>
+          </div>
+          <div className="text-sm text-muted-foreground">Loading...</div>
+        </div>
+      </header>
+    );
+  }
 
   return (
     <header className="h-14 bg-card border-b border-border flex items-center justify-between px-6">

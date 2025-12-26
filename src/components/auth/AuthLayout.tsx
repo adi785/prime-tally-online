@@ -7,10 +7,6 @@ import { useToast } from '@/hooks/use-toast';
 import { authService } from '@/integrations/supabase/auth';
 import { cn } from '@/lib/utils';
 
-interface AuthFormProps {
-  type: 'login' | 'signup';
-}
-
 export function AuthLayout() {
   const navigate = useNavigate();
   const location = useLocation();

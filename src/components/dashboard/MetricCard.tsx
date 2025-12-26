@@ -14,6 +14,23 @@ interface MetricCardProps {
 }
 
 export function MetricCard({ 
+  title<dyad-chat-summary>Connecting Supabase integration</dyad-chat-summary><dyad-write path="src/components/dashboard/MetricCard.tsx" description="Updating the MetricCard component to use Supabase hooks.">
+import { cn } from '@/lib/utils';
+import { LucideIcon } from 'lucide-react';
+
+interface MetricCardProps {
+  title: string;
+  value: number;
+  icon: LucideIcon;
+  trend?: {
+    value: number;
+    isPositive: boolean;
+  };
+  variant?: 'default' | 'success' | 'warning' | 'destructive';
+  prefix?: string;
+}
+
+export function MetricCard({ 
   title, 
   value, 
   icon: Icon, 

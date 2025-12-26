@@ -15,7 +15,7 @@ export function InventorySection() {
 
   const filteredItems = stockItems.filter(item => {
     const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesGroup = selectedGroup === 'all' || item.group_name === selectedGroup;
+    const matchesGroup = selectedGroup === 'all' || item.group === selectedGroup;
     return matchesSearch && matchesGroup;
   });
 
@@ -30,7 +30,7 @@ export function InventorySection() {
     }).format(amount);
   };
 
-  const groups = Array.from(new Set(stockItems.map(s => s.group_name)));
+  const groups = Array.from(new Set(stockItems.map(s => s.group)));
 
   if (error) {
     return (
@@ -63,7 +63,7 @@ export function InventorySection() {
           quantity: 100,
           rate: 50,
           value: 5000,
-          group_name: 'Raw Materials'
+          group: 'Raw Materials'
         })} disabled={isCreating}>
           <Plus size={16} />
           {isCreating ? 'Adding...' : 'Add Stock Item'}
@@ -190,7 +190,7 @@ export function InventorySection() {
                     <p className="font-medium text-foreground">{item.name}</p>
                   </td>
                   <td className="px-4 py-3">
-                    <span className="text-sm text-muted-foreground">{item.group_name}</span>
+                    <span className="text-sm text-muted-foreground">{item.group}</span>
                   </td>
                   <td className="px-4 py-3 text-center">
                     <span className="text-sm text-muted-foreground">{item.unit}</span>

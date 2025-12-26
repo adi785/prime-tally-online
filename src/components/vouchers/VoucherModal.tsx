@@ -3,7 +3,6 @@ import { X, Plus, Trash2, Save, Calculator } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { VoucherType } from '@/types/tally';
-import { ledgers } from '@/data/mockData';
 import { cn } from '@/lib/utils';
 import { VoucherForm } from './VoucherForm';
 

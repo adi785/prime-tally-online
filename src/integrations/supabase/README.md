@@ -4,11 +4,10 @@ This directory contains the complete backend integration for the TallyPrime clon
 
 ## Features
 
-- **Authentication**: Complete auth system with email/password, sign up, sign in, password reset
 - **Database**: PostgreSQL with Row Level Security (RLS) for data isolation
-- **API Services**: RESTful API services for all CRUD operations
-- **Real-time**: PostgreSQL notifications for real-time data updates
-- **File Storage**: Supabase storage for document uploads
+- **Authentication**: JWT-based auth with email/password, sign up, sign in, password reset
+- **Real-time**: PostgreSQL LISTEN/NOTIFY for real-time data updates
+- **Storage**: File storage for document uploads (future implementation)
 - **Security**: Built-in security with RLS policies and JWT authentication
 
 ## Database Schema
@@ -17,37 +16,38 @@ The schema includes tables for:
 
 - **Ledgers**: Account ledgers with groups and balances
 - **Vouchers**: All voucher types with double-entry accounting
+- **Voucher Items**: Individual ledger entries for each voucher
 - **Stock Items**: Inventory management
-- **Companies**: Company information
-- **Voucher Types**: Enum for voucher types
+- **Company Info**: Company information
 - **Ledger Groups**: Enum for ledger groups
+- **Voucher Types**: Enum for voucher types
 
 ## API Endpoints
 
 ### Ledgers
-- `GET /rest/v1/ledgers` - List ledgers with pagination
+- `GET /rest/v1/ledgers` - Get all ledgers with pagination
 - `POST /rest/v1/ledgers` - Create new ledger
-- `PUT /rest/v1/ledgers/:id` - Update ledger
-- `DELETE /rest/v1/ledgers/:id` - Delete ledger
+- `PUT /rest/v1/ledgers?id=eq.{id}` - Update ledger
+- `DELETE /rest/v1/ledgers?id=eq.{id}` - Delete ledger
 
 ### Vouchers
-- `GET /rest/v1/vouchers` - List vouchers with pagination
+- `GET /rest/v1/vouchers` - Get all vouchers with pagination
 - `POST /rest/v1/vouchers` - Create new voucher
-- `PUT /rest/v1/vouchers/:id` - Update voucher
-- `DELETE /rest/v1/vouchers/:id` - Delete voucher
+- `PUT /rest/v1/vouchers?id=eq.{id}` - Update voucher
+- `DELETE /rest/v1/vouchers?id=eq.{id}` - Delete voucher
 
 ### Dashboard
-- `POST /rest/v1/rpc/get_dashboard_metrics` - Get dashboard statistics
+- Custom function: `get_dashboard_metrics()` - Get dashboard statistics
 
 ### Stock
 - `GET /rest/v1/stock_items` - Get all stock items
 - `POST /rest/v1/stock_items` - Create new stock item
-- `PUT /rest/v1/stock_items/:id` - Update stock item
-- `DELETE /rest/v1/stock_items/:id` - Delete stock item
+- `PUT /rest/v1/stock_items?id=eq.{id}` - Update stock item
+- `DELETE /rest/v1/stock_items?id=eq.{id}` - Delete stock item
 
 ### Company
-- `GET /rest/v1/companies` - Get company information
-- `PUT /rest/v1/companies/:id` - Update company information
+- `GET /rest/v1/company_info` - Get company information
+- `PUT /rest/v1/company_info?id=eq.{id}` - Update company information
 
 ## Usage
 
@@ -58,10 +58,10 @@ import { supabaseIntegration } from '@/integrations/supabase';
 const { data: ledgers, isLoading } = supabaseIntegration.hooks.useLedgers();
 
 // Use services directly
-const newLedger = await supabaseIntegration.services.createLedger({
+const newLedger = await supabaseIntegration.services.ledgerService.createLedger({
   name: 'New Ledger',
-  group_id: 'sundry-debtors',
-  opening_balance: 1000,
+  group: 'sundry-debtors',
+  openingBalance: 1000,
 });
 
 // Use auth
@@ -70,7 +70,8 @@ await supabaseIntegration.auth.signIn('user@example.com', 'password');
 // Use real-time subscriptions
 const subscription = supabaseIntegration.realtime.subscribeToLedgers(
   (ledger) => console.log('New ledger created:', ledger),
-  (ledger) => console.log('Ledger updated:', ledger)
+  (ledger) => console.log('Ledger updated:', ledger),
+  (ledger) => console.log('Ledger deleted:', ledger)
 );
 ```
 
@@ -79,8 +80,8 @@ const subscription = supabaseIntegration.realtime.subscribeToLedgers(
 Add these to your `.env` file:
 
 ```env
-VITE_SUPABASE_URL=https://your-project.supabase.co
-VITE_SUPABASE_ANON_KEY=your-anon-key
+VITE_SUPABASE_URL=https://vrmbazbiwkzxntqbooyu.supabase.co
+VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZybWJhemJpd2t6eG50cWJvb3l1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY3NTE5MTYsImV4cCI6MjA4MjMyNzkxNn0.ZiyzAMlj1UlxNrdwZsZecOwL3RqRC5wD2KEw5-0gKzc
 ```
 
 ## Security
@@ -100,7 +101,7 @@ To set up the database schema:
 
 ## Real-time Updates
 
-The integration supports real-time updates via PostgreSQL notifications:
+The integration supports real-time updates via PostgreSQL LISTEN/NOTIFY:
 
 ```typescript
 // Subscribe to ledger changes
@@ -112,3 +113,67 @@ const subscription = realTimeService.subscribeToLedgers(
 
 // Remember to unsubscribe when component unmounts
 return () => subscription.unsubscribe();
+```
+
+## Authentication
+
+The integration provides complete authentication functionality:
+
+```typescript
+// Sign in
+await supabaseIntegration.auth.signIn('user@example.com', 'password');
+
+// Sign up
+await supabaseIntegration.auth.signUp('user@example.com', 'password', {
+  displayName: 'John Doe'
+});
+
+// Sign out
+await supabaseIntegration.auth.signOut();
+
+// Check authentication status
+const isAuthenticated = supabaseIntegration.auth.isAuthenticated();
+```
+
+## Error Handling
+
+All functions include proper error handling with toast notifications:
+
+```typescript
+try {
+  await supabaseIntegration.services.ledgerService.createLedger(ledgerData);
+} catch (error) {
+  console.error('Error creating ledger:', error);
+  // Error is automatically handled with toast notification
+}
+```
+
+## Database Triggers
+
+The schema includes several triggers for automatic functionality:
+
+1. **Ledger Balance Updates**: Automatically updates ledger balances when voucher items are inserted/updated/deleted
+2. **Voucher Number Generation**: Automatically generates voucher numbers based on type and date
+3. **Audit Trail**: Tracks changes to important data
+
+## Row Level Security (RLS)
+
+All tables have RLS policies configured:
+
+- **Public tables**: `ledger_groups`, `voucher_types` (read-only for everyone)
+- **Authenticated tables**: All other tables (CRUD operations for authenticated users only)
+
+## Performance Optimizations
+
+- Indexes on frequently queried columns
+- Efficient queries with proper joins
+- Pagination for large datasets
+- Caching with React Query
+
+## Future Enhancements
+
+- File storage for document uploads
+- Advanced reporting with complex queries
+- Multi-tenant support
+- Audit logging
+- Backup and restore functionality

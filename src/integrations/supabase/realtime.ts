@@ -1,12 +1,4 @@
 import { supabase } from './client';
-import { 
-  Ledger, 
-  Voucher, 
-  StockItem,
-  LedgerRealTimeEvent,
-  VoucherRealTimeEvent,
-  StockRealTimeEvent
-} from './types';
 
 export interface RealTimeSubscription {
   unsubscribe: () => void;
@@ -17,9 +9,9 @@ class RealTimeService {
 
   // Ledger subscriptions
   subscribeToLedgers(
-    onInsert?: (data: Ledger) => void,
-    onUpdate?: (data: Ledger) => void,
-    onDelete?: (data: Ledger) => void
+    onInsert?: (data: any) => void,
+    onUpdate?: (data: any) => void,
+    onDelete?: (data: any) => void
   ): RealTimeSubscription {
     const subscription = supabase
       .channel('ledgers')
@@ -33,13 +25,13 @@ class RealTimeService {
         (payload) => {
           switch (payload.eventType) {
             case 'INSERT':
-              if (onInsert) onInsert(payload.new as Ledger);
+              if (onInsert) onInsert(payload.new);
               break;
             case 'UPDATE':
-              if (onUpdate) onUpdate(payload.new as Ledger);
+              if (onUpdate) onUpdate(payload.new);
               break;
             case 'DELETE':
-              if (onDelete) onDelete(payload.old as Ledger);
+              if (onDelete) onDelete(payload.old);
               break;
           }
         }
@@ -59,8 +51,8 @@ class RealTimeService {
 
   subscribeToLedger(
     ledgerId: string,
-    onUpdate?: (data: Ledger) => void,
-    onDelete?: (data: Ledger) => void
+    onUpdate?: (data: any) => void,
+    onDelete?: (data: any) => void
   ): RealTimeSubscription {
     const subscription = supabase
       .channel(`ledger-${ledgerId}`)
@@ -75,10 +67,10 @@ class RealTimeService {
         (payload) => {
           switch (payload.eventType) {
             case 'UPDATE':
-              if (onUpdate) onUpdate(payload.new as Ledger);
+              if (onUpdate) onUpdate(payload.new);
               break;
             case 'DELETE':
-              if (onDelete) onDelete(payload.old as Ledger);
+              if (onDelete) onDelete(payload.old);
               break;
           }
         }
@@ -98,9 +90,9 @@ class RealTimeService {
 
   // Voucher subscriptions
   subscribeToVouchers(
-    onInsert?: (data: Voucher) => void,
-    onUpdate?: (data: Voucher) => void,
-    onDelete?: (data: Voucher) => void
+    onInsert?: (data: any) => void,
+    onUpdate?: (data: any) => void,
+    onDelete?: (data: any) => void
   ): RealTimeSubscription {
     const subscription = supabase
       .channel('vouchers')
@@ -114,13 +106,13 @@ class RealTimeService {
         (payload) => {
           switch (payload.eventType) {
             case 'INSERT':
-              if (onInsert) onInsert(payload.new as Voucher);
+              if (onInsert) onInsert(payload.new);
               break;
             case 'UPDATE':
-              if (onUpdate) onUpdate(payload.new as Voucher);
+              if (onUpdate) onUpdate(payload.new);
               break;
             case 'DELETE':
-              if (onDelete) onDelete(payload.old as Voucher);
+              if (onDelete) onDelete(payload.old);
               break;
           }
         }
@@ -140,8 +132,8 @@ class RealTimeService {
 
   subscribeToVoucher(
     voucherId: string,
-    onUpdate?: (data: Voucher) => void,
-    onDelete?: (data: Voucher) => void
+    onUpdate?: (data: any) => void,
+    onDelete?: (data: any) => void
   ): RealTimeSubscription {
     const subscription = supabase
       .channel(`voucher-${voucherId}`)
@@ -156,10 +148,10 @@ class RealTimeService {
         (payload) => {
           switch (payload.eventType) {
             case 'UPDATE':
-              if (onUpdate) onUpdate(payload.new as Voucher);
+              if (onUpdate) onUpdate(payload.new);
               break;
             case 'DELETE':
-              if (onDelete) onDelete(payload.old as Voucher);
+              if (onDelete) onDelete(payload.old);
               break;
           }
         }
@@ -177,14 +169,56 @@ class RealTimeService {
     return this.subscriptions.get(id)!;
   }
 
-  // Stock subscriptions
-  subscribeToStockItems(
-    onInsert?: (data: StockItem) => void,
-    onUpdate?: (data: StockItem) => void,
-    onDelete?: (data: StockItem) => void
+  // Voucher items subscriptions
+  subscribeToVoucherItems(
+    onInsert?: (data: any) => void,
+    onUpdate?: (data: any) => void,
+    onDelete?: (data: any) => void
   ): RealTimeSubscription {
     const subscription = supabase
-      .channel('stock_items')
+      .channel('voucher-items')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'voucher_items',
+        },
+        (payload) => {
+          switch (payload.eventType) {
+            case 'INSERT':
+              if (onInsert) onInsert(payload.new);
+              break;
+            case 'UPDATE':
+              if (onUpdate) onUpdate(payload.new);
+              break;
+            case 'DELETE':
+              if (onDelete) onDelete(payload.old);
+              break;
+          }
+        }
+      )
+      .subscribe();
+
+    const id = `voucher-items-${Date.now()}`;
+    this.subscriptions.set(id, {
+      unsubscribe: () => {
+        supabase.removeChannel(subscription);
+        this.subscriptions.delete(id);
+      },
+    });
+
+    return this.subscriptions.get(id)!;
+  }
+
+  // Stock subscriptions
+  subscribeToStockItems(
+    onInsert?: (data: any) => void,
+    onUpdate?: (data: any) => void,
+    onDelete?: (data: any) => void
+  ): RealTimeSubscription {
+    const subscription = supabase
+      .channel('stock-items')
       .on(
         'postgres_changes',
         {
@@ -195,13 +229,13 @@ class RealTimeService {
         (payload) => {
           switch (payload.eventType) {
             case 'INSERT':
-              if (onInsert) onInsert(payload.new as StockItem);
+              if (onInsert) onInsert(payload.new);
               break;
             case 'UPDATE':
-              if (onUpdate) onUpdate(payload.new as StockItem);
+              if (onUpdate) onUpdate(payload.new);
               break;
             case 'DELETE':
-              if (onDelete) onDelete(payload.old as StockItem);
+              if (onDelete) onDelete(payload.old);
               break;
           }
         }
@@ -221,8 +255,8 @@ class RealTimeService {
 
   subscribeToStockItem(
     stockItemId: string,
-    onUpdate?: (data: StockItem) => void,
-    onDelete?: (data: StockItem) => void
+    onUpdate?: (data: any) => void,
+    onDelete?: (data: any) => void
   ): RealTimeSubscription {
     const subscription = supabase
       .channel(`stock-item-${stockItemId}`)
@@ -237,10 +271,10 @@ class RealTimeService {
         (payload) => {
           switch (payload.eventType) {
             case 'UPDATE':
-              if (onUpdate) onUpdate(payload.new as StockItem);
+              if (onUpdate) onUpdate(payload.new);
               break;
             case 'DELETE':
-              if (onDelete) onDelete(payload.old as StockItem);
+              if (onDelete) onDelete(payload.old);
               break;
           }
         }
@@ -248,6 +282,36 @@ class RealTimeService {
       .subscribe();
 
     const id = `stock-item-${stockItemId}-${Date.now()}`;
+    this.subscriptions.set(id, {
+      unsubscribe: () => {
+        supabase.removeChannel(subscription);
+        this.subscriptions.delete(id);
+      },
+    });
+
+    return this.subscriptions.get(id)!;
+  }
+
+  // Company subscriptions
+  subscribeToCompany(
+    onUpdate?: (data: any) => void
+  ): RealTimeSubscription {
+    const subscription = supabase
+      .channel('company-info')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'company_info',
+        },
+        (payload) => {
+          if (onUpdate) onUpdate(payload.new);
+        }
+      )
+      .subscribe();
+
+    const id = `company-info-${Date.now()}`;
     this.subscriptions.set(id, {
       unsubscribe: () => {
         supabase.removeChannel(subscription);
