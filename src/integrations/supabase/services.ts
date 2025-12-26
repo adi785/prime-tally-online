@@ -15,8 +15,6 @@ import {
   LedgerQueryParams,
   VoucherQueryParams,
   StockQueryParams,
-  ApiResponse,
-  PaginatedResponse,
   DashboardMetricsResponse
 } from './types';
 

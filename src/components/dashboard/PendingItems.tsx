@@ -10,54 +10,31 @@ interface PendingItem {
 }
 
 const pendingItems: PendingItem[] = [
-  { 
-    id: '1', 
-    title: 'Pending Invoices', 
-    description: '8 invoices awaiting payment',
-    type: 'warning',
-    count: 8
-  },
-  { 
-    id: '2', 
-    title: 'GST Returns', 
-    description: 'GSTR-3B due in 5 days',
-    type: 'urgent',
-  },
-  { 
-    id: '3', 
-    title: 'Bank Reconciliation', 
-    description: '12 unmatched transactions',
-    type: 'info',
-    count: 12
-  },
-  { 
-    id: '4', 
-    title: 'Stock Alerts', 
-    description: '3 items below reorder level',
-    type: 'warning',
-    count: 3
-  },
+  { id: '1', title: 'Pending Invoices', description: '8 invoices awaiting payment', type: 'warning', count: 8 },
+  { id: '2', title: 'GST Returns', description: 'GSTR-3B due in 5 days', type: 'urgent' },
+  { id: '3', title: 'Bank Reconciliation', description: '12 unmatched transactions', type: 'info', count: 12 },
+  { id: '4', title: 'Stock Alerts', description: '3 items below reorder level', type: 'warning', count: 3 },
 ];
 
 const typeConfig = {
-  warning: { 
-    icon: <AlertCircle size={16} />, 
-    color: 'text-warning', 
+  warning: {
+    icon: <AlertCircle size={16} />,
+    color: 'text-warning',
     bgColor: 'bg-warning/10',
     borderColor: 'border-warning/20'
   },
-  info: { 
-    icon: <Clock size={16} />, 
-    color: 'text-primary', 
+  info: {
+    icon: <Clock size={16} />,
+    color: 'text-primary',
     bgColor: 'bg-primary/10',
     borderColor: 'border-primary/20'
   },
-  urgent: { 
-    icon: <FileWarning size={16} />, 
-    color: 'text-destructive', 
+  urgent: {
+    icon: <FileWarning size={16} />,
+    color: 'text-destructive',
     bgColor: 'bg-destructive/10',
     borderColor: 'border-destructive/20'
-  },
+  }
 };
 
 export function PendingItems() {
@@ -67,16 +44,14 @@ export function PendingItems() {
         <h3 className="font-semibold text-foreground">Pending Tasks</h3>
         <p className="text-sm text-muted-foreground">Items requiring attention</p>
       </div>
-      
       <div className="divide-y divide-border">
         {pendingItems.map((item, index) => {
           const config = typeConfig[item.type];
-          
           return (
-            <div 
+            <div
               key={item.id}
               className={cn(
-                "p-4 hover:bg-muted/30 transition-colors cursor-pointer group animate-slide-in",
+                "p-4 hover:bg-muted/30 transition-colors cursor-pointer group animate-slide-in"
               )}
               style={{ animationDelay: `${index * 50}ms` }}
             >
@@ -88,7 +63,6 @@ export function PendingItems() {
                 )}>
                   {config.icon}
                 </div>
-                
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
                     <p className="font-medium text-foreground">{item.title}</p>
@@ -104,11 +78,7 @@ export function PendingItems() {
                   </div>
                   <p className="text-sm text-muted-foreground">{item.description}</p>
                 </div>
-                
-                <ArrowRight 
-                  size={16} 
-                  className="text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" 
-                />
+                <ArrowRight size={16} className="text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
               </div>
             </div>
           );

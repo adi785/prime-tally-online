@@ -5,22 +5,12 @@ interface MetricCardProps {
   title: string;
   value: number;
   icon: LucideIcon;
-  trend?: {
-    value: number;
-    isPositive: boolean;
-  };
+  trend?: { value: number; isPositive: boolean };
   variant?: 'default' | 'success' | 'warning' | 'destructive';
   prefix?: string;
 }
 
-export function MetricCard({ 
-  title, 
-  value, 
-  icon: Icon, 
-  trend, 
-  variant = 'default',
-  prefix = '₹'
-}: MetricCardProps) {
+export function MetricCard({ title, value, icon: Icon, trend, variant = 'default', prefix = '₹' }: MetricCardProps) {
   const formatAmount = (amount: number) => {
     if (amount >= 10000000) {
       return `${(amount / 10000000).toFixed(2)} Cr`;

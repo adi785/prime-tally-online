@@ -53,15 +53,11 @@ const Index = () => {
   return (
     <div className="flex h-screen bg-background overflow-hidden">
       {/* Sidebar */}
-      <TallySidebar 
-        activeSection={activeSection} 
-        onSectionChange={setActiveSection} 
-      />
-
+      <TallySidebar activeSection={activeSection} onSectionChange={setActiveSection} />
+      
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
         <TopBar currentDate={currentDate} />
-        
         <main className="flex-1 overflow-y-auto tally-scrollbar">
           {renderContent()}
         </main>

@@ -1,14 +1,5 @@
 import { useState } from 'react';
-import { 
-  ArrowUpFromLine, 
-  ArrowDownToLine, 
-  Wallet, 
-  CreditCard, 
-  Receipt,
-  Calculator,
-  BookOpen,
-  FileText
-} from 'lucide-react';
+import { ArrowUpFromLine, ArrowDownToLine, Wallet, CreditCard, Receipt, Calculator, BookOpen, FileText } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { VoucherType } from '@/types/tally';
 import { VoucherForm } from '@/components/vouchers/VoucherForm';
@@ -55,7 +46,6 @@ export function QuickActions({ onVoucherCreate }: QuickActionsProps) {
   return (
     <div className="bg-card rounded-xl border border-border p-4 animate-fade-in">
       <h3 className="font-semibold text-foreground mb-4">Quick Actions</h3>
-      
       <div className="grid grid-cols-4 gap-3">
         {quickActions.map((action, index) => (
           <button

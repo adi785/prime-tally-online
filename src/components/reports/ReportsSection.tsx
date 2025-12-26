@@ -205,7 +205,7 @@ export function ReportsSection() {
           <div>
             <p className="text-sm text-muted-foreground">Current Ratio</p>
             <p className="text-xl font-bold font-mono text-foreground">
-              {(metrics?.totalReceivables || 0) / Math.max(metrics?.totalPayables || 1, 1).toFixed(2)}
+              {((metrics?.totalReceivables || 0) / Math.max(metrics?.totalPayables || 1, 1)).toFixed(2)}
             </p>
             <p className="text-xs text-success">Healthy</p>
           </div>

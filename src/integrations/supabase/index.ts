@@ -4,7 +4,6 @@ export * from './hooks';
 export * from './auth';
 export * from './services';
 export * from './types';
-export * from './schema.sql';
 export * from './realtime';
 
 // Export the main integration object

@@ -127,7 +127,7 @@ export const authService = {
   },
 
   getCurrentUser(): AuthUser | null {
-    const { user } = supabase.auth.getUser();
+    const { data: { user } } = supabase.auth.getUser();
     if (!user) return null;
 
     return {
@@ -139,7 +139,7 @@ export const authService = {
   },
 
   isAuthenticated(): boolean {
-    const { user } = supabase.auth.getUser();
+    const { data: { user } } = supabase.auth.getUser();
     return !!user;
   },
 
