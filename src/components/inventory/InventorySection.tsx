@@ -1,19 +1,21 @@
 import { useState } from 'react';
-import { stockItems } from '@/data/mockData';
+import { useStockItems, useCreateStockItem } from '@/integrations/nhost/hooks';
 import { cn } from '@/lib/utils';
 import { Search, Plus, Filter, Download, Package, AlertTriangle } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 
 export function InventorySection() {
+  const { data: stockItems = [], isLoading, error } = useStockItems();
+  const { mutate: createStockItem, isPending: isCreating } = useCreateStockItem();
+  
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedGroup, setSelectedGroup] = useState<string>('all');
 
-  const groups = Array.from(new Set(stockItems.map(s => s.group)));
-
   const filteredItems = stockItems.filter(item => {
     const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesGroup = selectedGroup === 'all' || item.group === selectedGroup;
+    const matchesGroup = selectedGroup === 'all' || item.group_name === selectedGroup;
     return matchesSearch && matchesGroup;
   });
 
@@ -28,6 +30,25 @@ export function InventorySection() {
     }).format(amount);
   };
 
+  const groups = Array.from(new Set(stockItems.map(s => s.group_name)));
+
+  if (error) {
+    return (
+      <div className="p-6 space-y-6">
+        <div className="text-center py-8">
+          <div className="text-destructive mb-4">
+            <AlertTriangle size={32} className="mx-auto" />
+          </div>
+          <h3 className="text-lg font-semibold text-foreground mb-2">Error Loading Inventory</h3>
+          <p className="text-muted-foreground">Failed to load stock items. Please try again.</p>
+          <Button onClick={() => window.location.reload()} className="mt-4">
+            Retry
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="p-6 space-y-6">
       {/* Page Header */}
@@ -36,9 +57,16 @@ export function InventorySection() {
           <h1 className="text-2xl font-bold text-foreground">Inventory</h1>
           <p className="text-muted-foreground">Stock items and valuations</p>
         </div>
-        <Button className="gap-2">
+        <Button className="gap-2" onClick={() => createStockItem({
+          name: 'New Item',
+          unit: 'Nos',
+          quantity: 100,
+          rate: 50,
+          value: 5000,
+          group_name: 'Raw Materials'
+        })} disabled={isCreating}>
           <Plus size={16} />
-          Add Stock Item
+          {isCreating ? 'Adding...' : 'Add Stock Item'}
         </Button>
       </div>
 
@@ -135,41 +163,59 @@ export function InventorySection() {
             </tr>
           </thead>
           <tbody className="divide-y divide-table-border">
-            {filteredItems.map((item, index) => (
-              <tr 
-                key={item.id}
-                className="hover:bg-table-row-hover transition-colors cursor-pointer animate-slide-in"
-                style={{ animationDelay: `${index * 30}ms` }}
-              >
-                <td className="px-4 py-3">
-                  <p className="font-medium text-foreground">{item.name}</p>
-                </td>
-                <td className="px-4 py-3">
-                  <span className="text-sm text-muted-foreground">{item.group}</span>
-                </td>
-                <td className="px-4 py-3 text-center">
-                  <span className="text-sm text-muted-foreground">{item.unit}</span>
-                </td>
-                <td className="px-4 py-3 text-right">
-                  <span className={cn(
-                    "font-mono text-sm",
-                    item.quantity < 100 ? "text-warning font-semibold" : "text-foreground"
-                  )}>
-                    {item.quantity.toLocaleString('en-IN')}
-                  </span>
-                </td>
-                <td className="px-4 py-3 text-right">
-                  <span className="font-mono text-sm text-muted-foreground">
-                    {formatAmount(item.rate)}
-                  </span>
-                </td>
-                <td className="px-4 py-3 text-right">
-                  <span className="font-mono text-sm font-semibold text-foreground">
-                    {formatAmount(item.value)}
-                  </span>
+            {isLoading ? (
+              <tr>
+                <td colSpan={6} className="p-8 text-center">
+                  <LoadingSpinner />
                 </td>
               </tr>
-            ))}
+            ) : filteredItems.length === 0 ? (
+              <tr>
+                <td colSpan={6} className="p-12 text-center">
+                  <div className="text-muted-foreground mb-4">
+                    <Package size={32} className="mx-auto mb-2 opacity-50" />
+                  </div>
+                  <p className="text-muted-foreground">No stock items found.</p>
+                  <p className="text-sm text-muted-foreground mt-1">Add your first stock item to get started.</p>
+                </td>
+              </tr>
+            ) : (
+              filteredItems.map((item, index) => (
+                <tr 
+                  key={item.id}
+                  className="hover:bg-table-row-hover transition-colors cursor-pointer animate-slide-in"
+                  style={{ animationDelay: `${index * 30}ms` }}
+                >
+                  <td className="px-4 py-3">
+                    <p className="font-medium text-foreground">{item.name}</p>
+                  </td>
+                  <td className="px-4 py-3">
+                    <span className="text-sm text-muted-foreground">{item.group_name}</span>
+                  </td>
+                  <td className="px-4 py-3 text-center">
+                    <span className="text-sm text-muted-foreground">{item.unit}</span>
+                  </td>
+                  <td className="px-4 py-3 text-right">
+                    <span className={cn(
+                      "font-mono text-sm",
+                      item.quantity < 100 ? "text-warning font-semibold" : "text-foreground"
+                    )}>
+                      {item.quantity.toLocaleString('en-IN')}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 text-right">
+                    <span className="font-mono text-sm text-muted-foreground">
+                      {formatAmount(item.rate)}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 text-right">
+                    <span className="font-mono text-sm font-semibold text-foreground">
+                      {formatAmount(item.value)}
+                    </span>
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
           <tfoot>
             <tr className="bg-muted/50 border-t border-table-border">

@@ -1,11 +1,12 @@
 import { useState } from 'react';
-import { vouchers } from '@/data/mockData';
+import { useVouchers } from '@/integrations/nhost/hooks';
 import { cn } from '@/lib/utils';
 import { ArrowUpFromLine, ArrowDownToLine, Wallet, CreditCard, Printer } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { VoucherType } from '@/types/tally';
 import { VoucherForm } from '@/components/vouchers/VoucherForm';
 import { InvoicePreviewModal } from '@/components/invoice/InvoicePreviewModal';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 
 const voucherTypeConfig: Record<VoucherType, { icon: React.ReactNode; color: string; bgColor: string }> = {
   sales: { icon: <ArrowUpFromLine size={14} />, color: 'text-success', bgColor: 'bg-success/10' },
@@ -19,6 +20,7 @@ const voucherTypeConfig: Record<VoucherType, { icon: React.ReactNode; color: str
 };
 
 export function RecentVouchers() {
+  const { data: vouchers = [], isLoading } = useVouchers();
   const [selectedVoucher, setSelectedVoucher] = useState<any>(null);
   const [voucherForm, setVoucherForm] = useState<{ isOpen: boolean; type: VoucherType | null }>({
     isOpen: false,
@@ -58,73 +60,87 @@ export function RecentVouchers() {
       </div>
       
       <div className="divide-y divide-border">
-        {vouchers.slice(0, 5).map((voucher, index) => {
-          const config = voucherTypeConfig[voucher.type];
-          const isIncome = ['sales', 'receipt', 'credit-note'].includes(voucher.type);
-          
-          return (
-            <div 
-              key={voucher.id}
-              className="p-4 hover:bg-muted/50 transition-colors cursor-pointer animate-slide-in group"
-              style={{ animationDelay: `${index * 50}ms` }}
-            >
-              <div className="flex items-center gap-4">
-                <div className={cn(
-                  "w-10 h-10 rounded-lg flex items-center justify-center",
-                  config.bgColor,
-                  config.color
-                )}>
-                  {config.icon}
-                </div>
-                
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <p className="font-medium text-foreground truncate">{voucher.partyName}</p>
-                    <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded">
-                      {voucher.voucherNumber}
-                    </span>
+        {isLoading ? (
+          <div className="p-8 text-center">
+            <LoadingSpinner />
+          </div>
+        ) : vouchers.length === 0 ? (
+          <div className="p-8 text-center">
+            <div className="text-muted-foreground mb-4">
+              <FileText size={32} className="mx-auto mb-2 opacity-50" />
+            </div>
+            <p className="text-muted-foreground">No transactions found.</p>
+            <p className="text-sm text-muted-foreground mt-1">Create your first voucher to get started.</p>
+          </div>
+        ) : (
+          vouchers.slice(0, 5).map((voucher, index) => {
+            const config = voucherTypeConfig[voucher.type];
+            const isIncome = ['sales', 'receipt', 'credit-note'].includes(voucher.type);
+            
+            return (
+              <div 
+                key={voucher.id}
+                className="p-4 hover:bg-muted/50 transition-colors cursor-pointer animate-slide-in group"
+                style={{ animationDelay: `${index * 50}ms` }}
+              >
+                <div className="flex items-center gap-4">
+                  <div className={cn(
+                    "w-10 h-10 rounded-lg flex items-center justify-center",
+                    config.bgColor,
+                    config.color
+                  )}>
+                    {config.icon}
                   </div>
-                  <p className="text-sm text-muted-foreground capitalize">
-                    {voucher.type.replace('-', ' ')} • {formatDate(voucher.date)}
-                  </p>
-                </div>
-                
-                <div className="flex items-center gap-3">
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setSelectedVoucher(voucher);
-                    }}
-                  >
-                    <Printer size={14} />
-                  </Button>
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleEditVoucher(voucher);
-                    }}
-                  >
-                    <span className="text-xs">Edit</span>
-                  </Button>
-                  <div className="text-right">
-                    <p className={cn(
-                      "font-mono font-semibold",
-                      isIncome ? "amount-positive" : "amount-negative"
-                    )}>
-                      {isIncome ? '+' : '-'}{formatAmount(voucher.totalAmount)}
+                  
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <p className="font-medium text-foreground truncate">{voucher.party_name}</p>
+                      <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded">
+                        {voucher.voucher_number}
+                      </span>
+                    </div>
+                    <p className="text-sm text-muted-foreground capitalize">
+                      {voucher.type.replace('-', ' ')} • {formatDate(voucher.date)}
                     </p>
+                  </div>
+                  
+                  <div className="flex items-center gap-3">
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedVoucher(voucher);
+                      }}
+                    >
+                      <Printer size={14} />
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleEditVoucher(voucher);
+                      }}
+                    >
+                      <span className="text-xs">Edit</span>
+                    </Button>
+                    <div className="text-right">
+                      <p className={cn(
+                        "font-mono font-semibold",
+                        isIncome ? "amount-positive" : "amount-negative"
+                      )}>
+                        {isIncome ? '+' : '-'}{formatAmount(voucher.total_amount)}
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          );
-        })}
+            );
+          })
+        )}
       </div>
       
       <div className="p-3 bg-muted/30 text-center">

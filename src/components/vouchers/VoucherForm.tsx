@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { VoucherType, Ledger, LedgerGroup } from '@/types/tally';
-import { ledgers } from '@/data/mockData';
+import { useLedgers } from '@/integrations/nhost/hooks';
 
 interface VoucherFormProps {
   type: VoucherType;
@@ -37,6 +37,8 @@ interface LineItem {
 
 export function VoucherForm({ type, isOpen, onClose, onSave }: VoucherFormProps) {
   const { toast } = useToast();
+  const { data: ledgers = [] } = useLedgers();
+  
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [voucherNumber, setVoucherNumber] = useState('');
   const [partyLedger, setPartyLedger] = useState('');
@@ -146,10 +148,14 @@ export function VoucherForm({ type, isOpen, onClose, onSave }: VoucherFormProps)
       type,
       date,
       voucherNumber: voucherNumber || `AUTO-${Date.now()}`,
-      partyLedgerId: partyLedger,
+      party_ledger_id: partyLedger,
       narration,
-      items: items.filter(item => item.ledgerId && item.amount),
-      totalAmount,
+      items: items.filter(item => item.ledgerId && item.amount).map(item => ({
+        ledger_id: item.ledgerId,
+        amount: parseFloat(item.amount),
+        type: item.type
+      })),
+      total_amount: totalAmount,
     };
 
     try {

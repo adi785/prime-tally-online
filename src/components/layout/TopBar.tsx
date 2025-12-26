@@ -1,13 +1,18 @@
-import { Search, Bell, Calendar, User, Building2 } from 'lucide-react';
+import { Search, Bell, Calendar, User, Building2, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { company } from '@/data/mockData';
+import { useAuthState } from '@/integrations/nhost/hooks';
+import { useState } from 'react';
 
 interface TopBarProps {
   currentDate: string;
 }
 
 export function TopBar({ currentDate }: TopBarProps) {
+  const { user, signOut } = useAuthState();
+  const [showUserMenu, setShowUserMenu] = useState(false);
+
   return (
     <header className="h-14 bg-card border-b border-border flex items-center justify-between px-6">
       {/* Company Info */}
@@ -48,9 +53,50 @@ export function TopBar({ currentDate }: TopBarProps) {
           </span>
         </Button>
 
-        <Button variant="ghost" size="icon">
-          <User size={18} />
-        </Button>
+        {/* User Menu */}
+        <div className="relative">
+          <Button 
+            variant="ghost" 
+            size="icon"
+            onClick={() => setShowUserMenu(!showUserMenu)}
+            className="relative"
+          >
+            <User size={18} />
+          </Button>
+
+          {showUserMenu && (
+            <div className="absolute right-0 mt-2 w-48 bg-card border border-border rounded-lg shadow-lg py-2 z-50 animate-fade-in">
+              <div className="px-4 py-2 border-b border-border">
+                <p className="text-sm font-medium text-foreground">{user?.displayName || user?.email}</p>
+                <p className="text-xs text-muted-foreground">{user?.email}</p>
+              </div>
+              
+              <div className="py-1">
+                <button className="w-full text-left px-4 py-2 text-sm text-foreground hover:bg-muted/50 transition-colors">
+                  Profile Settings
+                </button>
+                <button className="w-full text-left px-4 py-2 text-sm text-foreground hover:bg-muted/50 transition-colors">
+                  Company Settings
+                </button>
+                <button className="w-full text-left px-4 py-2 text-sm text-foreground hover:bg-muted/50 transition-colors">
+                  Change Password
+                </button>
+              </div>
+
+              <div className="border-t border-border mt-1">
+                <button 
+                  onClick={signOut}
+                  className="w-full text-left px-4 py-2 text-sm text-destructive hover:bg-destructive/10 transition-colors"
+                >
+                  <div className="flex items-center gap-2">
+                    <LogOut size={14} />
+                    Sign Out
+                  </div>
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </header>
   );

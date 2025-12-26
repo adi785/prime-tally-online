@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { 
   FileSpreadsheet, 
   TrendingUp, 
@@ -10,6 +11,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { useDashboardMetrics } from '@/integrations/nhost/hooks';
 
 interface ReportCard {
   id: string;
@@ -91,6 +93,22 @@ const categories = [
 ];
 
 export function ReportsSection() {
+  const [period, setPeriod] = useState({
+    start: '2024-04-01',
+    end: '2024-12-31'
+  });
+
+  const { data: metrics } = useDashboardMetrics();
+
+  const formatAmount = (amount: number) => {
+    return new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(amount);
+  };
+
   return (
     <div className="p-6 space-y-6">
       {/* Page Header */}
@@ -172,22 +190,30 @@ export function ReportsSection() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
           <div>
             <p className="text-sm text-muted-foreground">Gross Profit</p>
-            <p className="text-xl font-bold font-mono amount-positive">₹4,00,000</p>
+            <p className="text-xl font-bold font-mono amount-positive">
+              ₹{formatAmount((metrics?.totalSales || 0) - (metrics?.totalPurchases || 0))}
+            </p>
             <p className="text-xs text-muted-foreground">23.5% margin</p>
           </div>
           <div>
             <p className="text-sm text-muted-foreground">Net Profit</p>
-            <p className="text-xl font-bold font-mono amount-positive">₹1,85,000</p>
+            <p className="text-xl font-bold font-mono amount-positive">
+              ₹{formatAmount((metrics?.totalSales || 0) - (metrics?.totalPurchases || 0) - 150000)}
+            </p>
             <p className="text-xs text-muted-foreground">10.9% margin</p>
           </div>
           <div>
             <p className="text-sm text-muted-foreground">Current Ratio</p>
-            <p className="text-xl font-bold font-mono text-foreground">2.45</p>
+            <p className="text-xl font-bold font-mono text-foreground">
+              {(metrics?.totalReceivables || 0) / Math.max(metrics?.totalPayables || 1, 1).toFixed(2)}
+            </p>
             <p className="text-xs text-success">Healthy</p>
           </div>
           <div>
             <p className="text-sm text-muted-foreground">Debt to Equity</p>
-            <p className="text-xl font-bold font-mono text-foreground">0.35</p>
+            <p className="text-xl font-bold font-mono text-foreground">
+              {((metrics?.totalPayables || 0) / Math.max((metrics?.totalReceivables || 1), 1)).toFixed(2)}
+            </p>
             <p className="text-xs text-success">Low Risk</p>
           </div>
         </div>

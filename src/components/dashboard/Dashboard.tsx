@@ -12,7 +12,7 @@ import { MetricCard } from './MetricCard';
 import { RecentVouchers } from './RecentVouchers';
 import { QuickActions } from './QuickActions';
 import { PendingItems } from './PendingItems';
-import { dashboardMetrics } from '@/data/mockData';
+import { useDashboardMetrics } from '@/integrations/nhost/hooks';
 import { VoucherType } from '@/types/tally';
 
 interface DashboardProps {
@@ -20,6 +20,25 @@ interface DashboardProps {
 }
 
 export function Dashboard({ onVoucherCreate }: DashboardProps) {
+  const { data: metrics, isLoading, error } = useDashboardMetrics();
+
+  if (error) {
+    return (
+      <div className="p-6 space-y-6">
+        <div className="text-center py-8">
+          <div className="text-destructive mb-4">
+            <AlertCircle size={32} className="mx-auto" />
+          </div>
+          <h3 className="text-lg font-semibold text-foreground mb-2">Error Loading Dashboard</h3>
+          <p className="text-muted-foreground">Failed to load dashboard metrics. Please try again.</p>
+          <Button onClick={() => window.location.reload()} className="mt-4">
+            Retry
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="p-6 space-y-6">
       {/* Page Header */}
@@ -32,27 +51,27 @@ export function Dashboard({ onVoucherCreate }: DashboardProps) {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <MetricCard
           title="Total Sales"
-          value={dashboardMetrics.totalSales}
+          value={metrics?.totalSales || 0}
           icon={TrendingUp}
           variant="success"
           trend={{ value: 12.5, isPositive: true }}
         />
         <MetricCard
           title="Total Purchases"
-          value={dashboardMetrics.totalPurchases}
+          value={metrics?.totalPurchases || 0}
           icon={TrendingDown}
           variant="warning"
           trend={{ value: 8.2, isPositive: false }}
         />
         <MetricCard
           title="Receivables"
-          value={dashboardMetrics.totalReceivables}
+          value={metrics?.totalReceivables || 0}
           icon={Wallet}
           variant="default"
         />
         <MetricCard
           title="Payables"
-          value={dashboardMetrics.totalPayables}
+          value={metrics?.totalPayables || 0}
           icon={CreditCard}
           variant="destructive"
         />
@@ -62,26 +81,26 @@ export function Dashboard({ onVoucherCreate }: DashboardProps) {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <MetricCard
           title="Cash in Hand"
-          value={dashboardMetrics.cashInHand}
+          value={metrics?.cashInHand || 0}
           icon={Receipt}
           variant="default"
         />
         <MetricCard
           title="Bank Balance"
-          value={dashboardMetrics.bankBalance}
+          value={metrics?.bankBalance || 0}
           icon={Landmark}
           variant="default"
         />
         <MetricCard
           title="Today's Transactions"
-          value={dashboardMetrics.todayTransactions}
+          value={metrics?.todayTransactions || 0}
           icon={FileText}
           variant="default"
           prefix=""
         />
         <MetricCard
           title="Pending Invoices"
-          value={dashboardMetrics.pendingInvoices}
+          value={metrics?.pendingInvoices || 0}
           icon={AlertCircle}
           variant="warning"
           prefix=""
