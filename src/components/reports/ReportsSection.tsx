@@ -12,6 +12,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useDashboardMetrics } from '@/integrations/supabase/hooks';
+import { toast } from 'sonner';
 
 interface ReportCard {
   id: string;

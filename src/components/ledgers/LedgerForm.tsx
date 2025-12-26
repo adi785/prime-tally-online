@@ -6,7 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { Ledger, LedgerGroup } from '@/types/tally';
 import { useCreateLedger, useUpdateLedger } from '@/integrations/supabase/hooks';
@@ -53,7 +53,6 @@ const groupOptions: { value: LedgerGroup; label: string; }[] = [
 ];
 
 export function LedgerForm({ isOpen, onClose, ledger, onSave }: LedgerFormProps) {
-  const { toast } = useToast();
   const { mutate: createLedger, isPending: isCreating } = useCreateLedger();
   const { mutate: updateLedger, isPending: isUpdating } = useUpdateLedger();
   

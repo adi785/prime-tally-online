@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { AlertCircle } from 'lucide-react';
+import { toast } from 'sonner';
 
 export function InventorySection() {
   const { data: stockItems = [], isLoading, error } = useStockItems();

@@ -2,6 +2,7 @@ import { forwardRef } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { company } from '@/data/mockData';
 import { Voucher } from '@/types/tally';
+import { toast } from 'sonner';
 
 interface InvoiceTemplateProps {
   voucher: Voucher;
@@ -93,7 +94,7 @@ export const InvoiceTemplate = forwardRef<HTMLDivElement, InvoiceTemplateProps>(
         <div className="grid grid-cols-2 gap-6 mb-6">
           <div className="border border-gray-300 p-3 rounded">
             <p className="font-semibold text-gray-500 text-xs uppercase mb-2">Bill To</p>
-            <p className="font-bold text-base">{voucher.partyName}</p>
+            <p className="font-bold text-base">{voucher.party_name}</p>
             <p className="text-gray-600 text-sm">Address details here</p>
             <p className="mt-1 text-sm"><span className="font-semibold">GSTIN:</span> 27XXXXX1234X1ZX</p>
           </div>

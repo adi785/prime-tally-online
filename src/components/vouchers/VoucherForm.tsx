@@ -9,6 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { VoucherType, Ledger, LedgerGroup } from '@/types/tally';
 import { useLedgers } from '@/integrations/supabase/hooks';
+import { toast } from 'sonner';
 
 interface VoucherFormProps {
   type: VoucherType;
@@ -36,7 +37,7 @@ interface LineItem {
 }
 
 export function VoucherForm({ type, isOpen, onClose, onSave }: VoucherFormProps) {
-  const { toast } = useToast();
+  const { toast: showToast } = useToast();
   const { data: ledgers = [], isLoading } = useLedgers();
   
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);

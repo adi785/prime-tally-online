@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useLocation, Navigate } from 'react-router-dom';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { useAuthState } from '@/integrations/supabase/hooks';
+import { toast } from 'sonner';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;

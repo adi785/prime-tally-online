@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { VoucherType } from '@/types/tally';
 import { useCreateVoucher } from '@/integrations/supabase/hooks';
 import { VoucherForm } from './VoucherForm';
+import { toast } from 'sonner';
 
 interface VoucherModalProps {
   type: VoucherType;
