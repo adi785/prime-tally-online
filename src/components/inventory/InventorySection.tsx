@@ -5,6 +5,7 @@ import { Search, Plus, Filter, Download, Package, AlertTriangle } from 'lucide-r
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
+import { AlertCircle } from 'lucide-react';
 
 export function InventorySection() {
   const { data: stockItems = [], isLoading, error } = useStockItems();
@@ -37,7 +38,7 @@ export function InventorySection() {
       <div className="p-6 space-y-6">
         <div className="text-center py-8">
           <div className="text-destructive mb-4">
-            <AlertTriangle size={32} className="mx-auto" />
+            <AlertCircle size={32} className="mx-auto" />
           </div>
           <h3 className="text-lg font-semibold text-foreground mb-2">Error Loading Inventory</h3>
           <p className="text-muted-foreground">Failed to load stock items. Please try again.</p>

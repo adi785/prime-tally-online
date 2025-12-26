@@ -37,7 +37,7 @@ interface LineItem {
 
 export function VoucherForm({ type, isOpen, onClose, onSave }: VoucherFormProps) {
   const { toast } = useToast();
-  const { data: ledgers = [] } = useLedgers();
+  const { data: ledgers = [], isLoading } = useLedgers();
   
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [voucherNumber, setVoucherNumber] = useState('');
@@ -237,7 +237,7 @@ export function VoucherForm({ type, isOpen, onClose, onSave }: VoucherFormProps)
                 onValueChange={setPartyLedger}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select Party" />
+                  <SelectValue placeholder={isLoading ? "Loading..." : "Select Party"} />
                 </SelectTrigger>
                 <SelectContent>
                   {partyLedgers.map(ledger => (
@@ -296,7 +296,7 @@ export function VoucherForm({ type, isOpen, onClose, onSave }: VoucherFormProps)
                           onValueChange={(value) => updateItem(item.id, 'ledgerId', value)}
                         >
                           <SelectTrigger>
-                            <SelectValue placeholder="Select Account" />
+                            <SelectValue placeholder={isLoading ? "Loading..." : "Select Account"} />
                           </SelectTrigger>
                           <SelectContent>
                             {accountLedgers.map(ledger => (

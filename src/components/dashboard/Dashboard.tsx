@@ -14,6 +14,7 @@ import { QuickActions } from './QuickActions';
 import { PendingItems } from './PendingItems';
 import { useDashboardMetrics } from '@/integrations/supabase/hooks';
 import { VoucherType } from '@/types/tally';
+import { Button } from '@/components/ui/button';
 
 interface DashboardProps {
   onVoucherCreate: (type: VoucherType) => void;

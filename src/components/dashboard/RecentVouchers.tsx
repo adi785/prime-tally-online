@@ -7,6 +7,7 @@ import { VoucherType } from '@/types/tally';
 import { VoucherForm } from '@/components/vouchers/VoucherForm';
 import { InvoicePreviewModal } from '@/components/invoice/InvoicePreviewModal';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
+import { AlertCircle } from 'lucide-react';
 
 const voucherTypeConfig: Record<VoucherType, { icon: React.ReactNode; color: string; bgColor: string }> = {
   sales: { icon: <ArrowUpFromLine size={14} />, color: 'text-success', bgColor: 'bg-success/10' },
