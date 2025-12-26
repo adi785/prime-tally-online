@@ -1,4 +1,3 @@
-import { useAuth, useUser } from '@nhost/react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Ledger, Voucher, DashboardMetrics, StockItem, Company } from '@/types/tally';
@@ -8,7 +7,7 @@ const api = {
   async get<T>(endpoint: string): Promise<T> {
     const response = await fetch(`${import.meta.env.VITE_NHOST_BACKEND_URL}/api/v1/${endpoint}`, {
       headers: {
-        'Authorization': `Bearer ${nhost.auth.getJWTToken()}`,
+        'Authorization': `Bearer ${import.meta.env.VITE_NHOST_ANON_KEY}`,
         'Content-Type': 'application/json',
       },
     });
@@ -24,7 +23,7 @@ const api = {
     const response = await fetch(`${import.meta.env.VITE_NHOST_BACKEND_URL}/api/v1/${endpoint}`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${nhost.auth.getJWTToken()}`,
+        'Authorization': `Bearer ${import.meta.env.VITE_NHOST_ANON_KEY}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(data),
@@ -41,7 +40,7 @@ const api = {
     const response = await fetch(`${import.meta.env.VITE_NHOST_BACKEND_URL}/api/v1/${endpoint}`, {
       method: 'PUT',
       headers: {
-        'Authorization': `Bearer ${nhost.auth.getJWTToken()}`,
+        'Authorization': `Bearer ${import.meta.env.VITE_NHOST_ANON_KEY}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(data),
@@ -58,7 +57,7 @@ const api = {
     const response = await fetch(`${import.meta.env.VITE_NHOST_BACKEND_URL}/api/v1/${endpoint}`, {
       method: 'DELETE',
       headers: {
-        'Authorization': `Bearer ${nhost.auth.getJWTToken()}`,
+        'Authorization': `Bearer ${import.meta.env.VITE_NHOST_ANON_KEY}`,
         'Content-Type': 'application/json',
       },
     });
@@ -76,7 +75,6 @@ export const useLedgers = () => {
   return useQuery({
     queryKey: ['ledgers'],
     queryFn: () => api.get<Ledger[]>('ledgers'),
-    enabled: !!nhost.auth.getJWTToken(),
   });
 };
 
@@ -135,7 +133,6 @@ export const useVouchers = () => {
   return useQuery({
     queryKey: ['vouchers'],
     queryFn: () => api.get<Voucher[]>('vouchers'),
-    enabled: !!nhost.auth.getJWTToken(),
   });
 };
 
@@ -197,7 +194,6 @@ export const useDashboardMetrics = () => {
   return useQuery({
     queryKey: ['dashboard'],
     queryFn: () => api.get<DashboardMetrics>('dashboard/metrics'),
-    enabled: !!nhost.auth.getJWTToken(),
   });
 };
 
@@ -206,7 +202,6 @@ export const useStockItems = () => {
   return useQuery({
     queryKey: ['stock-items'],
     queryFn: () => api.get<StockItem[]>('stock-items'),
-    enabled: !!nhost.auth.getJWTToken(),
   });
 };
 
@@ -232,7 +227,6 @@ export const useCompany = () => {
   return useQuery({
     queryKey: ['company'],
     queryFn: () => api.get<Company>('company'),
-    enabled: !!nhost.auth.getJWTToken(),
   });
 };
 
@@ -250,25 +244,4 @@ export const useUpdateCompany = () => {
       console.error('Update company error:', error);
     },
   });
-};
-
-// Authentication hook
-export const useAuthState = () => {
-  const { isAuthenticated, isLoading } = useAuth();
-  const user = useUser();
-  
-  return {
-    isAuthenticated,
-    isLoading,
-    user,
-    signOut: async () => {
-      try {
-        await nhost.auth.signOut();
-        toast.success('Signed out successfully');
-      } catch (error) {
-        toast.error('Failed to sign out');
-        console.error('Sign out error:', error);
-      }
-    },
-  };
 };
