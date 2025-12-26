@@ -2,9 +2,10 @@ import { useState } from 'react';
 import { vouchers } from '@/data/mockData';
 import { cn } from '@/lib/utils';
 import { ArrowUpFromLine, ArrowDownToLine, Wallet, CreditCard, Printer } from 'lucide-react';
-import { VoucherType, Voucher } from '@/types/tally';
-import { InvoicePreviewModal } from '@/components/invoice/InvoicePreviewModal';
 import { Button } from '@/components/ui/button';
+import { VoucherType } from '@/types/tally';
+import { VoucherForm } from '@/components/vouchers/VoucherForm';
+import { InvoicePreviewModal } from '@/components/invoice/InvoicePreviewModal';
 
 const voucherTypeConfig: Record<VoucherType, { icon: React.ReactNode; color: string; bgColor: string }> = {
   sales: { icon: <ArrowUpFromLine size={14} />, color: 'text-success', bgColor: 'bg-success/10' },
@@ -18,7 +19,11 @@ const voucherTypeConfig: Record<VoucherType, { icon: React.ReactNode; color: str
 };
 
 export function RecentVouchers() {
-  const [selectedVoucher, setSelectedVoucher] = useState<Voucher | null>(null);
+  const [selectedVoucher, setSelectedVoucher] = useState<any>(null);
+  const [voucherForm, setVoucherForm] = useState<{ isOpen: boolean; type: VoucherType | null }>({
+    isOpen: false,
+    type: null
+  });
 
   const formatAmount = (amount: number) => {
     return new Intl.NumberFormat('en-IN', {
@@ -34,6 +39,15 @@ export function RecentVouchers() {
       day: '2-digit',
       month: 'short',
     });
+  };
+
+  const handleEditVoucher = (voucher: any) => {
+    setVoucherForm({ isOpen: true, type: voucher.type });
+  };
+
+  const handleSaveVoucher = (voucherData: any) => {
+    console.log('Saving voucher:', voucherData);
+    setVoucherForm({ isOpen: false, type: null });
   };
 
   return (
@@ -87,6 +101,17 @@ export function RecentVouchers() {
                   >
                     <Printer size={14} />
                   </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleEditVoucher(voucher);
+                    }}
+                  >
+                    <span className="text-xs">Edit</span>
+                  </Button>
                   <div className="text-right">
                     <p className={cn(
                       "font-mono font-semibold",
@@ -114,6 +139,16 @@ export function RecentVouchers() {
           voucher={selectedVoucher}
           isOpen={!!selectedVoucher}
           onClose={() => setSelectedVoucher(null)}
+        />
+      )}
+
+      {/* Voucher Form Modal */}
+      {voucherForm.type && (
+        <VoucherForm
+          type={voucherForm.type}
+          isOpen={voucherForm.isOpen}
+          onClose={() => setVoucherForm({ isOpen: false, type: null })}
+          onSave={handleSaveVoucher}
         />
       )}
     </div>

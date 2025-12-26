@@ -2,9 +2,10 @@ import { useState } from 'react';
 import { ledgers } from '@/data/mockData';
 import { Ledger, LedgerGroup } from '@/types/tally';
 import { cn } from '@/lib/utils';
-import { Search, Plus, Filter, Download, MoreVertical } from 'lucide-react';
+import { Search, Plus, Filter, Download, MoreVertical, Edit, Trash2, Eye } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { LedgerForm } from './LedgerForm';
 
 const groupLabels: Record<LedgerGroup, string> = {
   'sundry-debtors': 'Sundry Debtors',
@@ -26,12 +27,30 @@ const groupLabels: Record<LedgerGroup, string> = {
 export function LedgerList() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedGroup, setSelectedGroup] = useState<LedgerGroup | 'all'>('all');
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [editingLedger, setEditingLedger] = useState<Ledger | null>(null);
 
   const filteredLedgers = ledgers.filter(ledger => {
     const matchesSearch = ledger.name.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesGroup = selectedGroup === 'all' || ledger.group === selectedGroup;
     return matchesSearch && matchesGroup;
   });
+
+  const handleCreateLedger = () => {
+    setEditingLedger(null);
+    setIsFormOpen(true);
+  };
+
+  const handleEditLedger = (ledger: Ledger) => {
+    setEditingLedger(ledger);
+    setIsFormOpen(true);
+  };
+
+  const handleSaveLedger = (ledgerData: Omit<Ledger, 'id' | 'currentBalance'>) => {
+    // In a real app, this would call an API or update state management
+    console.log('Saving ledger:', ledgerData);
+    // For now, just log and close the form
+  };
 
   const formatAmount = (amount: number) => {
     const absAmount = Math.abs(amount);
@@ -55,10 +74,18 @@ export function LedgerList() {
           <h1 className="text-2xl font-bold text-foreground">Ledgers</h1>
           <p className="text-muted-foreground">Manage your account ledgers</p>
         </div>
-        <Button className="gap-2">
-          <Plus size={16} />
-          Create Ledger
-        </Button>
+        <div className="flex items-center gap-3">
+          <Button className="gap-2" onClick={handleCreateLedger}>
+            <Plus size={16} />
+            Create Ledger
+          </Button>
+          <Button variant="outline" size="icon">
+            <Filter size={16} />
+          </Button>
+          <Button variant="outline" size="icon">
+            <Download size={16} />
+          </Button>
+        </div>
       </div>
 
       {/* Filters */}
@@ -83,13 +110,6 @@ export function LedgerList() {
             <option key={group} value={group}>{groupLabels[group]}</option>
           ))}
         </select>
-
-        <Button variant="outline" size="icon">
-          <Filter size={16} />
-        </Button>
-        <Button variant="outline" size="icon">
-          <Download size={16} />
-        </Button>
       </div>
 
       {/* Ledger Table */}
@@ -101,7 +121,7 @@ export function LedgerList() {
               <th className="text-left px-4 py-3 text-sm font-semibold text-foreground">Group</th>
               <th className="text-right px-4 py-3 text-sm font-semibold text-foreground">Opening Balance</th>
               <th className="text-right px-4 py-3 text-sm font-semibold text-foreground">Current Balance</th>
-              <th className="text-center px-4 py-3 text-sm font-semibold text-foreground w-12"></th>
+              <th className="text-center px-4 py-3 text-sm font-semibold text-foreground w-24">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-table-border">
@@ -139,9 +159,26 @@ export function LedgerList() {
                   </span>
                 </td>
                 <td className="px-4 py-3 text-center">
-                  <Button variant="ghost" size="icon" className="h-8 w-8">
-                    <MoreVertical size={14} />
-                  </Button>
+                  <div className="flex items-center justify-center gap-1">
+                    <Button variant="ghost" size="icon" className="h-8 w-8" title="View Details">
+                      <Eye size={14} />
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="h-8 w-8" 
+                      title="Edit Ledger"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleEditLedger(ledger);
+                      }}
+                    >
+                      <Edit size={14} />
+                    </Button>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" title="Delete Ledger">
+                      <Trash2 size={14} />
+                    </Button>
+                  </div>
                 </td>
               </tr>
             ))}
@@ -150,7 +187,14 @@ export function LedgerList() {
 
         {filteredLedgers.length === 0 && (
           <div className="p-12 text-center">
+            <div className="text-muted-foreground mb-4">
+              <Plus size={32} className="mx-auto mb-2 opacity-50" />
+            </div>
             <p className="text-muted-foreground">No ledgers found matching your criteria.</p>
+            <p className="text-sm text-muted-foreground mt-1">Create your first ledger to get started.</p>
+            <Button variant="outline" className="mt-4" onClick={handleCreateLedger}>
+              Create First Ledger
+            </Button>
           </div>
         )}
       </div>
@@ -163,6 +207,14 @@ export function LedgerList() {
           <span>Total Credit: <span className="font-mono font-semibold text-foreground">₹24,25,000</span></span>
         </div>
       </div>
+
+      {/* Ledger Form Modal */}
+      <LedgerForm
+        isOpen={isFormOpen}
+        onClose={() => setIsFormOpen(false)}
+        ledger={editingLedger}
+        onSave={handleSaveLedger}
+      />
     </div>
   );
 }

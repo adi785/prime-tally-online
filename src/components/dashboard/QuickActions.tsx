@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { 
   ArrowUpFromLine, 
   ArrowDownToLine, 
@@ -10,6 +11,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { VoucherType } from '@/types/tally';
+import { VoucherForm } from '@/components/vouchers/VoucherForm';
 
 interface QuickAction {
   id: VoucherType | string;
@@ -36,6 +38,20 @@ interface QuickActionsProps {
 }
 
 export function QuickActions({ onVoucherCreate }: QuickActionsProps) {
+  const [voucherForm, setVoucherForm] = useState<{ isOpen: boolean; type: VoucherType | null }>({
+    isOpen: false,
+    type: null
+  });
+
+  const handleVoucherCreate = (type: VoucherType) => {
+    setVoucherForm({ isOpen: true, type });
+  };
+
+  const handleSaveVoucher = (voucherData: any) => {
+    console.log('Saving voucher:', voucherData);
+    setVoucherForm({ isOpen: false, type: null });
+  };
+
   return (
     <div className="bg-card rounded-xl border border-border p-4 animate-fade-in">
       <h3 className="font-semibold text-foreground mb-4">Quick Actions</h3>
@@ -46,7 +62,7 @@ export function QuickActions({ onVoucherCreate }: QuickActionsProps) {
             key={action.id}
             onClick={() => {
               if (['sales', 'purchase', 'receipt', 'payment', 'journal', 'contra'].includes(action.id)) {
-                onVoucherCreate(action.id as VoucherType);
+                handleVoucherCreate(action.id as VoucherType);
               }
             }}
             className={cn(
@@ -63,6 +79,16 @@ export function QuickActions({ onVoucherCreate }: QuickActionsProps) {
           </button>
         ))}
       </div>
+
+      {/* Voucher Form Modal */}
+      {voucherForm.type && (
+        <VoucherForm
+          type={voucherForm.type}
+          isOpen={voucherForm.isOpen}
+          onClose={() => setVoucherForm({ isOpen: false, type: null })}
+          onSave={handleSaveVoucher}
+        />
+      )}
     </div>
   );
 }

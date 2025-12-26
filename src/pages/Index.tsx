@@ -3,16 +3,16 @@ import { TallySidebar } from '@/components/layout/TallySidebar';
 import { TopBar } from '@/components/layout/TopBar';
 import { Dashboard } from '@/components/dashboard/Dashboard';
 import { LedgerList } from '@/components/ledgers/LedgerList';
-import { VoucherModal } from '@/components/vouchers/VoucherModal';
+import { VoucherForm } from '@/components/vouchers/VoucherForm';
 import { ReportsSection } from '@/components/reports/ReportsSection';
 import { InventorySection } from '@/components/inventory/InventorySection';
 import { VoucherType } from '@/types/tally';
 
 const Index = () => {
   const [activeSection, setActiveSection] = useState('dashboard');
-  const [voucherModal, setVoucherModal] = useState<{ isOpen: boolean; type: VoucherType }>({
+  const [voucherForm, setVoucherForm] = useState<{ isOpen: boolean; type: VoucherType | null }>({
     isOpen: false,
-    type: 'sales'
+    type: null
   });
 
   const currentDate = new Date().toLocaleDateString('en-IN', {
@@ -23,11 +23,12 @@ const Index = () => {
   });
 
   const handleVoucherCreate = (type: VoucherType) => {
-    setVoucherModal({ isOpen: true, type });
+    setVoucherForm({ isOpen: true, type });
   };
 
-  const closeVoucherModal = () => {
-    setVoucherModal({ ...voucherModal, isOpen: false });
+  const handleSaveVoucher = (voucherData: any) => {
+    console.log('Saving voucher:', voucherData);
+    setVoucherForm({ isOpen: false, type: null });
   };
 
   const renderContent = () => {
@@ -44,15 +45,6 @@ const Index = () => {
         return <ReportsSection />;
       case 'inventory':
         return <InventorySection />;
-      case 'sales':
-      case 'purchase':
-      case 'receipt':
-      case 'payment':
-      case 'journal':
-      case 'contra':
-        handleVoucherCreate(activeSection as VoucherType);
-        setActiveSection('dashboard');
-        return <Dashboard onVoucherCreate={handleVoucherCreate} />;
       default:
         return <Dashboard onVoucherCreate={handleVoucherCreate} />;
     }
@@ -75,12 +67,15 @@ const Index = () => {
         </main>
       </div>
 
-      {/* Voucher Modal */}
-      <VoucherModal 
-        type={voucherModal.type}
-        isOpen={voucherModal.isOpen}
-        onClose={closeVoucherModal}
-      />
+      {/* Voucher Form Modal */}
+      {voucherForm.type && (
+        <VoucherForm
+          type={voucherForm.type}
+          isOpen={voucherForm.isOpen}
+          onClose={() => setVoucherForm({ isOpen: false, type: null })}
+          onSave={handleSaveVoucher}
+        />
+      )}
     </div>
   );
 };

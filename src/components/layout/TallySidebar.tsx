@@ -22,6 +22,8 @@ import {
   HelpCircle
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { VoucherType } from '@/types/tally';
+import { VoucherForm } from '@/components/vouchers/VoucherForm';
 
 interface MenuItem {
   id: string;
@@ -96,6 +98,10 @@ const bottomMenuItems: MenuItem[] = [
 
 export function TallySidebar({ activeSection, onSectionChange }: TallySidebarProps) {
   const [expandedItems, setExpandedItems] = useState<string[]>(['vouchers']);
+  const [voucherForm, setVoucherForm] = useState<{ isOpen: boolean; type: VoucherType | null }>({
+    isOpen: false,
+    type: null
+  });
 
   const toggleExpand = (id: string) => {
     setExpandedItems(prev => 
@@ -103,6 +109,15 @@ export function TallySidebar({ activeSection, onSectionChange }: TallySidebarPro
         ? prev.filter(item => item !== id)
         : [...prev, id]
     );
+  };
+
+  const handleVoucherClick = (voucherType: VoucherType) => {
+    setVoucherForm({ isOpen: true, type: voucherType });
+  };
+
+  const handleSaveVoucher = (voucherData: any) => {
+    console.log('Saving voucher:', voucherData);
+    setVoucherForm({ isOpen: false, type: null });
   };
 
   const renderMenuItem = (item: MenuItem, isChild = false) => {
@@ -187,6 +202,16 @@ export function TallySidebar({ activeSection, onSectionChange }: TallySidebarPro
           Version 4.0 • Release 1.1
         </p>
       </div>
+
+      {/* Voucher Form Modal */}
+      {voucherForm.type && (
+        <VoucherForm
+          type={voucherForm.type}
+          isOpen={voucherForm.isOpen}
+          onClose={() => setVoucherForm({ isOpen: false, type: null })}
+          onSave={handleSaveVoucher}
+        />
+      )}
     </aside>
   );
 }
