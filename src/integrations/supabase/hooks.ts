@@ -4,6 +4,28 @@ import { toast } from 'sonner';
 import { Ledger, Voucher, DashboardMetrics, StockItem, Company } from '@/types/tally';
 import { useState, useEffect } from 'react';
 
+// Base API utilities
+const apiUtils = {
+  handleTableError: (tableName: string, error: any) => {
+    console.warn(`${tableName} table not found, returning empty array`);
+    return [];
+  },
+
+  handleMutationError: (operation: string, error: any) => {
+    console.warn(`${operation} failed, simulating success`);
+    return true;
+  },
+
+  formatCurrency: (amount: number) => {
+    return new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(amount);
+  },
+};
+
 // Ledger hooks
 export const useLedgers = () => {
   return useQuery({
@@ -16,13 +38,11 @@ export const useLedgers = () => {
           .order('name', { ascending: true });
         
         if (error) {
-          console.warn('Ledgers table not found, returning empty array');
-          return [];
+          return apiUtils.handleTableError('ledgers', error);
         }
         return data || [];
       } catch (error) {
-        console.warn('Ledgers table not accessible, returning empty array');
-        return [];
+        return apiUtils.handleTableError('ledgers', error);
       }
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
@@ -52,8 +72,7 @@ export const useCreateLedger = () => {
         if (error) throw error;
         return data;
       } catch (error) {
-        console.warn('Ledgers table not accessible, simulating success');
-        return { id: Date.now().toString(), ...ledger, current_balance: ledger.openingBalance };
+        return apiUtils.handleMutationError('Create ledger', error);
       }
     },
     onSuccess: () => {
@@ -83,8 +102,7 @@ export const useUpdateLedger = () => {
         if (error) throw error;
         return updatedData;
       } catch (error) {
-        console.warn('Ledgers table not accessible, simulating success');
-        return { id, ...data };
+        return apiUtils.handleMutationError('Update ledger', error);
       }
     },
     onSuccess: () => {
@@ -111,7 +129,7 @@ export const useDeleteLedger = () => {
         
         if (error) throw error;
       } catch (error) {
-        console.warn('Ledgers table not accessible, simulating success');
+        return apiUtils.handleMutationError('Delete ledger', error);
       }
     },
     onSuccess: () => {
@@ -140,13 +158,11 @@ export const useVouchers = () => {
           .order('date', { ascending: false });
         
         if (error) {
-          console.warn('Vouchers table not found, returning empty array');
-          return [];
+          return apiUtils.handleTableError('vouchers', error);
         }
         return data || [];
       } catch (error) {
-        console.warn('Vouchers table not accessible, returning empty array');
-        return [];
+        return apiUtils.handleTableError('vouchers', error);
       }
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
@@ -191,8 +207,7 @@ export const useCreateVoucher = () => {
 
         return { ...voucherData, items: itemsData };
       } catch (error) {
-        console.warn('Vouchers table not accessible, simulating success');
-        return { id: Date.now().toString(), ...voucher, createdAt: new Date().toISOString() };
+        return apiUtils.handleMutationError('Create voucher', error);
       }
     },
     onSuccess: () => {
@@ -224,8 +239,7 @@ export const useUpdateVoucher = () => {
         if (error) throw error;
         return updatedData;
       } catch (error) {
-        console.warn('Vouchers table not accessible, simulating success');
-        return { id, ...data };
+        return apiUtils.handleMutationError('Update voucher', error);
       }
     },
     onSuccess: () => {
@@ -263,7 +277,7 @@ export const useDeleteVoucher = () => {
         
         if (voucherError) throw voucherError;
       } catch (error) {
-        console.warn('Vouchers table not accessible, simulating success');
+        return apiUtils.handleMutationError('Delete voucher', error);
       }
     },
     onSuccess: () => {
@@ -355,13 +369,11 @@ export const useStockItems = () => {
           .order('name', { ascending: true });
         
         if (error) {
-          console.warn('Stock items table not found, returning empty array');
-          return [];
+          return apiUtils.handleTableError('stock_items', error);
         }
         return data || [];
       } catch (error) {
-        console.warn('Stock items table not accessible, returning empty array');
-        return [];
+        return apiUtils.handleTableError('stock_items', error);
       }
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
@@ -390,8 +402,7 @@ export const useCreateStockItem = () => {
         if (error) throw error;
         return data;
       } catch (error) {
-        console.warn('Stock items table not accessible, simulating success');
-        return { id: Date.now().toString(), ...stockItem };
+        return apiUtils.handleMutationError('Create stock item', error);
       }
     },
     onSuccess: () => {
@@ -466,8 +477,7 @@ export const useUpdateCompany = () => {
         if (error) throw error;
         return data;
       } catch (error) {
-        console.warn('Companies table not accessible, simulating success');
-        return company;
+        return apiUtils.handleMutationError('Update company', error);
       }
     },
     onSuccess: () => {
@@ -527,4 +537,22 @@ export const useAuthState = () => {
     isAuthenticated: !!user,
     signOut,
   };
+};
+
+// Export all hooks as a single object for easier imports
+export const supabaseHooks = {
+  useLedgers,
+  useCreateLedger,
+  useUpdateLedger,
+  useDeleteLedger,
+  useVouchers,
+  useCreateVoucher,
+  useUpdateVoucher,
+  useDeleteVoucher,
+  useDashboardMetrics,
+  useStockItems,
+  useCreateStockItem,
+  useCompany,
+  useUpdateCompany,
+  useAuthState,
 };
