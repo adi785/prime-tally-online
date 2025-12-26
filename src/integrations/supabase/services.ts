@@ -29,7 +29,7 @@ class SupabaseService {
     }
     
     if (params?.group) {
-      query = query.eq('group', params.group);
+      query = query.eq('group_name', params.group);
     }
     
     const { data, error } = await query.order('name', { ascending: true });
@@ -64,7 +64,7 @@ class SupabaseService {
       .from('ledgers')
       .insert([{
         name: data.name,
-        group: data.group,
+        group_name: data.group,
         opening_balance: data.opening_balance,
         address: data.address,
         phone: data.phone,
@@ -265,19 +265,19 @@ class SupabaseService {
       const { data: debtorsData } = await supabase
         .from('ledgers')
         .select('current_balance')
-        .eq('group', 'sundry-debtors');
+        .eq('group_name', 'sundry-debtors');
       
       // Get payables (sundry creditors)
       const { data: creditorsData } = await supabase
         .from('ledgers')
         .select('current_balance')
-        .eq('group', 'sundry-creditors');
+        .eq('group_name', 'sundry-creditors');
       
       // Get cash and bank balances
       const { data: cashData } = await supabase
         .from('ledgers')
         .select('current_balance')
-        .in('group', ['cash-in-hand', 'bank-accounts']);
+        .in('group_name', ['cash-in-hand', 'bank-accounts']);
 
       const result = {
         totalSales: salesData?.reduce((sum, v) => sum + v.total_amount, 0) || 0,
