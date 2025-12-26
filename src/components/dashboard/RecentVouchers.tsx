@@ -1,7 +1,10 @@
+import { useState } from 'react';
 import { vouchers } from '@/data/mockData';
 import { cn } from '@/lib/utils';
-import { ArrowUpFromLine, ArrowDownToLine, Wallet, CreditCard } from 'lucide-react';
-import { VoucherType } from '@/types/tally';
+import { ArrowUpFromLine, ArrowDownToLine, Wallet, CreditCard, Printer } from 'lucide-react';
+import { VoucherType, Voucher } from '@/types/tally';
+import { InvoicePreviewModal } from '@/components/invoice/InvoicePreviewModal';
+import { Button } from '@/components/ui/button';
 
 const voucherTypeConfig: Record<VoucherType, { icon: React.ReactNode; color: string; bgColor: string }> = {
   sales: { icon: <ArrowUpFromLine size={14} />, color: 'text-success', bgColor: 'bg-success/10' },
@@ -15,6 +18,8 @@ const voucherTypeConfig: Record<VoucherType, { icon: React.ReactNode; color: str
 };
 
 export function RecentVouchers() {
+  const [selectedVoucher, setSelectedVoucher] = useState<Voucher | null>(null);
+
   const formatAmount = (amount: number) => {
     return new Intl.NumberFormat('en-IN', {
       style: 'currency',
@@ -46,7 +51,7 @@ export function RecentVouchers() {
           return (
             <div 
               key={voucher.id}
-              className="p-4 hover:bg-muted/50 transition-colors cursor-pointer animate-slide-in"
+              className="p-4 hover:bg-muted/50 transition-colors cursor-pointer animate-slide-in group"
               style={{ animationDelay: `${index * 50}ms` }}
             >
               <div className="flex items-center gap-4">
@@ -70,13 +75,26 @@ export function RecentVouchers() {
                   </p>
                 </div>
                 
-                <div className="text-right">
-                  <p className={cn(
-                    "font-mono font-semibold",
-                    isIncome ? "amount-positive" : "amount-negative"
-                  )}>
-                    {isIncome ? '+' : '-'}{formatAmount(voucher.totalAmount)}
-                  </p>
+                <div className="flex items-center gap-3">
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedVoucher(voucher);
+                    }}
+                  >
+                    <Printer size={14} />
+                  </Button>
+                  <div className="text-right">
+                    <p className={cn(
+                      "font-mono font-semibold",
+                      isIncome ? "amount-positive" : "amount-negative"
+                    )}>
+                      {isIncome ? '+' : '-'}{formatAmount(voucher.totalAmount)}
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
@@ -89,6 +107,15 @@ export function RecentVouchers() {
           View All Transactions →
         </button>
       </div>
+
+      {/* Invoice Preview Modal */}
+      {selectedVoucher && (
+        <InvoicePreviewModal
+          voucher={selectedVoucher}
+          isOpen={!!selectedVoucher}
+          onClose={() => setSelectedVoucher(null)}
+        />
+      )}
     </div>
   );
 }
