@@ -12,9 +12,8 @@ import { MetricCard } from './MetricCard';
 import { RecentVouchers } from './RecentVouchers';
 import { QuickActions } from './QuickActions';
 import { PendingItems } from './PendingItems';
-import { useDashboardMetrics } from '@/integrations/supabase/hooks';
+import { useDashboardMetrics } from '@/integrations/nhost/hooks';
 import { VoucherType } from '@/types/tally';
-import { LoadingSpinner } from '@/components/ui/loading-spinner';
 
 interface DashboardProps {
   onVoucherCreate: (type: VoucherType) => void;

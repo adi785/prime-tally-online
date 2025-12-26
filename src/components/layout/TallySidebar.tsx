@@ -24,7 +24,6 @@ import {
 import { cn } from '@/lib/utils';
 import { VoucherType } from '@/types/tally';
 import { VoucherForm } from '@/components/vouchers/VoucherForm';
-import { useAuthState } from '@/integrations/supabase/hooks';
 
 interface MenuItem {
   id: string;
@@ -103,7 +102,6 @@ export function TallySidebar({ activeSection, onSectionChange }: TallySidebarPro
     isOpen: false,
     type: null
   });
-  const { signOut } = useAuthState();
 
   const toggleExpand = (id: string) => {
     setExpandedItems(prev => 

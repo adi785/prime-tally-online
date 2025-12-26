@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { VoucherType, Ledger, LedgerGroup } from '@/types/tally';
-import { useLedgers, useCreateVoucher } from '@/integrations/supabase/hooks';
+import { useLedgers } from '@/integrations/nhost/hooks';
 
 interface VoucherFormProps {
   type: VoucherType;
@@ -38,7 +38,6 @@ interface LineItem {
 export function VoucherForm({ type, isOpen, onClose, onSave }: VoucherFormProps) {
   const { toast } = useToast();
   const { data: ledgers = [] } = useLedgers();
-  const { mutate: createVoucher, isPending: isCreating } = useCreateVoucher();
   
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [voucherNumber, setVoucherNumber] = useState('');
@@ -149,28 +148,25 @@ export function VoucherForm({ type, isOpen, onClose, onSave }: VoucherFormProps)
       type,
       date,
       voucherNumber: voucherNumber || `AUTO-${Date.now()}`,
-      partyLedgerId: partyLedger,
+      party_ledger_id: partyLedger,
       narration,
       items: items.filter(item => item.ledgerId && item.amount).map(item => ({
-        particulars: accountLedgers.find(l => l.id === item.ledgerId)?.name || '',
-        ledgerId: item.ledgerId,
+        ledger_id: item.ledgerId,
         amount: parseFloat(item.amount),
-        type: item.type,
+        type: item.type
       })),
-      totalAmount,
+      total_amount: totalAmount,
     };
 
     try {
-      createVoucher(voucherData, {
-        onSuccess: (data) => {
-          toast({
-            title: "Voucher Created",
-            description: `${voucherConfig[type].title} has been created successfully`,
-          });
-          handleClose();
-          onSave(voucherData);
-        },
+      onSave(voucherData);
+      
+      toast({
+        title: "Voucher Created",
+        description: `${voucherConfig[type].title} has been created successfully`,
       });
+
+      handleClose();
     } catch (error) {
       toast({
         title: "Error",
@@ -384,9 +380,9 @@ export function VoucherForm({ type, isOpen, onClose, onSave }: VoucherFormProps)
               <Button variant="outline" onClick={handleClose} type="button">
                 Cancel
               </Button>
-              <Button type="submit" className="gap-2" disabled={isCreating}>
+              <Button type="submit" className="gap-2">
                 <Save size={16} />
-                {isCreating ? 'Saving...' : 'Save Voucher'}
+                Save Voucher
               </Button>
             </div>
           </div>

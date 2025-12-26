@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useVouchers } from '@/integrations/supabase/hooks';
+import { useVouchers } from '@/integrations/nhost/hooks';
 import { cn } from '@/lib/utils';
 import { ArrowUpFromLine, ArrowDownToLine, Wallet, CreditCard, Printer } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -94,9 +94,9 @@ export function RecentVouchers() {
                   
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <p className="font-medium text-foreground truncate">{voucher.partyName}</p>
+                      <p className="font-medium text-foreground truncate">{voucher.party_name}</p>
                       <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded">
-                        {voucher.voucherNumber}
+                        {voucher.voucher_number}
                       </span>
                     </div>
                     <p className="text-sm text-muted-foreground capitalize">
@@ -132,7 +132,7 @@ export function RecentVouchers() {
                         "font-mono font-semibold",
                         isIncome ? "amount-positive" : "amount-negative"
                       )}>
-                        {isIncome ? '+' : '-'}{formatAmount(voucher.totalAmount)}
+                        {isIncome ? '+' : '-'}{formatAmount(voucher.total_amount)}
                       </p>
                     </div>
                   </div>

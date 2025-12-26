@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useLedgers, useCreateLedger, useUpdateLedger, useDeleteLedger } from '@/integrations/supabase/hooks';
+import { useLedgers, useCreateLedger, useUpdateLedger, useDeleteLedger } from '@/integrations/nhost/hooks';
 import { Ledger, LedgerGroup } from '@/types/tally';
 import { cn } from '@/lib/utils';
 import { Search, Plus, Filter, Download, MoreVertical, Edit, Trash2, Eye } from 'lucide-react';
@@ -31,7 +31,7 @@ export function LedgerList() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingLedger, setEditingLedger] = useState<Ledger | null>(null);
 
-  // Use Supabase hooks
+  // Use backend hooks
   const { data: ledgers, isLoading, error } = useLedgers();
   const { mutate: createLedger, isPending: isCreating } = useCreateLedger();
   const { mutate: updateLedger, isPending: isUpdating } = useUpdateLedger();

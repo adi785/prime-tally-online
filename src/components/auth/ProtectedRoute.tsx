@@ -1,4 +1,4 @@
-import { useAuthState } from '@/integrations/supabase/hooks';
+import { useAuthState } from '@/integrations/nhost/hooks';
 import { Navigate, useLocation } from 'react-router-dom';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 

@@ -4,8 +4,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { authService } from '@/integrations/supabase/auth';
+import { authService } from '@/integrations/nhost/auth';
 import { cn } from '@/lib/utils';
+
+interface AuthFormProps {
+  type: 'login' | 'signup';
+}
 
 export function AuthLayout() {
   const navigate = useNavigate();
