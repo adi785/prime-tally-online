@@ -440,22 +440,8 @@ export const useCompany = () => {
             financial_year_start: '2024-04-01',
             financial_year_end: '2025-03-31',
           };
-        }
-        return data;
-      } catch (error) {
-        console.warn('Companies table not accessible, returning mock company data');
-        return {
-          id: '1',
-          name: 'ABC Enterprises Pvt. Ltd.',
-          address: '123 Business Park, Mumbai, Maharashtra - 400001',
-          gstin: '27AABCU9603R1ZM',
-          pan: 'AABCU9603R',
-          phone: '+91 22 2345 6789',
-          email: 'info@abcenterprises.com',
-          financial_year_start: '2024-04-01',
-          financial_year_end: '2025-03-31',
-        };
       }
+      return data;
     },
     staleTime: 60 * 60 * 1000, // 1 hour
   });

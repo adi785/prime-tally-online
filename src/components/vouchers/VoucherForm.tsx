@@ -272,7 +272,7 @@ export function VoucherForm({ type, isOpen, onClose, onSave }: VoucherFormProps)
                 </thead>
                 <tbody>
                   {items.map((item, index) => (
-                    <tr key={item.id} className="border-b border-border last:border-b-0">
+                    <tr key={item.id} className="border-b border-border">
                       <td className="p-2">
                         <Select
                           value={item.type}
