@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { useDashboardMetrics } from '@/integrations/nhost/hooks';
+import { useDashboardMetrics } from '@/integrations/supabase/hooks';
 
 interface ReportCard {
   id: string;

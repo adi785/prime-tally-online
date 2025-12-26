@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { VoucherType, Ledger, LedgerGroup } from '@/types/tally';
-import { useLedgers } from '@/integrations/nhost/hooks';
+import { useLedgers } from '@/integrations/supabase/hooks';
 
 interface VoucherFormProps {
   type: VoucherType;

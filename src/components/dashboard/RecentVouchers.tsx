@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useVouchers } from '@/integrations/nhost/hooks';
+import { useVouchers } from '@/integrations/supabase/hooks';
 import { cn } from '@/lib/utils';
 import { ArrowUpFromLine, ArrowDownToLine, Wallet, CreditCard, Printer } from 'lucide-react';
 import { Button } from '@/components/ui/button';
