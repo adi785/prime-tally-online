@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useVouchers } from '@/integrations/supabase/hooks';
 import { cn } from '@/lib/utils';
-import { ArrowUpFromLine, ArrowDownToLine, Wallet, CreditCard, Printer } from 'lucide-react';
+import { ArrowUpFromLine, ArrowDownToLine, Wallet, CreditCard, Printer, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { VoucherType } from '@/types/tally';
 import { VoucherForm } from '@/components/vouchers/VoucherForm';
