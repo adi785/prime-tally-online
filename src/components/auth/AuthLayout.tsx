@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { authService } from '@/integrations/nhost/auth';
+import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
 
 export function AuthLayout() {
@@ -36,16 +36,34 @@ export function AuthLayout() {
           return;
         }
 
-        await authService.signUp(formData.email, formData.password, {
-          displayName: formData.displayName,
+        const { error } = await supabase.auth.signUp({
+          email: formData.email,
+          password: formData.password,
+          options: {
+            data: {
+              display_name: formData.displayName,
+            },
+          },
         });
+
+        if (error) throw error;
+
+        toast.success('Account created successfully');
       } else {
-        await authService.signIn(formData.email, formData.password);
+        const { error } = await supabase.auth.signInWithPassword({
+          email: formData.email,
+          password: formData.password,
+        });
+
+        if (error) throw error;
+
+        toast.success('Signed in successfully');
       }
 
       navigate('/dashboard');
     } catch (error) {
       console.error('Auth error:', error);
+      toast.error('Authentication failed. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -62,9 +80,16 @@ export function AuthLayout() {
     }
 
     try {
-      await authService.resetPassword(formData.email);
+      const { error } = await supabase.auth.resetPasswordForEmail(formData.email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+
+      if (error) throw error;
+
+      toast.success('Password reset email sent. Please check your inbox.');
     } catch (error) {
       console.error('Password reset error:', error);
+      toast.error('Failed to send reset email. Please try again.');
     }
   };
 

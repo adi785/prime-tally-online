@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
-import { authService } from '@/integrations/nhost/auth';
+import { useAuthState } from '@/integrations/supabase/hooks';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -12,16 +12,14 @@ export function ProtectedRoute({ children, requireAuth = true }: ProtectedRouteP
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const location = useLocation();
+  const { user, isLoading: authLoading } = useAuthState();
 
   useEffect(() => {
-    const checkAuth = () => {
-      const authenticated = authService.isAuthenticated();
-      setIsAuthenticated(authenticated);
+    if (!authLoading) {
+      setIsAuthenticated(!!user);
       setIsLoading(false);
-    };
-
-    checkAuth();
-  }, []);
+    }
+  }, [user, authLoading]);
 
   if (isLoading) {
     return (
