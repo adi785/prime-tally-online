@@ -79,6 +79,13 @@ export interface UpdateCompanyRequest extends Partial<Company> {
 }
 
 // Authentication types
+export interface AuthUser {
+  id: string;
+  email: string;
+  displayName?: string;
+  avatarUrl?: string;
+}
+
 export interface SignInRequest {
   email: string;
   password: string;

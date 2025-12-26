@@ -28,33 +28,39 @@ export interface Ledger {
   id: string;
   name: string;
   group: LedgerGroup;
-  openingBalance: number;
-  currentBalance: number;
+  opening_balance: number;
+  current_balance: number;
   address?: string;
   phone?: string;
   gstin?: string;
   email?: string;
+  is_billwise?: boolean;
+  is_inventory?: boolean;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface VoucherItem {
   id: string;
-  particulars: string;
-  ledgerId: string;
+  particulars?: string;
+  ledger_id: string;
   amount: number;
   type: 'debit' | 'credit';
+  created_at?: string;
 }
 
 export interface Voucher {
   id: string;
-  voucherNumber: string;
+  voucher_number: string;
   type: VoucherType;
   date: string;
-  partyName: string;
-  partyLedgerId: string;
+  party_name?: string;
+  party_ledger_id: string;
   items: VoucherItem[];
   narration?: string;
-  totalAmount: number;
-  createdAt: string;
+  total_amount: number;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface DashboardMetrics {
@@ -75,16 +81,21 @@ export interface StockItem {
   quantity: number;
   rate: number;
   value: number;
-  group: string;
+  group_name: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface Company {
+  id: string;
   name: string;
   address: string;
   gstin: string;
   pan: string;
-  phone: string;
-  email: string;
-  financialYearStart: string;
-  financialYearEnd: string;
+  phone?: string;
+  email?: string;
+  financial_year_start: string;
+  financial_year_end: string;
+  created_at?: string;
+  updated_at?: string;
 }

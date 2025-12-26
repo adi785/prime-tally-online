@@ -24,6 +24,8 @@ interface DashboardProps {
 export function Dashboard({ onVoucherCreate }: DashboardProps) {
   const { data: metrics, isLoading, error } = useDashboardMetrics();
 
+  console.log('Dashboard metrics:', { metrics, isLoading, error });
+
   if (error) {
     return (
       <div className="p-6 space-y-6">

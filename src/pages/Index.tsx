@@ -6,6 +6,8 @@ import { LedgerList } from '@/components/ledgers/LedgerList';
 import { VoucherForm } from '@/components/vouchers/VoucherForm';
 import { ReportsSection } from '@/components/reports/ReportsSection';
 import { InventorySection } from '@/components/inventory/InventorySection';
+import { DebugInfo } from '@/components/DebugInfo';
+import { TestConnection } from '@/components/TestConnection';
 import { VoucherType } from '@/types/tally';
 
 const Index = () => {
@@ -59,6 +61,8 @@ const Index = () => {
       <div className="flex-1 flex flex-col overflow-hidden">
         <TopBar currentDate={currentDate} />
         <main className="flex-1 overflow-y-auto tally-scrollbar">
+          <DebugInfo />
+          <TestConnection />
           {renderContent()}
         </main>
       </div>

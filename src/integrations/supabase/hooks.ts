@@ -55,10 +55,11 @@ export const useAuthState = () => {
 
   const signOut = async () => {
     try {
-      await supabase.auth.signOut();
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
       toast.success('Signed out successfully');
     } catch (error) {
-      toast.error('Failed to sign out');
+      toast.error('Failed to sign out. Please try again.');
       console.error('Sign out error:', error);
     }
   };
@@ -74,13 +75,16 @@ export const useAuthState = () => {
 // --- Ledger Hooks ---
 
 export const useLedgers = (params?: LedgerQueryParams) => {
+  console.log('useLedgers called with params:', params);
   return useQuery<Ledger[], Error>({
     queryKey: ['ledgers', params],
     queryFn: () => supabaseService.getLedgers(params),
+    enabled: true,
   });
 };
 
 export const useLedger = (id: string) => {
+  console.log('useLedger called with id:', id);
   return useQuery<Ledger, Error>({
     queryKey: ['ledgers', id],
     queryFn: () => supabaseService.getLedger(id),
@@ -137,13 +141,16 @@ export const useDeleteLedger = () => {
 // --- Voucher Hooks ---
 
 export const useVouchers = (params?: VoucherQueryParams) => {
+  console.log('useVouchers called with params:', params);
   return useQuery<Voucher[], Error>({
     queryKey: ['vouchers', params],
     queryFn: () => supabaseService.getVouchers(params),
+    enabled: true,
   });
 };
 
 export const useVoucher = (id: string) => {
+  console.log('useVoucher called with id:', id);
   return useQuery<Voucher, Error>({
     queryKey: ['vouchers', id],
     queryFn: () => supabaseService.getVoucher(id),
@@ -203,6 +210,7 @@ export const useDeleteVoucher = () => {
 // --- Dashboard Hooks ---
 
 export const useDashboardMetrics = () => {
+  console.log('useDashboardMetrics called');
   return useQuery<DashboardMetricsResponse, Error>({
     queryKey: ['dashboardMetrics'],
     queryFn: () => supabaseService.getDashboardMetrics(),
@@ -213,13 +221,16 @@ export const useDashboardMetrics = () => {
 // --- Stock Item Hooks ---
 
 export const useStockItems = (params?: StockQueryParams) => {
+  console.log('useStockItems called with params:', params);
   return useQuery<StockItem[], Error>({
     queryKey: ['stockItems', params],
     queryFn: () => supabaseService.getStockItems(params),
+    enabled: true,
   });
 };
 
 export const useStockItem = (id: string) => {
+  console.log('useStockItem called with id:', id);
   return useQuery<StockItem, Error>({
     queryKey: ['stockItems', id],
     queryFn: () => supabaseService.getStockItem(id),
@@ -273,6 +284,7 @@ export const useDeleteStockItem = () => {
 // --- Company Hooks ---
 
 export const useCompany = () => {
+  console.log('useCompany called');
   return useQuery<Company, Error>({
     queryKey: ['company'],
     queryFn: () => supabaseService.getCompany(),

@@ -39,6 +39,8 @@ export function LedgerList() {
   const { mutate: updateLedger, isPending: isUpdating } = useUpdateLedger();
   const { mutate: deleteLedger, isPending: isDeleting } = useDeleteLedger();
 
+  console.log('LedgerList data:', { ledgers, isLoading, error });
+
   const filteredLedgers = ledgers?.filter(ledger => {
     const matchesSearch = ledger.name.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesGroup = selectedGroup === 'all' || ledger.group === selectedGroup;
@@ -200,17 +202,17 @@ export function LedgerList() {
                   <td className="px-4 py-3 text-right">
                     <span className={cn(
                       "font-mono text-sm",
-                      ledger.openingBalance < 0 ? "amount-positive" : ledger.openingBalance > 0 ? "amount-neutral" : "text-muted-foreground"
+                      ledger.opening_balance < 0 ? "amount-positive" : ledger.opening_balance > 0 ? "amount-neutral" : "text-muted-foreground"
                     )}>
-                      {ledger.openingBalance === 0 ? '-' : formatAmount(ledger.openingBalance)}
+                      {ledger.opening_balance === 0 ? '-' : formatAmount(ledger.opening_balance)}
                     </span>
                   </td>
                   <td className="px-4 py-3 text-right">
                     <span className={cn(
                       "font-mono text-sm font-semibold",
-                      ledger.currentBalance < 0 ? "amount-positive" : ledger.currentBalance > 0 ? "amount-negative" : "text-muted-foreground"
+                      ledger.current_balance < 0 ? "amount-positive" : ledger.current_balance > 0 ? "amount-negative" : "text-muted-foreground"
                     )}>
-                      {ledger.currentBalance === 0 ? '-' : formatAmount(ledger.currentBalance)}
+                      {ledger.current_balance === 0 ? '-' : formatAmount(ledger.current_balance)}
                     </span>
                   </td>
                   <td className="px-4 py-3 text-center">
@@ -256,8 +258,8 @@ export function LedgerList() {
       <div className="flex items-center justify-between text-sm text-muted-foreground animate-fade-in">
         <span>Showing {filteredLedgers.length} of {ledgers?.length || 0} ledgers</span>
         <div className="flex gap-6">
-          <span>Total Debit: <span className="font-mono font-semibold text-foreground">₹{ledgers?.reduce((sum, l) => sum + Math.max(0, l.currentBalance), 0).toLocaleString('en-IN') || '0'}</span></span>
-          <span>Total Credit: <span className="font-mono font-semibold text-foreground">₹{ledgers?.reduce((sum, l) => sum + Math.abs(Math.min(0, l.currentBalance)), 0).toLocaleString('en-IN') || '0'}</span></span>
+          <span>Total Debit: <span className="font-mono font-semibold text-foreground">₹{ledgers?.reduce((sum, l) => sum + Math.max(0, l.current_balance), 0).toLocaleString('en-IN') || '0'}</span></span>
+          <span>Total Credit: <span className="font-mono font-semibold text-foreground">₹{ledgers?.reduce((sum, l) => sum + Math.abs(Math.min(0, l.current_balance)), 0).toLocaleString('en-IN') || '0'}</span></span>
         </div>
       </div>
 

@@ -21,6 +21,7 @@ import {
 class SupabaseService {
   // Ledger services
   async getLedgers(params?: LedgerQueryParams): Promise<Ledger[]> {
+    console.log('getLedgers called with params:', params);
     let query = supabase.from('ledgers').select('*');
     
     if (params?.search) {
@@ -33,22 +34,32 @@ class SupabaseService {
     
     const { data, error } = await query.order('name', { ascending: true });
     
-    if (error) throw error;
+    if (error) {
+      console.error('getLedgers error:', error);
+      throw error;
+    }
+    console.log('getLedgers success, data:', data);
     return data || [];
   }
 
   async getLedger(id: string): Promise<Ledger> {
+    console.log('getLedger called with id:', id);
     const { data, error } = await supabase
       .from('ledgers')
       .select('*')
       .eq('id', id)
       .single();
     
-    if (error) throw error;
+    if (error) {
+      console.error('getLedger error:', error);
+      throw error;
+    }
+    console.log('getLedger success, data:', data);
     return data;
   }
 
   async createLedger(data: CreateLedgerRequest): Promise<Ledger> {
+    console.log('createLedger called with data:', data);
     const { data: result, error } = await supabase
       .from('ledgers')
       .insert([{
@@ -65,11 +76,16 @@ class SupabaseService {
       .select()
       .single();
     
-    if (error) throw error;
+    if (error) {
+      console.error('createLedger error:', error);
+      throw error;
+    }
+    console.log('createLedger success, result:', result);
     return result;
   }
 
   async updateLedger(id: string, data: UpdateLedgerRequest): Promise<Ledger> {
+    console.log('updateLedger called with id:', id, 'data:', data);
     const { data: result, error } = await supabase
       .from('ledgers')
       .update(data)
@@ -77,21 +93,31 @@ class SupabaseService {
       .select()
       .single();
     
-    if (error) throw error;
+    if (error) {
+      console.error('updateLedger error:', error);
+      throw error;
+    }
+    console.log('updateLedger success, result:', result);
     return result;
   }
 
   async deleteLedger(id: string): Promise<void> {
+    console.log('deleteLedger called with id:', id);
     const { error } = await supabase
       .from('ledgers')
       .delete()
       .eq('id', id);
     
-    if (error) throw error;
+    if (error) {
+      console.error('deleteLedger error:', error);
+      throw error;
+    }
+    console.log('deleteLedger success');
   }
 
   // Voucher services
   async getVouchers(params?: VoucherQueryParams): Promise<Voucher[]> {
+    console.log('getVouchers called with params:', params);
     let query = supabase.from('vouchers').select(`
       *,
       items: voucher_items(*)
@@ -107,11 +133,16 @@ class SupabaseService {
     
     const { data, error } = await query.order('date', { ascending: false });
     
-    if (error) throw error;
+    if (error) {
+      console.error('getVouchers error:', error);
+      throw error;
+    }
+    console.log('getVouchers success, data:', data);
     return data || [];
   }
 
   async getVoucher(id: string): Promise<Voucher> {
+    console.log('getVoucher called with id:', id);
     const { data, error } = await supabase
       .from('vouchers')
       .select(`
@@ -121,11 +152,16 @@ class SupabaseService {
       .eq('id', id)
       .single();
     
-    if (error) throw error;
+    if (error) {
+      console.error('getVoucher error:', error);
+      throw error;
+    }
+    console.log('getVoucher success, data:', data);
     return data;
   }
 
   async createVoucher(data: CreateVoucherRequest): Promise<Voucher> {
+    console.log('createVoucher called with data:', data);
     // Insert voucher
     const { data: voucherData, error: voucherError } = await supabase
       .from('vouchers')
@@ -140,7 +176,10 @@ class SupabaseService {
       .select()
       .single();
     
-    if (voucherError) throw voucherError;
+    if (voucherError) {
+      console.error('createVoucher error:', voucherError);
+      throw voucherError;
+    }
 
     // Insert items
     const itemsData = data.items.map(item => ({
@@ -154,12 +193,17 @@ class SupabaseService {
       .from('voucher_items')
       .insert(itemsData);
     
-    if (itemsError) throw itemsError;
+    if (itemsError) {
+      console.error('createVoucher items error:', itemsError);
+      throw itemsError;
+    }
 
+    console.log('createVoucher success, result:', { ...voucherData, items: itemsData });
     return { ...voucherData, items: itemsData };
   }
 
   async updateVoucher(id: string, data: UpdateVoucherRequest): Promise<Voucher> {
+    console.log('updateVoucher called with id:', id, 'data:', data);
     const { data: result, error } = await supabase
       .from('vouchers')
       .update(data)
@@ -167,18 +211,26 @@ class SupabaseService {
       .select()
       .single();
     
-    if (error) throw error;
+    if (error) {
+      console.error('updateVoucher error:', error);
+      throw error;
+    }
+    console.log('updateVoucher success, result:', result);
     return result;
   }
 
   async deleteVoucher(id: string): Promise<void> {
+    console.log('deleteVoucher called with id:', id);
     // Delete items first
     const { error: itemsError } = await supabase
       .from('voucher_items')
       .delete()
       .eq('voucher_id', id);
     
-    if (itemsError) throw itemsError;
+    if (itemsError) {
+      console.error('deleteVoucher items error:', itemsError);
+      throw itemsError;
+    }
 
     // Delete voucher
     const { error: voucherError } = await supabase
@@ -186,59 +238,73 @@ class SupabaseService {
       .delete()
       .eq('id', id);
     
-    if (voucherError) throw voucherError;
+    if (voucherError) {
+      console.error('deleteVoucher error:', voucherError);
+      throw voucherError;
+    }
+    console.log('deleteVoucher success');
   }
 
   // Dashboard services
   async getDashboardMetrics(): Promise<DashboardMetricsResponse> {
-    // Get total sales
-    const { data: salesData } = await supabase
-      .from('vouchers')
-      .select('total_amount')
-      .eq('type', 'sales');
-    
-    // Get total purchases
-    const { data: purchasesData } = await supabase
-      .from('vouchers')
-      .select('total_amount')
-      .eq('type', 'purchase');
-    
-    // Get receivables (sundry debtors)
-    const { data: debtorsData } = await supabase
-      .from('ledgers')
-      .select('current_balance')
-      .eq('group', 'sundry-debtors');
-    
-    // Get payables (sundry creditors)
-    const { data: creditorsData } = await supabase
-      .from('ledgers')
-      .select('current_balance')
-      .eq('group', 'sundry-creditors');
-    
-    // Get cash and bank balances
-    const { data: cashData } = await supabase
-      .from('ledgers')
-      .select('current_balance')
-      .in('group', ['cash-in-hand', 'bank-accounts']);
+    console.log('getDashboardMetrics called');
+    try {
+      // Get total sales
+      const { data: salesData } = await supabase
+        .from('vouchers')
+        .select('total_amount')
+        .eq('type', 'sales');
+      
+      // Get total purchases
+      const { data: purchasesData } = await supabase
+        .from('vouchers')
+        .select('total_amount')
+        .eq('type', 'purchase');
+      
+      // Get receivables (sundry debtors)
+      const { data: debtorsData } = await supabase
+        .from('ledgers')
+        .select('current_balance')
+        .eq('group', 'sundry-debtors');
+      
+      // Get payables (sundry creditors)
+      const { data: creditorsData } = await supabase
+        .from('ledgers')
+        .select('current_balance')
+        .eq('group', 'sundry-creditors');
+      
+      // Get cash and bank balances
+      const { data: cashData } = await supabase
+        .from('ledgers')
+        .select('current_balance')
+        .in('group', ['cash-in-hand', 'bank-accounts']);
 
-    return {
-      totalSales: salesData?.reduce((sum, v) => sum + v.total_amount, 0) || 0,
-      totalPurchases: purchasesData?.reduce((sum, v) => sum + v.total_amount, 0) || 0,
-      totalReceivables: debtorsData?.reduce((sum, l) => sum + l.current_balance, 0) || 0,
-      totalPayables: creditorsData?.reduce((sum, l) => sum + l.current_balance, 0) || 0,
-      cashInHand: cashData?.reduce((sum, l) => sum + l.current_balance, 0) || 0,
-      bankBalance: cashData?.reduce((sum, l) => sum + l.current_balance, 0) || 0,
-      todayTransactions: 0, // Would need to calculate based on today's date
-      pendingInvoices: 0, // Would need to calculate based on payment status
-      period: {
-        start: new Date().toISOString().split('T')[0],
-        end: new Date().toISOString().split('T')[0],
-      },
-    };
+      const result = {
+        totalSales: salesData?.reduce((sum, v) => sum + v.total_amount, 0) || 0,
+        totalPurchases: purchasesData?.reduce((sum, v) => sum + v.total_amount, 0) || 0,
+        totalReceivables: debtorsData?.reduce((sum, l) => sum + l.current_balance, 0) || 0,
+        totalPayables: creditorsData?.reduce((sum, l) => sum + l.current_balance, 0) || 0,
+        cashInHand: cashData?.reduce((sum, l) => sum + l.current_balance, 0) || 0,
+        bankBalance: cashData?.reduce((sum, l) => sum + l.current_balance, 0) || 0,
+        todayTransactions: 0, // Would need to calculate based on today's date
+        pendingInvoices: 0, // Would need to calculate based on payment status
+        period: {
+          start: new Date().toISOString().split('T')[0],
+          end: new Date().toISOString().split('T')[0],
+        },
+      };
+
+      console.log('getDashboardMetrics success, result:', result);
+      return result;
+    } catch (error) {
+      console.error('getDashboardMetrics error:', error);
+      throw error;
+    }
   }
 
   // Stock services
   async getStockItems(params?: StockQueryParams): Promise<StockItem[]> {
+    console.log('getStockItems called with params:', params);
     let query = supabase.from('stock_items').select('*');
     
     if (params?.search) {
@@ -251,22 +317,32 @@ class SupabaseService {
     
     const { data, error } = await query.order('name', { ascending: true });
     
-    if (error) throw error;
+    if (error) {
+      console.error('getStockItems error:', error);
+      throw error;
+    }
+    console.log('getStockItems success, data:', data);
     return data || [];
   }
 
   async getStockItem(id: string): Promise<StockItem> {
+    console.log('getStockItem called with id:', id);
     const { data, error } = await supabase
       .from('stock_items')
       .select('*')
       .eq('id', id)
       .single();
     
-    if (error) throw error;
+    if (error) {
+      console.error('getStockItem error:', error);
+      throw error;
+    }
+    console.log('getStockItem success, data:', data);
     return data;
   }
 
   async createStockItem(data: CreateStockItemRequest): Promise<StockItem> {
+    console.log('createStockItem called with data:', data);
     const { data: result, error } = await supabase
       .from('stock_items')
       .insert([{
@@ -280,11 +356,16 @@ class SupabaseService {
       .select()
       .single();
     
-    if (error) throw error;
+    if (error) {
+      console.error('createStockItem error:', error);
+      throw error;
+    }
+    console.log('createStockItem success, result:', result);
     return result;
   }
 
   async updateStockItem(id: string, data: UpdateStockItemRequest): Promise<StockItem> {
+    console.log('updateStockItem called with id:', id, 'data:', data);
     const { data: result, error } = await supabase
       .from('stock_items')
       .update(data)
@@ -292,31 +373,46 @@ class SupabaseService {
       .select()
       .single();
     
-    if (error) throw error;
+    if (error) {
+      console.error('updateStockItem error:', error);
+      throw error;
+    }
+    console.log('updateStockItem success, result:', result);
     return result;
   }
 
   async deleteStockItem(id: string): Promise<void> {
+    console.log('deleteStockItem called with id:', id);
     const { error } = await supabase
       .from('stock_items')
       .delete()
       .eq('id', id);
     
-    if (error) throw error;
+    if (error) {
+      console.error('deleteStockItem error:', error);
+      throw error;
+    }
+    console.log('deleteStockItem success');
   }
 
   // Company services
   async getCompany(): Promise<Company> {
+    console.log('getCompany called');
     const { data, error } = await supabase
       .from('companies')
       .select('*')
       .single();
     
-    if (error) throw error;
+    if (error) {
+      console.error('getCompany error:', error);
+      throw error;
+    }
+    console.log('getCompany success, data:', data);
     return data;
   }
 
   async updateCompany(data: UpdateCompanyRequest): Promise<Company> {
+    console.log('updateCompany called with data:', data);
     const { data: result, error } = await supabase
       .from('companies')
       .update(data)
@@ -324,23 +420,33 @@ class SupabaseService {
       .select()
       .single();
     
-    if (error) throw error;
+    if (error) {
+      console.error('updateCompany error:', error);
+      throw error;
+    }
+    console.log('updateCompany success, result:', result);
     return result;
   }
 
   // Utility services
   async searchLedgers(query: string): Promise<Ledger[]> {
+    console.log('searchLedgers called with query:', query);
     const { data, error } = await supabase
       .from('ledgers')
       .select('*')
       .ilike('name', `%${query}%`)
       .order('name', { ascending: true });
     
-    if (error) throw error;
+    if (error) {
+      console.error('searchLedgers error:', error);
+      throw error;
+    }
+    console.log('searchLedgers success, data:', data);
     return data || [];
   }
 
   async getVoucherTypes(): Promise<Array<{ id: string; name: string }>> {
+    console.log('getVoucherTypes called');
     return [
       { id: 'sales', name: 'Sales' },
       { id: 'purchase', name: 'Purchase' },
@@ -354,6 +460,7 @@ class SupabaseService {
   }
 
   async getLedgerGroups(): Promise<Array<{ id: string; name: string }>> {
+    console.log('getLedgerGroups called');
     return [
       { id: 'sundry-debtors', name: 'Sundry Debtors' },
       { id: 'sundry-creditors', name: 'Sundry Creditors' },
@@ -374,6 +481,7 @@ class SupabaseService {
 
   // Report services
   async getBalanceSheet(): Promise<any> {
+    console.log('getBalanceSheet called');
     // This would implement balance sheet calculation logic
     return {
       assets: [],
@@ -386,6 +494,7 @@ class SupabaseService {
   }
 
   async getProfitAndLoss(): Promise<any> {
+    console.log('getProfitAndLoss called');
     // This would implement P&L calculation logic
     return {
       income: [],
@@ -395,6 +504,7 @@ class SupabaseService {
   }
 
   async getTrialBalance(): Promise<any> {
+    console.log('getTrialBalance called');
     // This would implement trial balance calculation logic
     return {
       ledgers: [],
@@ -404,6 +514,7 @@ class SupabaseService {
   }
 
   async getDayBook(params: { startDate: string; endDate: string }): Promise<any> {
+    console.log('getDayBook called with params:', params);
     // This would implement day book calculation logic
     return {
       transactions: [],
