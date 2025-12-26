@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useVouchers } from '@/integrations/supabase/hooks';
 import { cn } from '@/lib/utils';
-import { ArrowUpFromLine, ArrowDownToLine, Wallet, CreditCard, Printer, FileText } from 'lucide-react';
+import { ArrowUpFromLine, ArrowDownToLine, Wallet, CreditCard, Printer } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { VoucherType } from '@/types/tally';
 import { VoucherForm } from '@/components/vouchers/VoucherForm';
@@ -68,7 +68,7 @@ export function RecentVouchers() {
         ) : vouchers.length === 0 ? (
           <div className="p-8 text-center">
             <div className="text-muted-foreground mb-4">
-              <FileText size={32} className="mx-auto mb-2 opacity-50" />
+              <AlertCircle size={32} className="mx-auto mb-2 opacity-50" />
             </div>
             <p className="text-muted-foreground">No transactions found.</p>
             <p className="text-sm text-muted-foreground mt-1">Create your first voucher to get started.</p>
