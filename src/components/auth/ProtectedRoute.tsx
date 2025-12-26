@@ -1,4 +1,4 @@
-import { useAuthState } from '@/integrations/nhost/hooks';
+import { useAuthState } from '@/integrations/supabase/hooks';
 import { Navigate, useLocation } from 'react-router-dom';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 
@@ -8,7 +8,7 @@ interface ProtectedRouteProps {
 }
 
 export function ProtectedRoute({ children, requireAuth = true }: ProtectedRouteProps) {
-  const { isAuthenticated, isLoading, user } = useAuthState();
+  const { user, isLoading, isAuthenticated } = useAuthState();
   const location = useLocation();
 
   if (isLoading) {

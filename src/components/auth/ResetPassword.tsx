@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { authService } from '@/integrations/nhost/auth';
+import { authService } from '@/integrations/supabase/auth';
 import { cn } from '@/lib/utils';
 
 export default function ResetPassword() {
@@ -32,8 +32,7 @@ export default function ResetPassword() {
         return;
       }
 
-      // For password reset, we need to sign in first, then update password
-      await authService.signIn(formData.email, formData.password);
+      await authService.updatePassword(formData.password);
       
       toast({
         title: "Password Updated",
