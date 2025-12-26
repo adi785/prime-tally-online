@@ -16,11 +16,11 @@ A complete, production-ready TallyPrime clone built with modern technologies. Th
 - **Icons**: Lucide React for consistent iconography
 
 ### Backend
-- **Platform**: Nhost (PostgreSQL + Hasura + Authentication)
+- **Platform**: Supabase (PostgreSQL + Authentication + Storage)
 - **Database**: PostgreSQL with Row Level Security (RLS)
 - **Authentication**: JWT-based auth with email/password
-- **API**: GraphQL and REST endpoints
-- **Real-time**: GraphQL subscriptions for live updates
+- **API**: RESTful API with Supabase client
+- **Real-time**: PostgreSQL notifications for live updates
 
 ## Features
 
@@ -51,7 +51,7 @@ A complete, production-ready TallyPrime clone built with modern technologies. Th
 
 ### Prerequisites
 - Node.js (v18 or higher)
-- Nhost account (for backend)
+- Supabase account (for backend)
 
 ### Setup
 
@@ -69,13 +69,13 @@ A complete, production-ready TallyPrime clone built with modern technologies. Th
 3. **Set up environment variables**
    ```bash
    cp .env.example .env
-   # Edit .env with your Nhost project details
+   # Edit .env with your Supabase project details
    ```
 
-4. **Set up Nhost backend**
-   - Create a new project on [Nhost](https://nhost.io)
-   - Copy the database schema from `src/integrations/nhost/schema.sql`
-   - Configure environment variables in Nhost dashboard
+4. **Set up Supabase backend**
+   - Create a new project on [Supabase](https://supabase.com)
+   - Copy the database schema from `src/integrations/supabase/schema.sql`
+   - Configure environment variables in your `.env` file
 
 5. **Start development server**
    ```bash
@@ -93,12 +93,12 @@ The application uses a comprehensive PostgreSQL schema with:
 - Row Level Security for data isolation
 
 ### API Endpoints
-- `GET /api/v1/ledgers` - List ledgers with pagination
-- `POST /api/v1/ledgers` - Create new ledger
-- `GET /api/v1/vouchers` - List vouchers with pagination
-- `POST /api/v1/vouchers` - Create new voucher
-- `GET /api/v1/dashboard/metrics` - Dashboard statistics
-- `GET /api/v1/stock-items` - Inventory management
+- `GET /rest/v1/ledgers` - List ledgers with pagination
+- `POST /rest/v1/ledgers` - Create new ledger
+- `GET /rest/v1/vouchers` - List vouchers with pagination
+- `POST /rest/v1/vouchers` - Create new voucher
+- `POST /rest/v1/rpc/get_dashboard_metrics` - Dashboard statistics
+- `GET /rest/v1/stock_items` - Inventory management
 
 ### Authentication
 - JWT-based authentication
@@ -114,7 +114,7 @@ src/
 ├── components/          # Reusable UI components
 ├── pages/              # Page components
 ├── integrations/       # Backend integrations
-│   └── nhost/         # Nhost-specific code
+│   └── supabase/      # Supabase-specific code
 ├── types/             # TypeScript type definitions
 ├── hooks/             # Custom React hooks
 ├── lib/               # Utility functions
@@ -141,11 +141,11 @@ The application can be deployed to any static hosting service:
 - GitHub Pages
 
 ### Backend
-The backend runs on Nhost and includes:
+The backend runs on Supabase and includes:
 - PostgreSQL database
-- Hasura GraphQL engine
 - Authentication service
-- File storage
+- Storage for file uploads
+- Edge functions for server-side logic
 
 ## Contributing
 

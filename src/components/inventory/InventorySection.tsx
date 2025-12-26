@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useStockItems, useCreateStockItem } from '@/integrations/nhost/hooks';
+import { useStockItems, useCreateStockItem } from '@/integrations/supabase/hooks';
 import { cn } from '@/lib/utils';
 import { Search, Plus, Filter, Download, Package, AlertTriangle } from 'lucide-react';
 import { Input } from '@/components/ui/input';
