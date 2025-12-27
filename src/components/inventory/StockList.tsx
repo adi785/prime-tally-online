@@ -10,6 +10,7 @@ import { StockForm } from './StockForm'
 export function StockList() {
   const [searchQuery, setSearchQuery] = useState('')
   const [isFormOpen, setIsFormOpen] = useState(false)
+  const [editingItem, setEditingItem] = useState<any>(null)
   const { data: stockItems = [], isLoading } = useStockItems()
   const { mutate: createStockItem } = useCreateStockItem()
   const { mutate: updateStockItem } = useUpdateStockItem()
@@ -26,11 +27,18 @@ export function StockList() {
   }
 
   const handleCreate = () => {
+    setEditingItem(null)
+    setIsFormOpen(true)
+  }
+
+  const handleEdit = (item: any) => {
+    setEditingItem(item)
     setIsFormOpen(true)
   }
 
   const handleSave = () => {
     setIsFormOpen(false)
+    setEditingItem(null)
   }
 
   const formatAmount = (amount: number) => {
@@ -133,7 +141,12 @@ export function StockList() {
                   </TableCell>
                   <TableCell className="px-4 py-3 text-center">
                     <div className="flex items-center justify-center gap-1">
-                      <Button variant="ghost" size="icon" className="h-8 w-8">
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-8 w-8"
+                        onClick={() => handleEdit(item)}
+                      >
                         <Edit size={14} />
                       </Button>
                       <Button 
@@ -158,6 +171,7 @@ export function StockList() {
         <StockForm 
           isOpen={isFormOpen} 
           onClose={() => setIsFormOpen(false)} 
+          item={editingItem}
           onSave={handleSave}
         />
       )}
