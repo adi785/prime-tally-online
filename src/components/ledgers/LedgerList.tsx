@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { toast } from 'sonner'
+import { useNavigate } from 'react-router-dom'
 
 export function LedgerList() {
   const [searchQuery, setSearchQuery] = useState('')
@@ -12,6 +13,7 @@ export function LedgerList() {
   const { mutate: createLedger } = useCreateLedger()
   const { mutate: updateLedger } = useUpdateLedger()
   const { mutate: deleteLedger } = useDeleteLedger()
+  const navigate = useNavigate()
 
   const filteredLedgers = ledgers.filter(ledger => 
     ledger.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -21,6 +23,12 @@ export function LedgerList() {
     if (window.confirm('Are you sure you want to delete this ledger?')) {
       deleteLedger(id)
     }
+  }
+
+  const handleCreate = () => {
+    // Navigate to ledger creation page or open a modal
+    toast.info('Create Ledger functionality would open here')
+    // For now, we'll just show a toast - in a real app, this would open a form
   }
 
   const formatAmount = (amount: number) => {
@@ -40,7 +48,7 @@ export function LedgerList() {
           <h1 className="text-2xl font-bold text-foreground">Ledgers</h1>
           <p className="text-muted-foreground">Manage your account ledgers</p>
         </div>
-        <Button className="gap-2">
+        <Button className="gap-2" onClick={handleCreate}>
           <Plus size={16} /> Create Ledger
         </Button>
       </div>
@@ -87,7 +95,7 @@ export function LedgerList() {
                   </div>
                   <p className="text-muted-foreground">No ledgers found.</p>
                   <p className="text-sm text-muted-foreground mt-1">Create your first ledger to get started.</p>
-                  <Button variant="outline" className="mt-4">
+                  <Button variant="outline" className="mt-4" onClick={handleCreate}>
                     Create First Ledger
                   </Button>
                 </TableCell>

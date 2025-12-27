@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { toast } from 'sonner'
+import { useNavigate } from 'react-router-dom'
 
 export function StockList() {
   const [searchQuery, setSearchQuery] = useState('')
@@ -12,6 +13,7 @@ export function StockList() {
   const { mutate: createStockItem } = useCreateStockItem()
   const { mutate: updateStockItem } = useUpdateStockItem()
   const { mutate: deleteStockItem } = useDeleteStockItem()
+  const navigate = useNavigate()
 
   const filteredItems = stockItems.filter(item => 
     item.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -21,6 +23,12 @@ export function StockList() {
     if (window.confirm('Are you sure you want to delete this stock item?')) {
       deleteStockItem(id)
     }
+  }
+
+  const handleCreate = () => {
+    // Navigate to stock item creation page or open a modal
+    toast.info('Add Stock Item functionality would open here')
+    // For now, we'll just show a toast - in a real app, this would open a form
   }
 
   const formatAmount = (amount: number) => {
@@ -40,7 +48,7 @@ export function StockList() {
           <h1 className="text-2xl font-bold text-foreground">Inventory</h1>
           <p className="text-muted-foreground">Manage your stock items</p>
         </div>
-        <Button className="gap-2">
+        <Button className="gap-2" onClick={handleCreate}>
           <Plus size={16} /> Add Stock Item
         </Button>
       </div>
@@ -89,7 +97,7 @@ export function StockList() {
                   </div>
                   <p className="text-muted-foreground">No stock items found.</p>
                   <p className="text-sm text-muted-foreground mt-1">Add your first stock item to get started.</p>
-                  <Button variant="outline" className="mt-4">
+                  <Button variant="outline" className="mt-4" onClick={handleCreate}>
                     Add First Item
                   </Button>
                 </TableCell>

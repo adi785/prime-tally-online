@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { toast } from 'sonner'
+import { useNavigate } from 'react-router-dom'
 
 export function VoucherList() {
   const [searchQuery, setSearchQuery] = useState('')
@@ -12,6 +13,7 @@ export function VoucherList() {
   const { mutate: createVoucher } = useCreateVoucher()
   const { mutate: updateVoucher } = useUpdateVoucher()
   const { mutate: deleteVoucher } = useDeleteVoucher()
+  const navigate = useNavigate()
 
   const filteredVouchers = vouchers.filter(voucher => 
     voucher.party_ledger?.name?.toLowerCase().includes(searchQuery.toLowerCase())
@@ -21,6 +23,12 @@ export function VoucherList() {
     if (window.confirm('Are you sure you want to delete this voucher?')) {
       deleteVoucher(id)
     }
+  }
+
+  const handleCreate = () => {
+    // Navigate to voucher creation page or open a modal
+    toast.info('Create Voucher functionality would open here')
+    // For now, we'll just show a toast - in a real app, this would open a form
   }
 
   const formatAmount = (amount: number) => {
@@ -48,7 +56,7 @@ export function VoucherList() {
           <h1 className="text-2xl font-bold text-foreground">Vouchers</h1>
           <p className="text-muted-foreground">Manage your voucher entries</p>
         </div>
-        <Button className="gap-2">
+        <Button className="gap-2" onClick={handleCreate}>
           <Plus size={16} /> Create Voucher
         </Button>
       </div>
@@ -96,7 +104,7 @@ export function VoucherList() {
                   </div>
                   <p className="text-muted-foreground">No vouchers found.</p>
                   <p className="text-sm text-muted-foreground mt-1">Create your first voucher to get started.</p>
-                  <Button variant="outline" className="mt-4">
+                  <Button variant="outline" className="mt-4" onClick={handleCreate}>
                     Create First Voucher
                   </Button>
                 </TableCell>
