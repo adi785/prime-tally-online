@@ -6,15 +6,15 @@ import { Button } from '@/components/ui/button'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { toast } from 'sonner'
 import { StockForm } from './StockForm'
+import { LoadingSpinner } from '@/components/ui/loading-spinner'
+import { AlertCircle } from 'lucide-react'
 
 export function StockList() {
   const [searchQuery, setSearchQuery] = useState('')
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [editingItem, setEditingItem] = useState<any>(null)
-  const { data: stockItems = [], isLoading } = useStockItems()
-  const { mutate: createStockItem } = useCreateStockItem()
-  const { mutate: updateStockItem } = useUpdateStockItem()
-  const { mutate: deleteStockItem } = useDeleteStockItem()
+  const { data: stockItems = [], isLoading, error } = useStockItems()
+  const { mutate: deleteStockItem, isPending: isDeleting } = useDeleteStockItem()
 
   const filteredItems = stockItems.filter(item => 
     item.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -48,6 +48,31 @@ export function StockList() {
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     }).format(amount)
+  }
+
+  if (isLoading) {
+    return (
+      <div className="p-6 space-y-6">
+        <div className="flex items-center justify-center h-64">
+          <LoadingSpinner size="lg" />
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-6 text-center py-8">
+        <div className="text-destructive mb-4">
+          <AlertCircle size={32} className="mx-auto" />
+        </div>
+        <h3 className="text-lg font-semibold text-foreground mb-2">Error Loading Stock Items</h3>
+        <p className="text-muted-foreground">Failed to load stock items. Please try again.</p>
+        <Button onClick={() => window.location.reload()} className="mt-4">
+          Retry
+        </Button>
+      </div>
+    );
   }
 
   return (
@@ -91,15 +116,7 @@ export function StockList() {
             </TableRow>
           </TableHeader>
           <TableBody className="divide-y divide-table-border">
-            {isLoading ? (
-              <TableRow>
-                <TableCell colSpan={7} className="p-8 text-center">
-                  <div className="flex justify-center">
-                    <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ) : filteredItems.length === 0 ? (
+            {filteredItems.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={7} className="p-12 text-center">
                   <div className="text-muted-foreground mb-4">
@@ -154,6 +171,7 @@ export function StockList() {
                         size="icon" 
                         className="h-8 w-8 text-muted-foreground hover:text-destructive"
                         onClick={() => handleDelete(item.id)}
+                        disabled={isDeleting}
                       >
                         <Trash2 size={14} />
                       </Button>

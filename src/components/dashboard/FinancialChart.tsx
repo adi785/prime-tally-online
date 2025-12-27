@@ -9,36 +9,46 @@ interface FinancialChartProps {
 }
 
 export function FinancialChart({ type, period }: FinancialChartProps) {
-  const { data: metrics } = useDashboardMetrics();
+  const { data: metrics, isLoading } = useDashboardMetrics();
   const [chartData, setChartData] = useState<any[]>([]);
 
   useEffect(() => {
-    // Generate sample data for the chart
+    if (!metrics) return;
+
+    // Generate sample data for the chart based on actual metrics
     const generateData = () => {
-      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-      const quarters = ['Q1', 'Q2', 'Q3', 'Q4'];
-      
+      const currentYear = new Date().getFullYear();
+      const currentMonth = new Date().getMonth(); // 0-indexed
+
       if (period === 'monthly') {
+        // For monthly, we'll simulate data for the last 6 months
+        const months = Array.from({ length: 6 }).map((_, i) => {
+          const date = new Date(currentYear, currentMonth - 5 + i, 1);
+          return date.toLocaleString('en-US', { month: 'short' });
+        });
+
         return months.map((month, index) => ({
           name: month,
-          sales: Math.floor(Math.random() * 200000) + 100000,
-          purchases: Math.floor(Math.random() * 150000) + 50000,
-          profit: Math.floor(Math.random() * 50000) + 20000,
+          sales: (metrics.totalSales / 6) * (0.8 + Math.random() * 0.4), // Distribute total sales
+          purchases: (metrics.totalPurchases / 6) * (0.8 + Math.random() * 0.4), // Distribute total purchases
+          profit: ((metrics.totalSales - metrics.totalPurchases) / 6) * (0.8 + Math.random() * 0.4),
         }));
       } else if (period === 'quarterly') {
+        // For quarterly, we'll simulate data for the last 4 quarters
+        const quarters = ['Q1', 'Q2', 'Q3', 'Q4'];
         return quarters.map((quarter, index) => ({
           name: quarter,
-          sales: Math.floor(Math.random() * 800000) + 400000,
-          purchases: Math.floor(Math.random() * 600000) + 200000,
-          profit: Math.floor(Math.random() * 200000) + 50000,
+          sales: (metrics.totalSales / 4) * (0.8 + Math.random() * 0.4),
+          purchases: (metrics.totalPurchases / 4) * (0.8 + Math.random() * 0.4),
+          profit: ((metrics.totalSales - metrics.totalPurchases) / 4) * (0.8 + Math.random() * 0.4),
         }));
-      } else {
+      } else { // yearly
         return [
           {
-            name: '2024',
-            sales: metrics?.totalSales || 1700000,
-            purchases: metrics?.totalPurchases || 1300000,
-            profit: (metrics?.totalSales || 0) - (metrics?.totalPurchases || 0) - 150000,
+            name: currentYear.toString(),
+            sales: metrics.totalSales,
+            purchases: metrics.totalPurchases,
+            profit: metrics.totalSales - metrics.totalPurchases,
           }
         ];
       }
@@ -90,66 +100,72 @@ export function FinancialChart({ type, period }: FinancialChartProps) {
       </div>
       
       <div className="h-64">
-        {type === 'bar' ? (
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={chartData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--table-border))" />
-              <XAxis 
-                dataKey="name" 
-                stroke="hsl(var(--muted-foreground))"
-                fontSize={12}
-              />
-              <YAxis 
-                stroke="hsl(var(--muted-foreground))"
-                fontSize={12}
-                tickFormatter={(value) => `₹${(value / 1000).toFixed(0)}k`}
-              />
-              <Tooltip content={<CustomTooltip />} />
-              <Legend />
-              <Bar dataKey="sales" fill={chartConfig.sales.color} radius={[4, 4, 0, 0]} />
-              <Bar dataKey="purchases" fill={chartConfig.purchases.color} radius={[4, 4, 0, 0]} />
-              <Bar dataKey="profit" fill={chartConfig.profit.color} radius={[4, 4, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
+        {isLoading ? (
+          <div className="flex items-center justify-center h-full text-muted-foreground">
+            <LoadingSpinner /> Loading chart data...
+          </div>
         ) : (
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={chartData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--table-border))" />
-              <XAxis 
-                dataKey="name" 
-                stroke="hsl(var(--muted-foreground))"
-                fontSize={12}
-              />
-              <YAxis 
-                stroke="hsl(var(--muted-foreground))"
-                fontSize={12}
-                tickFormatter={(value) => `₹${(value / 1000).toFixed(0)}k`}
-              />
-              <Tooltip content={<CustomTooltip />} />
-              <Legend />
-              <Line 
-                type="monotone" 
-                dataKey="sales" 
-                stroke={chartConfig.sales.color}
-                strokeWidth={2}
-                dot={{ fill: chartConfig.sales.color, strokeWidth: 2 }}
-              />
-              <Line 
-                type="monotone" 
-                dataKey="purchases" 
-                stroke={chartConfig.purchases.color}
-                strokeWidth={2}
-                dot={{ fill: chartConfig.purchases.color, strokeWidth: 2 }}
-              />
-              <Line 
-                type="monotone" 
-                dataKey="profit" 
-                stroke={chartConfig.profit.color}
-                strokeWidth={2}
-                dot={{ fill: chartConfig.profit.color, strokeWidth: 2 }}
-              />
-            </LineChart>
-          </ResponsiveContainer>
+          type === 'bar' ? (
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={chartData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--table-border))" />
+                <XAxis 
+                  dataKey="name" 
+                  stroke="hsl(var(--muted-foreground))"
+                  fontSize={12}
+                />
+                <YAxis 
+                  stroke="hsl(var(--muted-foreground))"
+                  fontSize={12}
+                  tickFormatter={(value) => `₹${(value / 1000).toFixed(0)}k`}
+                />
+                <Tooltip content={<CustomTooltip />} />
+                <Legend />
+                <Bar dataKey="sales" fill={chartConfig.sales.color} radius={[4, 4, 0, 0]} />
+                <Bar dataKey="purchases" fill={chartConfig.purchases.color} radius={[4, 4, 0, 0]} />
+                <Bar dataKey="profit" fill={chartConfig.profit.color} radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          ) : (
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={chartData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--table-border))" />
+                <XAxis 
+                  dataKey="name" 
+                  stroke="hsl(var(--muted-foreground))"
+                  fontSize={12}
+                />
+                <YAxis 
+                  stroke="hsl(var(--muted-foreground))"
+                  fontSize={12}
+                  tickFormatter={(value) => `₹${(value / 1000).toFixed(0)}k`}
+                />
+                <Tooltip content={<CustomTooltip />} />
+                <Legend />
+                <Line 
+                  type="monotone" 
+                  dataKey="sales" 
+                  stroke={chartConfig.sales.color}
+                  strokeWidth={2}
+                  dot={{ fill: chartConfig.sales.color, strokeWidth: 2 }}
+                />
+                <Line 
+                  type="monotone" 
+                  dataKey="purchases" 
+                  stroke={chartConfig.purchases.color}
+                  strokeWidth={2}
+                  dot={{ fill: chartConfig.purchases.color, strokeWidth: 2 }}
+                />
+                <Line 
+                  type="monotone" 
+                  dataKey="profit" 
+                  stroke={chartConfig.profit.color}
+                  strokeWidth={2}
+                  dot={{ fill: chartConfig.profit.color, strokeWidth: 2 }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          )
         )}
       </div>
     </div>

@@ -1,6 +1,6 @@
 import { forwardRef } from 'react'
 import { QRCodeSVG } from 'qrcode.react'
-import { company } from '@/data/mockData'
+import { useCompany } from '@/integrations/supabase/hooks' // Import useCompany hook
 import { toast } from 'sonner'
 
 interface InvoiceTemplateProps {
@@ -25,6 +25,16 @@ interface InvoiceTemplateProps {
 
 export const InvoiceTemplate = forwardRef<HTMLDivElement, InvoiceTemplateProps>(
   ({ voucher, invoiceDetails }, ref) => {
+    const { data: company, isLoading: isCompanyLoading } = useCompany(); // Fetch company data
+
+    if (isCompanyLoading || !company) {
+      return (
+        <div className="bg-white text-black p-8 max-w-[210mm] mx-auto font-sans text-sm print:p-6">
+          Loading company details...
+        </div>
+      );
+    }
+
     const defaultItems = [
       { description: 'Product/Service as per voucher', hsn: '9983', quantity: 1, rate: voucher.total_amount, amount: voucher.total_amount, gstRate: 18 }
     ]
@@ -93,7 +103,7 @@ export const InvoiceTemplate = forwardRef<HTMLDivElement, InvoiceTemplateProps>(
         <div className="grid grid-cols-2 gap-6 mb-6">
           <div className="border border-gray-300 p-3 rounded">
             <p className="font-semibold text-gray-500 text-xs uppercase mb-2">Bill To</p>
-            <p className="font-bold text-base">{voucher.party_ledger?.name}</p>
+            <p className="font-bold text-base">{voucher.party?.name}</p>
             <p className="text-gray-600 text-sm">Address details here</p>
             <p className="mt-1 text-sm"><span className="font-semibold">GSTIN:</span> 27XXXXX1234X1ZX</p>
           </div>

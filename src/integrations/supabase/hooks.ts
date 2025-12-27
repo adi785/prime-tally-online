@@ -2,8 +2,14 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from './client'
 import { toast } from 'sonner'
 import { authService } from './auth'
-import { companyService } from './services/companyService' // Import companyService
-import { Company, UpdateCompanyRequest } from './types' // Import Company and UpdateCompanyRequest types
+import { companyService } from './services/companyService'
+import { Company, CreateLedgerRequest, UpdateCompanyRequest, UpdateLedgerRequest, CreateStockItemRequest, UpdateStockItemRequest, CreateVoucherRequest, UpdateVoucherRequest } from './types'
+import { ledgerService } from './services/ledgerService'
+import { stockService } from './services/stockService'
+import { voucherService } from './services/voucherService'
+import { dashboardService } from './services/dashboardService'
+import { reportService } from './services/reportService'
+import { utilityService } from './services/utilityService'
 
 // Auth Hook
 export const useAuthState = () => {
@@ -22,6 +28,7 @@ export const useAuthState = () => {
     try {
       await authService.signOut()
       queryClient.setQueryData(['auth'], null)
+      queryClient.clear() // Clear all queries on sign out
     } catch (error) {
       console.error('Sign out error:', error)
     }
@@ -40,12 +47,7 @@ export const useLedgerGroups = () => {
   return useQuery({
     queryKey: ['ledgerGroups'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('ledger_groups')
-        .select('*')
-        .order('name')
-      
-      if (error) throw error
+      const data = await ledgerService.getLedgerGroups(); // Use service
       return data || []
     },
   })
@@ -56,15 +58,7 @@ export const useLedgers = () => {
   return useQuery({
     queryKey: ['ledgers'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('ledgers')
-        .select(`
-          *,
-          group:ledger_groups(name)
-        `)
-        .order('name')
-      
-      if (error) throw error
+      const data = await ledgerService.getLedgers(); // Use service
       return data || []
     },
   })
@@ -74,18 +68,13 @@ export const useCreateLedger = () => {
   const queryClient = useQueryClient()
   
   return useMutation({
-    mutationFn: async (newLedger: any) => {
-      const { data, error } = await supabase
-        .from('ledgers')
-        .insert([newLedger])
-        .select()
-        .single()
-      
-      if (error) throw error
+    mutationFn: async (newLedger: CreateLedgerRequest) => {
+      const data = await ledgerService.createLedger(newLedger); // Use service
       return data
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['ledgers'] })
+      queryClient.invalidateQueries({ queryKey: ['dashboardMetrics'] }) // Invalidate dashboard metrics as ledgers affect them
       toast.success('Ledger created successfully')
     },
     onError: (error) => {
@@ -98,19 +87,13 @@ export const useUpdateLedger = () => {
   const queryClient = useQueryClient()
   
   return useMutation({
-    mutationFn: async ({ id, ...updates }: any) => {
-      const { data, error } = await supabase
-        .from('ledgers')
-        .update(updates)
-        .eq('id', id)
-        .select()
-        .single()
-      
-      if (error) throw error
+    mutationFn: async ({ id, ...updates }: UpdateLedgerRequest) => {
+      const data = await ledgerService.updateLedger(id!, updates); // Use service
       return data
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['ledgers'] })
+      queryClient.invalidateQueries({ queryKey: ['dashboardMetrics'] }) // Invalidate dashboard metrics as ledgers affect them
       toast.success('Ledger updated successfully')
     },
     onError: (error) => {
@@ -124,15 +107,11 @@ export const useDeleteLedger = () => {
   
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from('ledgers')
-        .delete()
-        .eq('id', id)
-      
-      if (error) throw error
+      await ledgerService.deleteLedger(id); // Use service
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['ledgers'] })
+      queryClient.invalidateQueries({ queryKey: ['dashboardMetrics'] }) // Invalidate dashboard metrics as ledgers affect them
       toast.success('Ledger deleted successfully')
     },
     onError: (error) => {
@@ -146,12 +125,7 @@ export const useVoucherTypes = () => {
   return useQuery({
     queryKey: ['voucherTypes'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('voucher_types')
-        .select('*')
-        .order('name')
-      
-      if (error) throw error
+      const data = await voucherService.getVoucherTypes(); // Use service
       return data || []
     },
   })
@@ -162,16 +136,7 @@ export const useVouchers = () => {
   return useQuery({
     queryKey: ['vouchers'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('vouchers')
-        .select(`
-          *,
-          party_ledger:ledgers(name),
-          voucher_items(*, ledger:ledgers(name))
-        `)
-        .order('date', { ascending: false })
-      
-      if (error) throw error
+      const data = await voucherService.getVouchers(); // Use service
       return data || []
     },
   })
@@ -181,35 +146,14 @@ export const useCreateVoucher = () => {
   const queryClient = useQueryClient()
   
   return useMutation({
-    mutationFn: async (newVoucher: any) => {
-      // Use the RPC function to create voucher with items
-      const { data: voucherId, error } = await supabase.rpc('create_voucher_with_items', {
-        p_voucher_number: newVoucher.voucher_number,
-        p_type: newVoucher.type_id,
-        p_date: newVoucher.date,
-        p_party_ledger_id: newVoucher.party_ledger_id,
-        p_narration: newVoucher.narration,
-        p_items: newVoucher.items
-      })
-      
-      if (error) throw error
-      
-      // Fetch the created voucher
-      const { data, error: fetchError } = await supabase
-        .from('vouchers')
-        .select(`
-          *,
-          party_ledger:ledgers(name),
-          voucher_items(*, ledger:ledgers(name))
-        `)
-        .eq('id', voucherId)
-        .single()
-      
-      if (fetchError) throw fetchError
+    mutationFn: async (newVoucher: CreateVoucherRequest) => {
+      const data = await voucherService.createVoucher(newVoucher); // Use service
       return data
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['vouchers'] })
+      queryClient.invalidateQueries({ queryKey: ['dashboardMetrics'] }) // Invalidate dashboard metrics as vouchers affect them
+      queryClient.invalidateQueries({ queryKey: ['ledgers'] }) // Vouchers update ledger balances
       toast.success('Voucher created successfully')
     },
     onError: (error) => {
@@ -222,19 +166,14 @@ export const useUpdateVoucher = () => {
   const queryClient = useQueryClient()
   
   return useMutation({
-    mutationFn: async ({ id, ...updates }: any) => {
-      const { data, error } = await supabase
-        .from('vouchers')
-        .update(updates)
-        .eq('id', id)
-        .select()
-        .single()
-      
-      if (error) throw error
+    mutationFn: async ({ id, ...updates }: UpdateVoucherRequest) => {
+      const data = await voucherService.updateVoucher(id!, updates); // Use service
       return data
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['vouchers'] })
+      queryClient.invalidateQueries({ queryKey: ['dashboardMetrics'] }) // Invalidate dashboard metrics as vouchers affect them
+      queryClient.invalidateQueries({ queryKey: ['ledgers'] }) // Vouchers update ledger balances
       toast.success('Voucher updated successfully')
     },
     onError: (error) => {
@@ -248,15 +187,12 @@ export const useDeleteVoucher = () => {
   
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from('vouchers')
-        .delete()
-        .eq('id', id)
-      
-      if (error) throw error
+      await voucherService.deleteVoucher(id); // Use service
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['vouchers'] })
+      queryClient.invalidateQueries({ queryKey: ['dashboardMetrics'] }) // Invalidate dashboard metrics as vouchers affect them
+      queryClient.invalidateQueries({ queryKey: ['ledgers'] }) // Vouchers update ledger balances
       toast.success('Voucher deleted successfully')
     },
     onError: (error) => {
@@ -270,8 +206,7 @@ export const useDashboardMetrics = () => {
   return useQuery({
     queryKey: ['dashboardMetrics'],
     queryFn: async () => {
-      const { data, error } = await supabase.rpc('get_dashboard_metrics')
-      if (error) throw error
+      const data = await dashboardService.getDashboardMetrics() // Use service
       return data
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
@@ -283,12 +218,7 @@ export const useStockItems = () => {
   return useQuery({
     queryKey: ['stockItems'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('stock_items')
-        .select('*')
-        .order('name')
-      
-      if (error) throw error
+      const data = await stockService.getStockItems(); // Use service
       return data || []
     },
   })
@@ -298,14 +228,8 @@ export const useCreateStockItem = () => {
   const queryClient = useQueryClient()
   
   return useMutation({
-    mutationFn: async (newStockItem: any) => {
-      const { data, error } = await supabase
-        .from('stock_items')
-        .insert([newStockItem])
-        .select()
-        .single()
-      
-      if (error) throw error
+    mutationFn: async (newStockItem: CreateStockItemRequest) => {
+      const data = await stockService.createStockItem(newStockItem); // Use service
       return data
     },
     onSuccess: () => {
@@ -322,15 +246,8 @@ export const useUpdateStockItem = () => {
   const queryClient = useQueryClient()
   
   return useMutation({
-    mutationFn: async ({ id, ...updates }: any) => {
-      const { data, error } = await supabase
-        .from('stock_items')
-        .update(updates)
-        .eq('id', id)
-        .select()
-        .single()
-      
-      if (error) throw error
+    mutationFn: async ({ id, ...updates }: UpdateStockItemRequest) => {
+      const data = await stockService.updateStockItem(id!, updates); // Use service
       return data
     },
     onSuccess: () => {
@@ -348,12 +265,7 @@ export const useDeleteStockItem = () => {
   
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from('stock_items')
-        .delete()
-        .eq('id', id)
-      
-      if (error) throw error
+      await stockService.deleteStockItem(id); // Use service
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['stockItems'] })
@@ -367,7 +279,7 @@ export const useDeleteStockItem = () => {
 
 // Company Hooks
 export const useCompany = () => {
-  return useQuery<Company, Error>({
+  return useQuery<Company | null, Error>({
     queryKey: ['company'],
     queryFn: async () => {
       const data = await companyService.getCompany()
@@ -376,6 +288,23 @@ export const useCompany = () => {
     staleTime: Infinity, // Company info doesn't change often
   })
 }
+
+export const useCreateCompany = () => {
+  const queryClient = useQueryClient();
+  return useMutation<Company, Error, Omit<Company, 'id' | 'created_at' | 'updated_at' | 'user_id'>>({
+    mutationFn: async (newCompany) => {
+      const data = await companyService.createCompany(newCompany);
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['company'] });
+      toast.success('Company created successfully');
+    },
+    onError: (error) => {
+      toast.error(`Failed to create company: ${error.message}`);
+    },
+  });
+};
 
 export const useUpdateCompany = () => {
   const queryClient = useQueryClient()
@@ -394,3 +323,36 @@ export const useUpdateCompany = () => {
     },
   })
 }
+
+// Report Hooks
+export const useBalanceSheet = () => {
+  return useQuery({
+    queryKey: ['balanceSheet'],
+    queryFn: async () => reportService.getBalanceSheet(),
+    staleTime: 5 * 60 * 1000,
+  });
+};
+
+export const useProfitAndLoss = () => {
+  return useQuery({
+    queryKey: ['profitLoss'],
+    queryFn: async () => reportService.getProfitAndLoss(),
+    staleTime: 5 * 60 * 1000,
+  });
+};
+
+export const useTrialBalance = () => {
+  return useQuery({
+    queryKey: ['trialBalance'],
+    queryFn: async () => reportService.getTrialBalance(),
+    staleTime: 5 * 60 * 1000,
+  });
+};
+
+export const useDayBook = (params: { startDate: string; endDate: string }) => {
+  return useQuery({
+    queryKey: ['dayBook', params],
+    queryFn: async () => reportService.getDayBook(params),
+    staleTime: 5 * 60 * 1000,
+  });
+};

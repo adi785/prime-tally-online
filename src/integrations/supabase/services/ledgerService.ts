@@ -7,16 +7,26 @@ import {
 } from '../types';
 
 export class LedgerService {
+  private async getUserId(): Promise<string> {
+    const { data: { user }, error } = await supabase.auth.getUser();
+    if (error || !user) {
+      throw new Error('User not authenticated');
+    }
+    return user.id;
+  }
+
   // ==============================
   // READ: Multiple Ledgers
   // ==============================
   async getLedgers(params?: LedgerQueryParams): Promise<Ledger[]> {
+    const userId = await this.getUserId();
     let query = supabase
       .from('ledgers')
       .select(`
         *,
         group:ledger_groups(id, name)
       `)
+      .eq('user_id', userId) // Filter by user_id
       .eq('is_active', true)
       .order('name', { ascending: true });
 
@@ -48,6 +58,7 @@ export class LedgerService {
   // READ: Single Ledger
   // ==============================
   async getLedger(id: string): Promise<Ledger | null> {
+    const userId = await this.getUserId();
     const { data, error } = await supabase
       .from('ledgers')
       .select(`
@@ -55,6 +66,7 @@ export class LedgerService {
         group:ledger_groups(id, name)
       `)
       .eq('id', id)
+      .eq('user_id', userId) // Filter by user_id
       .eq('is_active', true)
       .maybeSingle();
 
@@ -78,11 +90,12 @@ export class LedgerService {
   // CREATE
   // ==============================
   async createLedger(data: CreateLedgerRequest): Promise<Ledger> {
+    const userId = await this.getUserId();
     const { data: result, error } = await supabase
       .from('ledgers')
       .insert({
-        name: data.name,
-        group_id: data.group_id,
+        ...data,
+        user_id: userId, // Add user_id
         opening_balance: data.opening_balance ?? 0,
         address: data.address ?? null,
         phone: data.phone ?? null,
@@ -116,6 +129,7 @@ export class LedgerService {
   // UPDATE
   // ==============================
   async updateLedger(id: string, data: UpdateLedgerRequest): Promise<Ledger> {
+    const userId = await this.getUserId();
     const { data: result, error } = await supabase
       .from('ledgers')
       .update({
@@ -130,6 +144,7 @@ export class LedgerService {
         is_inventory: data.is_inventory ?? false,
       })
       .eq('id', id)
+      .eq('user_id', userId) // Filter by user_id
       .eq('is_active', true)
       .select(`
         *,
@@ -155,10 +170,12 @@ export class LedgerService {
   // DELETE (Soft Delete – ERP Safe)
   // ==============================
   async deleteLedger(id: string): Promise<void> {
+    const userId = await this.getUserId();
     const { error } = await supabase
       .from('ledgers')
       .update({ is_active: false })
-      .eq('id', id);
+      .eq('id', id)
+      .eq('user_id', userId); // Filter by user_id
 
     if (error) {
       console.error('deleteLedger failed:', error);
@@ -170,12 +187,14 @@ export class LedgerService {
   // SEARCH (Consistent Shape)
   // ==============================
   async searchLedgers(search: string): Promise<Ledger[]> {
+    const userId = await this.getUserId();
     const { data, error } = await supabase
       .from('ledgers')
       .select(`
         *,
         group:ledger_groups(id, name)
       `)
+      .eq('user_id', userId) // Filter by user_id
       .eq('is_active', true)
       .ilike('name', `%${search}%`)
       .order('name', { ascending: true });
@@ -195,7 +214,7 @@ export class LedgerService {
   }
 
   // ==============================
-  // LEDGER GROUPS
+  // LEDGER GROUPS (Read-only for authenticated users)
   // ==============================
   async getLedgerGroups(): Promise<Array<{ id: string; name: string }>> {
     const { data, error } = await supabase

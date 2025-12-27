@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { X, Save, AlertCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -18,25 +18,8 @@ interface LedgerFormProps {
   onSave: () => void
 }
 
-const groupOptions = [
-  { value: 'sundry-debtors', label: 'Sundry Debtors' },
-  { value: 'sundry-creditors', label: 'Sundry Creditors' },
-  { value: 'bank-accounts', label: 'Bank Accounts' },
-  { value: 'cash-in-hand', label: 'Cash-in-Hand' },
-  { value: 'sales-accounts', label: 'Sales Accounts' },
-  { value: 'purchase-accounts', label: 'Purchase Accounts' },
-  { value: 'direct-expenses', label: 'Direct Expenses' },
-  { value: 'indirect-expenses', label: 'Indirect Expenses' },
-  { value: 'direct-incomes', label: 'Direct Incomes' },
-  { value: 'indirect-incomes', label: 'Indirect Incomes' },
-  { value: 'fixed-assets', label: 'Fixed Assets' },
-  { value: 'current-assets', label: 'Current Assets' },
-  { value: 'current-liabilities', label: 'Current Liabilities' },
-  { value: 'capital-account', label: 'Capital Account' },
-]
-
 export function LedgerForm({ isOpen, onClose, ledger, onSave }: LedgerFormProps) {
-  const { data: groups = [] } = useLedgerGroups()
+  const { data: groups = [], isLoading: isGroupsLoading } = useLedgerGroups()
   const { mutate: createLedger, isPending: isCreating } = useCreateLedger()
   const { mutate: updateLedger, isPending: isUpdating } = useUpdateLedger()
   
@@ -53,6 +36,36 @@ export function LedgerForm({ isOpen, onClose, ledger, onSave }: LedgerFormProps)
   })
   
   const [errors, setErrors] = useState<Record<string, string>>({})
+
+  useEffect(() => {
+    if (ledger) {
+      setFormData({
+        name: ledger.name || '',
+        group_id: ledger.group_id || '',
+        opening_balance: ledger.opening_balance?.toString() || '0',
+        address: ledger.address || '',
+        phone: ledger.phone || '',
+        gstin: ledger.gstin || '',
+        email: ledger.email || '',
+        is_billwise: ledger.is_billwise || false,
+        is_inventory: ledger.is_inventory || false,
+      });
+    } else {
+      // Reset form for new ledger
+      setFormData({
+        name: '',
+        group_id: '',
+        opening_balance: '0',
+        address: '',
+        phone: '',
+        gstin: '',
+        email: '',
+        is_billwise: false,
+        is_inventory: false,
+      });
+    }
+    setErrors({}); // Clear errors on ledger change
+  }, [ledger]);
   
   const validateForm = () => {
     const newErrors: Record<string, string> = {}
@@ -93,8 +106,8 @@ export function LedgerForm({ isOpen, onClose, ledger, onSave }: LedgerFormProps)
         phone: formData.phone.trim(),
         gstin: formData.gstin.trim(),
         email: formData.email.trim(),
-        is_billwise: formData.isBillwise,
-        is_inventory: formData.isInventory,
+        is_billwise: formData.is_billwise,
+        is_inventory: formData.is_inventory,
       }
       
       if (ledger) {
@@ -182,9 +195,10 @@ export function LedgerForm({ isOpen, onClose, ledger, onSave }: LedgerFormProps)
               <Select 
                 value={formData.group_id} 
                 onValueChange={(value) => setFormData({ ...formData, group_id: value })}
+                disabled={isGroupsLoading}
               >
                 <SelectTrigger className={errors.group_id ? "border-destructive" : ""}>
-                  <SelectValue placeholder="Select group" />
+                  <SelectValue placeholder={isGroupsLoading ? "Loading groups..." : "Select group"} />
                 </SelectTrigger>
                 <SelectContent>
                   {groups.map((group: any) => (

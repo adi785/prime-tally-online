@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useStockItems } from '@/integrations/supabase/hooks';
 import { cn } from '@/lib/utils';
-import { AlertTriangle, Package, TrendingUp, TrendingDown, RefreshCw } from 'lucide-react';
+import { AlertTriangle, Package, TrendingUp, TrendingDown, RefreshCw, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
+import { AlertCircle } from 'lucide-react';
 
 interface ReorderAlert {
   id: string;
@@ -18,19 +20,24 @@ interface ReorderAlert {
 }
 
 export function ReorderAlerts() {
-  const { data: stockItems = [] } = useStockItems();
+  const { data: stockItems = [], isLoading, error } = useStockItems();
   const [alerts, setAlerts] = useState<ReorderAlert[]>([]);
   const [filter, setFilter] = useState<'all' | 'critical' | 'warning'>('all');
 
   useEffect(() => {
+    if (!stockItems || stockItems.length === 0) {
+      setAlerts([]);
+      return;
+    }
+
     // Generate reorder alerts based on stock levels
     const generateAlerts = () => {
       const newAlerts: ReorderAlert[] = stockItems.map(item => {
-        // Calculate reorder level (20% of current stock)
-        const reorderLevel = Math.floor(item.quantity * 0.2);
+        // Calculate reorder level (e.g., 20% of initial quantity or a fixed low number)
+        const reorderLevel = Math.floor(item.quantity * 0.2); // Example: 20% of current stock
         
-        // Calculate reorder quantity (80% of current stock)
-        const reorderQuantity = Math.floor(item.quantity * 0.8);
+        // Calculate reorder quantity (e.g., to bring stock up to 80% of initial or a fixed amount)
+        const reorderQuantity = Math.floor(item.quantity * 0.8); // Example: 80% of current stock
         
         // Determine status based on current stock vs reorder level
         let status: 'critical' | 'warning' | 'ok';
@@ -39,7 +46,7 @@ export function ReorderAlerts() {
         if (item.quantity <= reorderLevel) {
           status = 'critical';
           urgency = 'high';
-        } else if (item.quantity <= reorderLevel * 2) {
+        } else if (item.quantity <= reorderLevel * 2) { // Warning if within 2x reorder level
           status = 'warning';
           urgency = 'medium';
         } else {
@@ -55,10 +62,10 @@ export function ReorderAlerts() {
           reorderQuantity,
           status,
           urgency,
-          suggestedSupplier: `Supplier ${Math.floor(Math.random() * 5) + 1}`,
+          suggestedSupplier: `Supplier ${Math.floor(Math.random() * 5) + 1}`, // Placeholder
           estimatedCost: reorderQuantity * item.rate
         };
-      });
+      }).filter(alert => alert.status !== 'ok'); // Only show critical and warning alerts
 
       // Sort by urgency and status
       newAlerts.sort((a, b) => {
@@ -104,12 +111,13 @@ export function ReorderAlerts() {
 
   const handleReorder = (alert: ReorderAlert) => {
     toast.success(`Reorder initiated for ${alert.name} - ${alert.reorderQuantity} units`);
-    // Implementation would go here
+    // Implementation would go here (e.g., create a purchase order)
   };
 
   const handleRefresh = () => {
     toast.info('Refreshing stock levels...');
-    // Implementation would go here
+    // Invalidate stockItems query to refetch data
+    // queryClient.invalidateQueries({ queryKey: ['stockItems'] });
   };
 
   const formatAmount = (amount: number) => {
@@ -132,6 +140,31 @@ export function ReorderAlerts() {
   };
 
   const stats = getAlertStats();
+
+  if (isLoading) {
+    return (
+      <div className="p-6 space-y-6">
+        <div className="flex items-center justify-center h-64">
+          <LoadingSpinner size="lg" />
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-6 text-center py-8">
+        <div className="text-destructive mb-4">
+          <AlertCircle size={32} className="mx-auto" />
+        </div>
+        <h3 className="text-lg font-semibold text-foreground mb-2">Error Loading Reorder Alerts</h3>
+        <p className="text-muted-foreground">Failed to load reorder alerts. Please try again.</p>
+        <Button onClick={() => window.location.reload()} className="mt-4">
+          Retry
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 space-y-6">
@@ -157,7 +190,7 @@ export function ReorderAlerts() {
               <Package size={20} />
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">Total Items</p>
+              <p className="text-sm text-muted-foreground">Total Alerts</p>
               <p className="text-xl font-bold">{stats.total}</p>
             </div>
           </div>
@@ -187,7 +220,7 @@ export function ReorderAlerts() {
         <div className="bg-card rounded-xl border border-border p-4">
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-lg bg-success/10 text-success">
-              <TrendingUp size={20} />
+              <CheckCircle size={20} />
             </div>
             <div>
               <p className="text-sm text-muted-foreground">OK</p>
@@ -201,7 +234,7 @@ export function ReorderAlerts() {
               <Package size={20} />
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">Reorder Cost</p>
+              <p className="text-sm text-muted-foreground">Estimated Reorder Cost</p>
               <p className="text-xl font-bold font-mono">{formatAmount(stats.totalCost)}</p>
             </div>
           </div>

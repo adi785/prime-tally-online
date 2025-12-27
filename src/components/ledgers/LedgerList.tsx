@@ -6,15 +6,16 @@ import { Button } from '@/components/ui/button'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { toast } from 'sonner'
 import { LedgerForm } from './LedgerForm'
+import { LoadingSpinner } from '@/components/ui/loading-spinner'
+import { AlertCircle } from 'lucide-react'
 
 export function LedgerList() {
   const [searchQuery, setSearchQuery] = useState('')
   const [isFormOpen, setIsFormOpen] = useState(false)
-  const { data: ledgers = [], isLoading } = useLedgers()
+  const [editingLedger, setEditingLedger] = useState<any>(null) // State to hold ledger being edited
+  const { data: ledgers = [], isLoading, error } = useLedgers()
   const { data: groups = [] } = useLedgerGroups()
-  const { mutate: createLedger } = useCreateLedger()
-  const { mutate: updateLedger } = useUpdateLedger()
-  const { mutate: deleteLedger } = useDeleteLedger()
+  const { mutate: deleteLedger, isPending: isDeleting } = useDeleteLedger()
 
   const filteredLedgers = ledgers.filter(ledger => 
     ledger.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -27,11 +28,18 @@ export function LedgerList() {
   }
 
   const handleCreate = () => {
+    setEditingLedger(null) // Clear any editing state
+    setIsFormOpen(true)
+  }
+
+  const handleEdit = (ledger: any) => {
+    setEditingLedger(ledger) // Set the ledger to be edited
     setIsFormOpen(true)
   }
 
   const handleSave = () => {
     setIsFormOpen(false)
+    setEditingLedger(null) // Clear editing state after save
   }
 
   const formatAmount = (amount: number) => {
@@ -41,6 +49,31 @@ export function LedgerList() {
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     }).format(Math.abs(amount))
+  }
+
+  if (isLoading) {
+    return (
+      <div className="p-6 space-y-6">
+        <div className="flex items-center justify-center h-64">
+          <LoadingSpinner size="lg" />
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-6 text-center py-8">
+        <div className="text-destructive mb-4">
+          <AlertCircle size={32} className="mx-auto" />
+        </div>
+        <h3 className="text-lg font-semibold text-foreground mb-2">Error Loading Ledgers</h3>
+        <p className="text-muted-foreground">Failed to load ledgers. Please try again.</p>
+        <Button onClick={() => window.location.reload()} className="mt-4">
+          Retry
+        </Button>
+      </div>
+    );
   }
 
   return (
@@ -82,15 +115,7 @@ export function LedgerList() {
             </TableRow>
           </TableHeader>
           <TableBody className="divide-y divide-table-border">
-            {isLoading ? (
-              <TableRow>
-                <TableCell colSpan={5} className="p-8 text-center">
-                  <div className="flex justify-center">
-                    <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ) : filteredLedgers.length === 0 ? (
+            {filteredLedgers.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={5} className="p-12 text-center">
                   <div className="text-muted-foreground mb-4">
@@ -131,7 +156,7 @@ export function LedgerList() {
                   </TableCell>
                   <TableCell className="px-4 py-3 text-center">
                     <div className="flex items-center justify-center gap-1">
-                      <Button variant="ghost" size="icon" className="h-8 w-8">
+                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleEdit(ledger)}>
                         <Edit size={14} />
                       </Button>
                       <Button 
@@ -139,6 +164,7 @@ export function LedgerList() {
                         size="icon" 
                         className="h-8 w-8 text-muted-foreground hover:text-destructive"
                         onClick={() => handleDelete(ledger.id)}
+                        disabled={isDeleting}
                       >
                         <Trash2 size={14} />
                       </Button>
@@ -156,6 +182,7 @@ export function LedgerList() {
         <LedgerForm 
           isOpen={isFormOpen} 
           onClose={() => setIsFormOpen(false)} 
+          ledger={editingLedger} // Pass the ledger for editing
           onSave={handleSave}
         />
       )}

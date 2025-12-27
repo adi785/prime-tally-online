@@ -5,6 +5,8 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsive
 import { Download, Printer, TrendingUp, TrendingDown, AlertTriangle, Package } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
+import { AlertCircle } from 'lucide-react';
 
 interface StockAnalysisData {
   items: Array<{
@@ -26,20 +28,25 @@ interface StockAnalysisData {
 }
 
 export function StockAnalysis() {
-  const { data: stockItems = [] } = useStockItems();
+  const { data: stockItems = [], isLoading, error } = useStockItems();
   const [analysis, setAnalysis] = useState<StockAnalysisData | null>(null);
   const [view, setView] = useState<'overview' | 'turnover' | 'valuation'>('overview');
 
   useEffect(() => {
+    if (!stockItems || stockItems.length === 0) {
+      setAnalysis(null);
+      return;
+    }
+
     // Generate stock analysis data
     const generateAnalysis = () => {
       const items = stockItems.map(item => {
-        // Calculate turnover based on quantity and rate (simulated)
-        const turnover = item.quantity * item.rate * (Math.random() * 0.5 + 0.2);
+        // Calculate turnover based on quantity and rate (simulated for now, would come from sales data)
+        const turnover = item.quantity * item.rate * (Math.random() * 0.5 + 0.2); // Placeholder simulation
         
         // Determine status based on turnover and quantity
         let status: 'high' | 'medium' | 'low' | 'critical';
-        if (item.quantity < 100 || turnover < 5000) {
+        if (item.quantity < 10 || turnover < 5000) { // Adjusted thresholds for more critical items
           status = 'critical';
         } else if (turnover > 20000) {
           status = 'high';
@@ -62,7 +69,7 @@ export function StockAnalysis() {
 
       const totalItems = items.length;
       const totalValue = items.reduce((sum, item) => sum + item.value, 0);
-      const avgTurnover = items.reduce((sum, item) => sum + item.turnover, 0) / totalItems;
+      const avgTurnover = totalItems > 0 ? items.reduce((sum, item) => sum + item.turnover, 0) / totalItems : 0;
       const criticalItems = items.filter(item => item.status === 'critical').length;
       const slowMovingItems = items.filter(item => item.status === 'low').length;
 
@@ -109,13 +116,11 @@ export function StockAnalysis() {
   };
 
   const getValuationChartData = () => {
-    const groups = Array.from(new Set(analysis?.items.map(item => item.group)));
-    return groups.map(group => ({
-      name: group,
-      value: analysis?.items
-        .filter(item => item.group === group)
-        .reduce((sum, item) => sum + item.value, 0) || 0
-    }));
+    const groupsMap = new Map<string, number>();
+    analysis?.items.forEach(item => {
+      groupsMap.set(item.group, (groupsMap.get(item.group) || 0) + item.value);
+    });
+    return Array.from(groupsMap.entries()).map(([name, value]) => ({ name, value }));
   };
 
   const handleExport = (format: 'pdf' | 'excel') => {
@@ -126,7 +131,42 @@ export function StockAnalysis() {
     window.print();
   };
 
-  if (!analysis) return null;
+  if (isLoading) {
+    return (
+      <div className="p-6 space-y-6">
+        <div className="flex items-center justify-center h-64">
+          <LoadingSpinner size="lg" />
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-6 text-center py-8">
+        <div className="text-destructive mb-4">
+          <AlertCircle size={32} className="mx-auto" />
+        </div>
+        <h3 className="text-lg font-semibold text-foreground mb-2">Error Loading Stock Analysis</h3>
+        <p className="text-muted-foreground">Failed to load stock analysis data. Please try again.</p>
+        <Button onClick={() => window.location.reload()} className="mt-4">
+          Retry
+        </Button>
+      </div>
+    );
+  }
+
+  if (!analysis || analysis.items.length === 0) {
+    return (
+      <div className="p-6 text-center py-8">
+        <div className="text-muted-foreground mb-4">
+          <Package size={32} className="mx-auto mb-2 opacity-50" />
+        </div>
+        <h3 className="text-lg font-semibold text-foreground mb-2">No Stock Items for Analysis</h3>
+        <p className="text-muted-foreground">Add stock items to view inventory analysis.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 space-y-6">

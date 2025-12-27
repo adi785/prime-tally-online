@@ -8,6 +8,8 @@ import { toast } from 'sonner'
 import { useNavigate } from 'react-router-dom'
 import { VoucherForm } from './VoucherForm'
 import { InvoicePreviewModal } from '@/components/invoice/InvoicePreviewModal'
+import { LoadingSpinner } from '@/components/ui/loading-spinner'
+import { AlertCircle } from 'lucide-react'
 
 const voucherTypes = [
   { id: 'sales', label: 'Sales', icon: ArrowUpFromLine, color: 'text-success', bgColor: 'bg-success/10' },
@@ -20,19 +22,19 @@ const voucherTypes = [
 
 export function VoucherList() {
   const [searchQuery, setSearchQuery] = useState('')
-  const [selectedType, setSelectedType] = useState('sales')
+  const [selectedType, setSelectedType] = useState('all')
   const [isFormOpen, setIsFormOpen] = useState(false)
-  const [voucherType, setVoucherType] = useState('sales')
-  const [selectedVoucher, setSelectedVoucher] = useState<any>(null)
-  const { data: vouchers = [], isLoading } = useVouchers()
-  const { mutate: createVoucher } = useCreateVoucher()
-  const { mutate: updateVoucher } = useUpdateVoucher()
-  const { mutate: deleteVoucher } = useDeleteVoucher()
+  const [currentVoucherType, setCurrentVoucherType] = useState('sales')
+  const [editingVoucher, setEditingVoucher] = useState<any>(null) // State to hold voucher being edited
+  const [selectedVoucherForPreview, setSelectedVoucherForPreview] = useState<any>(null)
+
+  const { data: vouchers = [], isLoading, error } = useVouchers()
+  const { mutate: deleteVoucher, isPending: isDeleting } = useDeleteVoucher()
   const navigate = useNavigate()
 
   const filteredVouchers = vouchers.filter(voucher => 
     voucher.party_ledger?.name?.toLowerCase().includes(searchQuery.toLowerCase()) &&
-    (selectedType === 'all' || voucher.type === selectedType)
+    (selectedType === 'all' || voucher.type?.name === selectedType)
   )
 
   const handleDelete = (id: string) => {
@@ -42,22 +44,24 @@ export function VoucherList() {
   }
 
   const handleCreate = (type: string) => {
-    setVoucherType(type)
+    setCurrentVoucherType(type)
+    setEditingVoucher(null) // Clear any editing state
     setIsFormOpen(true)
   }
 
   const handleEdit = (voucher: any) => {
-    // For now, we'll just show a toast since editing requires more complex logic
-    toast.info('Edit functionality is under development')
+    setCurrentVoucherType(voucher.type?.name || voucher.type_id) // Set type for form
+    setEditingVoucher(voucher) // Set the voucher to be edited
+    setIsFormOpen(true)
   }
 
   const handlePreview = (voucher: any) => {
-    setSelectedVoucher(voucher)
+    setSelectedVoucherForPreview(voucher)
   }
 
-  const handleSaveVoucher = (voucherData: any) => {
-    createVoucher(voucherData)
+  const handleSaveVoucher = () => {
     setIsFormOpen(false)
+    setEditingVoucher(null) // Clear editing state after save
   }
 
   const formatAmount = (amount: number) => {
@@ -80,6 +84,31 @@ export function VoucherList() {
   const getVoucherIcon = (type: string) => {
     const voucherType = voucherTypes.find(v => v.id === type)
     return voucherType?.icon || ArrowUpFromLine
+  }
+
+  if (isLoading) {
+    return (
+      <div className="p-6 space-y-6">
+        <div className="flex items-center justify-center h-64">
+          <LoadingSpinner size="lg" />
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-6 text-center py-8">
+        <div className="text-destructive mb-4">
+          <AlertCircle size={32} className="mx-auto" />
+        </div>
+        <h3 className="text-lg font-semibold text-foreground mb-2">Error Loading Vouchers</h3>
+        <p className="text-muted-foreground">Failed to load vouchers. Please try again.</p>
+        <Button onClick={() => window.location.reload()} className="mt-4">
+          Retry
+        </Button>
+      </div>
+    );
   }
 
   return (
@@ -115,7 +144,7 @@ export function VoucherList() {
           </button>
           {voucherTypes.map((type) => {
             const Icon = type.icon
-            const count = vouchers.filter(v => v.type === type.id).length
+            const count = vouchers.filter(v => v.type?.name === type.id).length
             return (
               <button
                 key={type.id}
@@ -183,15 +212,7 @@ export function VoucherList() {
             </TableRow>
           </TableHeader>
           <TableBody className="divide-y divide-table-border">
-            {isLoading ? (
-              <TableRow>
-                <TableCell colSpan={6} className="p-8 text-center">
-                  <div className="flex justify-center">
-                    <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ) : filteredVouchers.length === 0 ? (
+            {filteredVouchers.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={6} className="p-12 text-center">
                   <div className="text-muted-foreground mb-4">
@@ -212,11 +233,11 @@ export function VoucherList() {
                   </TableCell>
                   <TableCell className="px-4 py-3">
                     <span className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold ${
-                      voucherTypes.find(v => v.id === voucher.type)?.bgColor || 'bg-muted'
+                      voucherTypes.find(v => v.id === voucher.type?.name)?.bgColor || 'bg-muted'
                     } ${
-                      voucherTypes.find(v => v.id === voucher.type)?.color || 'text-foreground'
+                      voucherTypes.find(v => v.id === voucher.type?.name)?.color || 'text-foreground'
                     }`}>
-                      {voucher.type.toUpperCase()}
+                      {voucher.type?.name.toUpperCase()}
                     </span>
                   </TableCell>
                   <TableCell className="px-4 py-3">
@@ -253,6 +274,7 @@ export function VoucherList() {
                         size="icon" 
                         className="h-8 w-8 text-muted-foreground hover:text-destructive"
                         onClick={() => handleDelete(voucher.id)}
+                        disabled={isDeleting}
                       >
                         <Trash2 size={14} />
                       </Button>
@@ -268,19 +290,20 @@ export function VoucherList() {
       {/* Voucher Form Modal */}
       {isFormOpen && (
         <VoucherForm 
-          type={voucherType}
+          type={currentVoucherType}
           isOpen={isFormOpen} 
           onClose={() => setIsFormOpen(false)} 
+          voucher={editingVoucher} // Pass the voucher for editing
           onSave={handleSaveVoucher}
         />
       )}
 
       {/* Invoice Preview Modal */}
-      {selectedVoucher && (
+      {selectedVoucherForPreview && (
         <InvoicePreviewModal
-          voucher={selectedVoucher}
-          isOpen={!!selectedVoucher}
-          onClose={() => setSelectedVoucher(null)}
+          voucher={selectedVoucherForPreview}
+          isOpen={!!selectedVoucherForPreview}
+          onClose={() => setSelectedVoucherForPreview(null)}
         />
       )}
     </div>

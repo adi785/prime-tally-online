@@ -25,6 +25,7 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useLocation, useNavigate } from 'react-router-dom'
+import { useCompany } from '@/integrations/supabase/hooks' // Import useCompany
 
 interface MenuItem {
   id: string
@@ -113,7 +114,7 @@ const menuItems: MenuItem[] = [
         id: 'groups',
         label: 'Groups',
         icon: <Users size={16} />,
-        path: '/ledgers'
+        path: '/ledgers' // This path will lead to the ledgers page, where groups can be managed
       },
       {
         id: 'stock-items',
@@ -190,6 +191,7 @@ export function TallySidebar({ activeSection }: TallySidebarProps) {
   const [expandedItems, setExpandedItems] = useState<string[]>(['vouchers', 'masters', 'reports'])
   const navigate = useNavigate()
   const location = useLocation()
+  const { data: company, isLoading: isCompanyLoading } = useCompany() // Fetch company data
 
   const toggleExpand = (id: string) => {
     setExpandedItems(prev => 
@@ -268,7 +270,9 @@ export function TallySidebar({ activeSection }: TallySidebarProps) {
           </div>
           <div>
             <h1 className="text-sidebar-foreground font-bold text-lg tracking-tight">TallyPrime</h1>
-            <p className="text-sidebar-muted text-xs">Business Management</p>
+            <p className="text-sidebar-muted text-xs">
+              {isCompanyLoading ? 'Loading...' : company?.name || 'Business Management'}
+            </p>
           </div>
         </div>
       </div>

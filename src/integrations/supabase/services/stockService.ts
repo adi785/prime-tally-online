@@ -7,13 +7,23 @@ import {
 } from '../types';
 
 export class StockService {
+  private async getUserId(): Promise<string> {
+    const { data: { user }, error } = await supabase.auth.getUser();
+    if (error || !user) {
+      throw new Error('User not authenticated');
+    }
+    return user.id;
+  }
+
   // ==============================
   // READ: Multiple Stock Items
   // ==============================
   async getStockItems(params?: StockQueryParams): Promise<StockItem[]> {
+    const userId = await this.getUserId();
     let query = supabase
       .from('stock_items')
       .select('*')
+      .eq('user_id', userId) // Filter by user_id
       .eq('is_active', true)
       .order('name', { ascending: true });
 
@@ -39,10 +49,12 @@ export class StockService {
   // READ: Single Stock Item
   // ==============================
   async getStockItem(id: string): Promise<StockItem | null> {
+    const userId = await this.getUserId();
     const { data, error } = await supabase
       .from('stock_items')
       .select('*')
       .eq('id', id)
+      .eq('user_id', userId) // Filter by user_id
       .eq('is_active', true)
       .maybeSingle();
 
@@ -60,18 +72,18 @@ export class StockService {
   async createStockItem(
     data: CreateStockItemRequest
   ): Promise<StockItem> {
+    const userId = await this.getUserId();
     const quantity = data.quantity ?? 0;
     const rate = data.rate ?? 0;
 
     const { data: result, error } = await supabase
       .from('stock_items')
       .insert({
-        name: data.name,
-        unit: data.unit,
+        ...data,
+        user_id: userId, // Add user_id
         quantity,
         rate,
         value: quantity * rate,
-        group_id: data.group_id,
         is_active: true,
       })
       .select()
@@ -92,6 +104,7 @@ export class StockService {
     id: string,
     data: UpdateStockItemRequest
   ): Promise<StockItem> {
+    const userId = await this.getUserId();
     const quantity = data.quantity ?? 0;
     const rate = data.rate ?? 0;
 
@@ -103,9 +116,10 @@ export class StockService {
         quantity,
         rate,
         value: quantity * rate,
-        group_id: data.group_id,
+        group_name: data.group_name,
       })
       .eq('id', id)
+      .eq('user_id', userId) // Filter by user_id
       .eq('is_active', true)
       .select()
       .maybeSingle();
@@ -122,10 +136,12 @@ export class StockService {
   // DELETE (Soft Delete – ERP Safe)
   // ==============================
   async deleteStockItem(id: string): Promise<void> {
+    const userId = await this.getUserId();
     const { error } = await supabase
       .from('stock_items')
       .update({ is_active: false })
-      .eq('id', id);
+      .eq('id', id)
+      .eq('user_id', userId); // Filter by user_id
 
     if (error) {
       console.error('deleteStockItem failed:', error);

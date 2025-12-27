@@ -7,10 +7,19 @@ import {
 } from '../types';
 
 export class VoucherService {
+  private async getUserId(): Promise<string> {
+    const { data: { user }, error } = await supabase.auth.getUser();
+    if (error || !user) {
+      throw new Error('User not authenticated');
+    }
+    return user.id;
+  }
+
   // ==============================
   // READ: Multiple Vouchers
   // ==============================
   async getVouchers(params?: VoucherQueryParams): Promise<Voucher[]> {
+    const userId = await this.getUserId();
     let query = supabase
       .from('vouchers')
       .select(`
@@ -22,6 +31,7 @@ export class VoucherService {
           ledger:ledgers(id, name)
         )
       `)
+      .eq('user_id', userId) // Filter by user_id
       .eq('is_active', true)
       .order('date', { ascending: false });
 
@@ -49,6 +59,7 @@ export class VoucherService {
   // READ: Single Voucher
   // ==============================
   async getVoucher(id: string): Promise<Voucher | null> {
+    const userId = await this.getUserId();
     const { data, error } = await supabase
       .from('vouchers')
       .select(`
@@ -61,6 +72,7 @@ export class VoucherService {
         )
       `)
       .eq('id', id)
+      .eq('user_id', userId) // Filter by user_id
       .eq('is_active', true)
       .maybeSingle();
 
@@ -76,6 +88,7 @@ export class VoucherService {
   // CREATE (Atomic via RPC)
   // ==============================
   async createVoucher(data: CreateVoucherRequest): Promise<Voucher> {
+    const userId = await this.getUserId();
     const { data: voucherId, error } = await supabase.rpc(
       'create_voucher_with_items',
       {
@@ -85,6 +98,7 @@ export class VoucherService {
         p_party_ledger_id: data.party_ledger_id,
         p_narration: data.narration ?? null,
         p_items: data.items,
+        p_user_id: userId, // Pass user_id to RPC
       }
     );
 
@@ -105,6 +119,7 @@ export class VoucherService {
         )
       `)
       .eq('id', voucherId)
+      .eq('user_id', userId) // Filter by user_id
       .maybeSingle();
 
     if (fetchError || !result) {
@@ -122,6 +137,7 @@ export class VoucherService {
     id: string,
     data: UpdateVoucherRequest
   ): Promise<Voucher> {
+    const userId = await this.getUserId();
     const { data: success, error } = await supabase.rpc(
       'update_voucher_with_items',
       {
@@ -132,6 +148,7 @@ export class VoucherService {
         p_party_ledger_id: data.party_ledger_id,
         p_narration: data.narration ?? null,
         p_items: data.items,
+        p_user_id: userId, // Pass user_id to RPC
       }
     );
 
@@ -152,6 +169,7 @@ export class VoucherService {
         )
       `)
       .eq('id', id)
+      .eq('user_id', userId) // Filter by user_id
       .maybeSingle();
 
     if (fetchError || !result) {
@@ -166,10 +184,12 @@ export class VoucherService {
   // DELETE (Soft Delete – ERP Safe)
   // ==============================
   async deleteVoucher(id: string): Promise<void> {
+    const userId = await this.getUserId();
     const { error } = await supabase
       .from('vouchers')
       .update({ is_active: false })
-      .eq('id', id);
+      .eq('id', id)
+      .eq('user_id', userId); // Filter by user_id
 
     if (error) {
       console.error('deleteVoucher failed:', error);
@@ -178,7 +198,7 @@ export class VoucherService {
   }
 
   // ==============================
-  // MASTER DATA: Voucher Types
+  // MASTER DATA: Voucher Types (Read-only for authenticated users)
   // ==============================
   async getVoucherTypes(): Promise<
     Array<{ id: string; name: string; description: string }>

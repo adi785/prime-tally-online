@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { X, Save, AlertCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -27,6 +27,28 @@ export function StockForm({ isOpen, onClose, item, onSave }: StockFormProps) {
   })
   
   const [errors, setErrors] = useState<Record<string, string>>({})
+
+  useEffect(() => {
+    if (item) {
+      setFormData({
+        name: item.name || '',
+        unit: item.unit || '',
+        quantity: item.quantity?.toString() || '0',
+        rate: item.rate?.toString() || '0',
+        group_name: item.group_name || 'Raw Materials',
+      });
+    } else {
+      // Reset form for new item
+      setFormData({
+        name: '',
+        unit: '',
+        quantity: '0',
+        rate: '0',
+        group_name: 'Raw Materials',
+      });
+    }
+    setErrors({}); // Clear errors on item change
+  }, [item]);
   
   const validateForm = () => {
     const newErrors: Record<string, string> = {}
@@ -109,6 +131,7 @@ export function StockForm({ isOpen, onClose, item, onSave }: StockFormProps) {
           <button 
             onClick={handleClose} 
             className="text-muted-foreground hover:text-foreground transition-colors"
+            disabled={isCreating || isUpdating}
           >
             <X size={20} />
           </button>
@@ -123,6 +146,7 @@ export function StockForm({ isOpen, onClose, item, onSave }: StockFormProps) {
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               className={errors.name ? "border-destructive" : ""}
+              disabled={isCreating || isUpdating}
             />
             {errors.name && (
               <p className="text-sm text-destructive">{errors.name}</p>
@@ -138,9 +162,10 @@ export function StockForm({ isOpen, onClose, item, onSave }: StockFormProps) {
                 value={formData.unit}
                 onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
                 className={errors.unit ? "border-destructive" : ""}
+                disabled={isCreating || isUpdating}
               />
               {errors.unit && (
-                <p className="text-sm text-destructive">{errors.unit}</p>
+                <p className className="text-sm text-destructive">{errors.unit}</p>
               )}
             </div>
             <div className="space-y-2">
@@ -148,6 +173,7 @@ export function StockForm({ isOpen, onClose, item, onSave }: StockFormProps) {
               <Select 
                 value={formData.group_name} 
                 onValueChange={(value) => setFormData({ ...formData, group_name: value })}
+                disabled={isCreating || isUpdating}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select group" />
@@ -172,6 +198,7 @@ export function StockForm({ isOpen, onClose, item, onSave }: StockFormProps) {
                 value={formData.quantity}
                 onChange={(e) => setFormData({ ...formData, quantity: e.target.value })}
                 className={errors.quantity ? "border-destructive" : ""}
+                disabled={isCreating || isUpdating}
               />
               {errors.quantity && (
                 <p className="text-sm text-destructive">{errors.quantity}</p>
@@ -186,6 +213,7 @@ export function StockForm({ isOpen, onClose, item, onSave }: StockFormProps) {
                 value={formData.rate}
                 onChange={(e) => setFormData({ ...formData, rate: e.target.value })}
                 className={errors.rate ? "border-destructive" : ""}
+                disabled={isCreating || isUpdating}
               />
               {errors.rate && (
                 <p className="text-sm text-destructive">{errors.rate}</p>
@@ -200,7 +228,7 @@ export function StockForm({ isOpen, onClose, item, onSave }: StockFormProps) {
               </span>
             </div>
             <div className="flex items-center gap-3">
-              <Button variant="outline" onClick={handleClose} type="button">
+              <Button variant="outline" onClick={handleClose} type="button" disabled={isCreating || isUpdating}>
                 Cancel
               </Button>
               <Button type="submit" disabled={isCreating || isUpdating}>

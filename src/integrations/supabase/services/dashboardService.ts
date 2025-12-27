@@ -1,13 +1,22 @@
 import { supabase } from '../client';
-import { DashboardMetrics, DashboardMetricsResponse } from '../types';
+import { DashboardMetricsResponse } from '../types';
 
 export class DashboardService {
+  private async getUserId(): Promise<string> {
+    const { data: { user }, error } = await supabase.auth.getUser();
+    if (error || !user) {
+      throw new Error('User not authenticated');
+    }
+    return user.id;
+  }
+
   async getDashboardMetrics(): Promise<DashboardMetricsResponse> {
     console.log('getDashboardMetrics called');
+    const userId = await this.getUserId();
     
     try {
-      // Use the Supabase function to get dashboard metrics
-      const { data, error } = await supabase.rpc('get_dashboard_metrics');
+      // Use the Supabase function to get dashboard metrics, passing user_id
+      const { data, error } = await supabase.rpc('get_dashboard_metrics', { p_user_id: userId });
       
       if (error) {
         console.error('getDashboardMetrics error:', error);

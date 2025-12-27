@@ -9,12 +9,14 @@ import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { useLedgers, useVoucherTypes } from '@/integrations/supabase/hooks'
 import { useCreateVoucher, useUpdateVoucher } from '@/integrations/supabase/hooks'
+import { Ledger, Voucher } from '@/integrations/supabase/types'
 
 interface VoucherFormProps {
   type: string
   isOpen: boolean
   onClose: () => void
-  onSave: (voucherData: any) => void
+  onSave: (voucherData?: any) => void
+  voucher?: Voucher | null // Optional voucher prop for editing
 }
 
 const voucherConfig: Record<string, { title: string; color: string; bgColor: string }> = {
@@ -36,7 +38,7 @@ interface LineItem {
   description?: string
 }
 
-export function VoucherForm({ type, isOpen, onClose, onSave }: VoucherFormProps) {
+export function VoucherForm({ type, isOpen, onClose, onSave, voucher }: VoucherFormProps) {
   const { data: ledgers = [], isLoading: isLedgersLoading } = useLedgers()
   const { data: voucherTypes = [] } = useVoucherTypes()
   const { mutate: createVoucher, isPending: isCreating } = useCreateVoucher()
@@ -44,7 +46,7 @@ export function VoucherForm({ type, isOpen, onClose, onSave }: VoucherFormProps)
   
   const [date, setDate] = useState(new Date().toISOString().split('T')[0])
   const [voucherNumber, setVoucherNumber] = useState('')
-  const [partyLedger, setPartyLedger] = useState('')
+  const [partyLedgerId, setPartyLedgerId] = useState('')
   const [narration, setNarration] = useState('')
   const [items, setItems] = useState<LineItem[]>([
     { id: '1', ledgerId: '', amount: '', type: 'debit' }
@@ -52,50 +54,90 @@ export function VoucherForm({ type, isOpen, onClose, onSave }: VoucherFormProps)
   const [errors, setErrors] = useState<Record<string, string>>({})
   
   const config = voucherConfig[type]
+
+  useEffect(() => {
+    if (voucher) {
+      setDate(voucher.date || new Date().toISOString().split('T')[0]);
+      setVoucherNumber(voucher.voucher_number || '');
+      setPartyLedgerId(voucher.party_ledger_id || '');
+      setNarration(voucher.narration || '');
+      setItems(voucher.items.map(item => ({
+        id: item.id,
+        ledgerId: item.ledger_id,
+        amount: item.amount.toString(),
+        type: item.type,
+        description: item.particulars || ''
+      })));
+    } else {
+      // Reset form for new voucher
+      setDate(new Date().toISOString().split('T')[0]);
+      setVoucherNumber('');
+      setPartyLedgerId('');
+      setNarration('');
+      setItems([{ id: '1', ledgerId: '', amount: '', type: 'debit' }]);
+    }
+    setErrors({}); // Clear errors on voucher change
+  }, [voucher, type]);
   
   // Filter ledgers based on voucher type
   const partyLedgers = ledgers.filter(l => 
-    ['sundry-debtors', 'sundry-creditors'].includes(l.group_name || l.group?.name || '')
+    ['Sundry Debtors', 'Sundry Creditors'].includes(l.group?.name || l.group_name || '')
   )
   
   const accountLedgers = ledgers.filter(l => 
-    !['sundry-debtors', 'sundry-creditors'].includes(l.group_name || l.group?.name || '')
+    !['Sundry Debtors', 'Sundry Creditors'].includes(l.group?.name || l.group_name || '')
   )
   
-  // Sales-specific accounts
-  const salesAccounts = ledgers.filter(l => 
-    l.group_name === 'sales-accounts' || l.group?.name === 'sales-accounts'
-  )
-  
-  const getVoucherTypeOptions = () => {
+  const getVoucherTypeOptions = (itemType: 'debit' | 'credit') => {
+    let filteredLedgers: Ledger[] = [];
+    let label = '';
+
     switch (type) {
       case 'sales':
-        return [
-          { value: 'debit', label: 'Debit Party Account (Sundry Debtors)', accounts: partyLedgers },
-          { value: 'credit', label: 'Credit Sales Account', accounts: salesAccounts }
-        ]
+        if (itemType === 'debit') {
+          label = 'Debit Party Account (Sundry Debtors)';
+          filteredLedgers = ledgers.filter(l => l.group?.name === 'Sundry Debtors');
+        } else {
+          label = 'Credit Sales Account';
+          filteredLedgers = ledgers.filter(l => l.group?.name === 'Sales Accounts');
+        }
+        break;
       case 'purchase':
-        return [
-          { value: 'debit', label: 'Debit Purchase Account', accounts: accountLedgers.filter(l => l.group_name === 'purchase-accounts') },
-          { value: 'credit', label: 'Credit Party Account (Sundry Creditors)', accounts: partyLedgers }
-        ]
+        if (itemType === 'debit') {
+          label = 'Debit Purchase Account';
+          filteredLedgers = ledgers.filter(l => l.group?.name === 'Purchase Accounts');
+        } else {
+          label = 'Credit Party Account (Sundry Creditors)';
+          filteredLedgers = ledgers.filter(l => l.group?.name === 'Sundry Creditors');
+        }
+        break;
       case 'receipt':
-        return [
-          { value: 'debit', label: 'Debit Bank/Cash Account', accounts: accountLedgers.filter(l => ['bank-accounts', 'cash-in-hand'].includes(l.group_name || '')) },
-          { value: 'credit', label: 'Credit Party Account (Sundry Debtors)', accounts: partyLedgers }
-        ]
+        if (itemType === 'debit') {
+          label = 'Debit Bank/Cash Account';
+          filteredLedgers = ledgers.filter(l => ['Bank Accounts', 'Cash-in-Hand'].includes(l.group?.name || ''));
+        } else {
+          label = 'Credit Party Account (Sundry Debtors)';
+          filteredLedgers = ledgers.filter(l => l.group?.name === 'Sundry Debtors');
+        }
+        break;
       case 'payment':
-        return [
-          { value: 'debit', label: 'Debit Party Account (Sundry Creditors)', accounts: partyLedgers },
-          { value: 'credit', label: 'Credit Bank/Cash Account', accounts: accountLedgers.filter(l => ['bank-accounts', 'cash-in-hand'].includes(l.group_name || '')) }
-        ]
+        if (itemType === 'debit') {
+          label = 'Debit Party Account (Sundry Creditors)';
+          filteredLedgers = ledgers.filter(l => l.group?.name === 'Sundry Creditors');
+        } else {
+          label = 'Credit Bank/Cash Account';
+          filteredLedgers = ledgers.filter(l => ['Bank Accounts', 'Cash-in-Hand'].includes(l.group?.name || ''));
+        }
+        break;
+      case 'journal':
+      case 'contra':
       default:
-        return [
-          { value: 'debit', label: 'Debit Account', accounts: accountLedgers },
-          { value: 'credit', label: 'Credit Account', accounts: accountLedgers }
-        ]
+        label = itemType === 'debit' ? 'Debit Account' : 'Credit Account';
+        filteredLedgers = accountLedgers; // All non-party ledgers
+        break;
     }
-  }
+    return { label, accounts: filteredLedgers };
+  };
   
   const addItem = () => {
     setItems([...items, { id: Date.now().toString(), ledgerId: '', amount: '', type: 'debit' }])
@@ -113,7 +155,10 @@ export function VoucherForm({ type, isOpen, onClose, onSave }: VoucherFormProps)
     ))
   }
   
-  const totalAmount = items.reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0)
+  const totalDebit = items.filter(item => item.type === 'debit')
+    .reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0)
+  const totalCredit = items.filter(item => item.type === 'credit')
+    .reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0)
   
   const validateForm = () => {
     const newErrors: Record<string, string> = {}
@@ -122,7 +167,7 @@ export function VoucherForm({ type, isOpen, onClose, onSave }: VoucherFormProps)
       newErrors.date = 'Date is required'
     }
     
-    if (!partyLedger) {
+    if (!partyLedgerId && !['journal', 'contra'].includes(type)) { // Party ledger not required for Journal/Contra
       newErrors.partyLedger = 'Party account is required'
     }
     
@@ -130,11 +175,6 @@ export function VoucherForm({ type, isOpen, onClose, onSave }: VoucherFormProps)
     if (validItems.length === 0) {
       newErrors.items = 'At least one ledger entry is required'
     }
-    
-    const totalDebit = items.filter(item => item.type === 'debit')
-      .reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0)
-    const totalCredit = items.filter(item => item.type === 'credit')
-      .reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0)
     
     if (Math.abs(totalDebit - totalCredit) > 0.01) {
       newErrors.balance = 'Debit and Credit amounts must be equal'
@@ -156,13 +196,16 @@ export function VoucherForm({ type, isOpen, onClose, onSave }: VoucherFormProps)
     
     try {
       // Find the voucher type ID
-      const voucherType = voucherTypes.find((vt: any) => vt.name === type)
+      const selectedVoucherType = voucherTypes.find((vt: any) => vt.name === type)
+      if (!selectedVoucherType) {
+        throw new Error('Voucher type not found');
+      }
       
       const voucherData = {
         voucher_number: voucherNumber || `AUTO-${Date.now()}`,
-        type_id: voucherType?.id || type,
+        type_id: selectedVoucherType.id,
         date,
-        party_ledger_id: partyLedger,
+        party_ledger_id: partyLedgerId || null, // Can be null for Journal/Contra
         narration,
         items: items
           .filter(item => item.ledgerId && item.amount)
@@ -171,18 +214,24 @@ export function VoucherForm({ type, isOpen, onClose, onSave }: VoucherFormProps)
             amount: parseFloat(item.amount),
             type: item.type
           })),
-        total_amount: totalAmount,
+        total_amount: totalDebit, // Total amount is sum of debits (or credits)
       }
       
       if (voucherData.items.length === 0) {
         throw new Error('At least one ledger entry is required')
       }
       
-      onSave(voucherData)
-      toast.success("Voucher Created", {
-        description: `${config.title} has been created successfully`,
+      if (voucher) {
+        await updateVoucher({ id: voucher.id, ...voucherData });
+      } else {
+        await createVoucher(voucherData);
+      }
+
+      toast.success(voucher ? "Voucher Updated" : "Voucher Created", {
+        description: `${config.title} has been ${voucher ? 'updated' : 'created'} successfully`,
       })
       
+      onSave()
       handleClose()
     } catch (error: any) {
       console.error('Error saving voucher:', error)
@@ -195,7 +244,7 @@ export function VoucherForm({ type, isOpen, onClose, onSave }: VoucherFormProps)
   const handleClose = () => {
     setDate(new Date().toISOString().split('T')[0])
     setVoucherNumber('')
-    setPartyLedger('')
+    setPartyLedgerId('')
     setNarration('')
     setItems([{ id: '1', ledgerId: '', amount: '', type: 'debit' }])
     setErrors({})
@@ -219,6 +268,7 @@ export function VoucherForm({ type, isOpen, onClose, onSave }: VoucherFormProps)
           <button 
             onClick={handleClose} 
             className="text-white/70 hover:text-white transition-colors"
+            disabled={isCreating || isUpdating}
           >
             <X size={20} />
           </button>
@@ -238,6 +288,7 @@ export function VoucherForm({ type, isOpen, onClose, onSave }: VoucherFormProps)
                   value={date} 
                   onChange={(e) => setDate(e.target.value)}
                   className="pl-10"
+                  disabled={isCreating || isUpdating}
                 />
               </div>
               {errors.date && (
@@ -253,38 +304,42 @@ export function VoucherForm({ type, isOpen, onClose, onSave }: VoucherFormProps)
                 placeholder="Auto-generate" 
                 value={voucherNumber} 
                 onChange={(e) => setVoucherNumber(e.target.value)}
+                disabled={isCreating || isUpdating}
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="partyLedger">Party Account</Label>
-              <Select 
-                value={partyLedger} 
-                onValueChange={setPartyLedger}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder={isLedgersLoading ? "Loading..." : "Select Party"} />
-                </SelectTrigger>
-                <SelectContent>
-                  {partyLedgers.map(ledger => (
-                    <SelectItem key={ledger.id} value={ledger.id}>
-                      {ledger.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {errors.partyLedger && (
-                <p className="text-sm text-destructive flex items-center gap-1">
-                  <AlertCircle size={12} /> {errors.partyLedger}
-                </p>
-              )}
-            </div>
+            { !['journal', 'contra'].includes(type) && (
+              <div className="space-y-2">
+                <Label htmlFor="partyLedger">Party Account</Label>
+                <Select 
+                  value={partyLedgerId} 
+                  onValueChange={setPartyLedgerId}
+                  disabled={isLedgersLoading || isCreating || isUpdating}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder={isLedgersLoading ? "Loading..." : "Select Party"} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {partyLedgers.map(ledger => (
+                      <SelectItem key={ledger.id} value={ledger.id}>
+                        {ledger.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {errors.partyLedger && (
+                  <p className="text-sm text-destructive flex items-center gap-1">
+                    <AlertCircle size={12} /> {errors.partyLedger}
+                  </p>
+                )}
+              </div>
+            )}
           </div>
           
           {/* Line Items */}
           <div>
             <div className="flex items-center justify-between mb-3">
               <Label>Particulars</Label>
-              <Button variant="outline" size="sm" onClick={addItem} className="gap-1">
+              <Button variant="outline" size="sm" onClick={addItem} className="gap-1" disabled={isCreating || isUpdating}>
                 <PlusCircle size={14} /> Add Row
               </Button>
             </div>
@@ -304,17 +359,15 @@ export function VoucherForm({ type, isOpen, onClose, onSave }: VoucherFormProps)
                       <td className="p-2">
                         <Select 
                           value={item.type} 
-                          onValueChange={(value) => updateItem(item.id, 'type', value)}
+                          onValueChange={(value) => updateItem(item.id, 'type', value as 'debit' | 'credit')}
+                          disabled={isCreating || isUpdating}
                         >
                           <SelectTrigger>
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            {getVoucherTypeOptions().map(option => (
-                              <SelectItem key={option.value} value={option.value}>
-                                {option.label}
-                              </SelectItem>
-                            ))}
+                            <SelectItem value="debit">{getVoucherTypeOptions('debit').label}</SelectItem>
+                            <SelectItem value="credit">{getVoucherTypeOptions('credit').label}</SelectItem>
                           </SelectContent>
                         </Select>
                       </td>
@@ -322,13 +375,13 @@ export function VoucherForm({ type, isOpen, onClose, onSave }: VoucherFormProps)
                         <Select 
                           value={item.ledgerId} 
                           onValueChange={(value) => updateItem(item.id, 'ledgerId', value)}
+                          disabled={isLedgersLoading || isCreating || isUpdating}
                         >
                           <SelectTrigger>
                             <SelectValue placeholder={isLedgersLoading ? "Loading..." : "Select Account"} />
                           </SelectTrigger>
                           <SelectContent>
-                            {getVoucherTypeOptions()
-                              .find(opt => opt.value === item.type)?.accounts
+                            {getVoucherTypeOptions(item.type).accounts
                               .map(ledger => (
                                 <SelectItem key={ledger.id} value={ledger.id}>
                                   {ledger.name}
@@ -344,6 +397,7 @@ export function VoucherForm({ type, isOpen, onClose, onSave }: VoucherFormProps)
                           value={item.amount} 
                           onChange={(e) => updateItem(item.id, 'amount', e.target.value)}
                           className="text-right font-mono"
+                          disabled={isCreating || isUpdating}
                         />
                       </td>
                       <td className="p-2">
@@ -352,7 +406,7 @@ export function VoucherForm({ type, isOpen, onClose, onSave }: VoucherFormProps)
                           size="icon" 
                           className="h-8 w-8 text-muted-foreground hover:text-destructive"
                           onClick={() => removeItem(item.id)}
-                          disabled={items.length === 1}
+                          disabled={items.length === 1 || isCreating || isUpdating}
                         >
                           <Trash2 size={14} />
                         </Button>
@@ -378,29 +432,24 @@ export function VoucherForm({ type, isOpen, onClose, onSave }: VoucherFormProps)
             </div>
             <div className="text-right">
               <p className="text-sm font-mono text-foreground">
-                ₹{items
-                  .filter(i => i.type === 'debit')
-                  .reduce((sum, i) => sum + (parseFloat(i.amount) || 0), 0)
-                  .toLocaleString('en-IN')}
+                ₹{totalDebit.toLocaleString('en-IN')}
               </p>
               <p className="text-sm font-mono text-foreground">
-                ₹{items
-                  .filter(i => i.type === 'credit')
-                  .reduce((sum, i) => sum + (parseFloat(i.amount) || 0), 0)
-                  .toLocaleString('en-IN')}
+                ₹{totalCredit.toLocaleString('en-IN')}
               </p>
-              <p className="text-lg font-bold font-mono text-foreground mt-2">
-                ₹{Math.abs(
-                  items
-                    .filter(i => i.type === 'debit')
-                    .reduce((sum, i) => sum + (parseFloat(i.amount) || 0), 0) -
-                  items
-                    .filter(i => i.type === 'credit')
-                    .reduce((sum, i) => sum + (parseFloat(i.amount) || 0), 0)
-                ).toFixed(2)}
+              <p className={cn(
+                "text-lg font-bold font-mono mt-2",
+                Math.abs(totalDebit - totalCredit) < 0.01 ? "text-success" : "text-destructive"
+              )}>
+                ₹{Math.abs(totalDebit - totalCredit).toFixed(2)}
               </p>
             </div>
           </div>
+          {errors.balance && (
+            <p className="text-sm text-destructive flex items-center gap-1 mt-2">
+              <AlertCircle size={12} /> {errors.balance}
+            </p>
+          )}
           
           {/* Narration */}
           <div className="space-y-2">
@@ -411,6 +460,7 @@ export function VoucherForm({ type, isOpen, onClose, onSave }: VoucherFormProps)
               value={narration} 
               onChange={(e) => setNarration(e.target.value)} 
               rows={3}
+              disabled={isCreating || isUpdating}
             />
           </div>
           
@@ -424,12 +474,12 @@ export function VoucherForm({ type, isOpen, onClose, onSave }: VoucherFormProps)
               <span>Ctrl+A: Accept</span>
             </div>
             <div className="flex items-center gap-3">
-              <Button variant="outline" onClick={handleClose} type="button">
+              <Button variant="outline" onClick={handleClose} type="button" disabled={isCreating || isUpdating}>
                 Cancel
               </Button>
               <Button type="submit" className="gap-2" disabled={isCreating || isUpdating}>
                 <Save size={16} />
-                {isCreating || isUpdating ? 'Saving...' : 'Save Voucher'}
+                {isCreating || isUpdating ? 'Saving...' : voucher ? 'Update Voucher' : 'Save Voucher'}
               </Button>
             </div>
           </div>

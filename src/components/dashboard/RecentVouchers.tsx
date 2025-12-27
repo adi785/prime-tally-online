@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useVouchers } from '@/integrations/supabase/hooks';
 import { cn } from '@/lib/utils';
-import { ArrowUpFromLine, ArrowDownToLine, Wallet, CreditCard, Printer } from 'lucide-react';
+import { ArrowUpFromLine, ArrowDownToLine, Wallet, CreditCard, Printer, Edit } from 'lucide-react'; // Added Edit icon
 import { Button } from '@/components/ui/button';
 import { VoucherType } from '@/types/tally';
 import { VoucherForm } from '@/components/vouchers/VoucherForm';
@@ -23,10 +23,11 @@ const voucherTypeConfig: Record<VoucherType, { icon: React.ReactNode; color: str
 
 export function RecentVouchers() {
   const { data: vouchers = [], isLoading } = useVouchers();
-  const [selectedVoucher, setSelectedVoucher] = useState<any>(null);
-  const [voucherForm, setVoucherForm] = useState<{ isOpen: boolean; type: VoucherType | null }>({
+  const [selectedVoucherForPreview, setSelectedVoucherForPreview] = useState<any>(null);
+  const [voucherForm, setVoucherForm] = useState<{ isOpen: boolean; type: VoucherType | null; voucher: any | null }>({
     isOpen: false,
-    type: null
+    type: null,
+    voucher: null
   });
 
   const formatAmount = (amount: number) => {
@@ -46,12 +47,11 @@ export function RecentVouchers() {
   };
 
   const handleEditVoucher = (voucher: any) => {
-    setVoucherForm({ isOpen: true, type: voucher.type });
+    setVoucherForm({ isOpen: true, type: voucher.type?.name, voucher });
   };
 
-  const handleSaveVoucher = (voucherData: any) => {
-    console.log('Saving voucher:', voucherData);
-    setVoucherForm({ isOpen: false, type: null });
+  const handleSaveVoucher = () => {
+    setVoucherForm({ isOpen: false, type: null, voucher: null });
   };
 
   return (
@@ -76,8 +76,8 @@ export function RecentVouchers() {
           </div>
         ) : (
           vouchers.slice(0, 5).map((voucher, index) => {
-            const config = voucherTypeConfig[voucher.type];
-            const isIncome = ['sales', 'receipt', 'credit-note'].includes(voucher.type);
+            const config = voucherTypeConfig[voucher.type?.name as VoucherType];
+            const isIncome = ['sales', 'receipt', 'credit-note'].includes(voucher.type?.name);
             
             return (
               <div 
@@ -96,13 +96,13 @@ export function RecentVouchers() {
                   
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <p className="font-medium text-foreground truncate">{voucher.party_name}</p>
+                      <p className="font-medium text-foreground truncate">{voucher.party?.name}</p>
                       <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded">
                         {voucher.voucher_number}
                       </span>
                     </div>
                     <p className="text-sm text-muted-foreground capitalize">
-                      {voucher.type.replace('-', ' ')} • {formatDate(voucher.date)}
+                      {voucher.type?.name.replace('-', ' ')} • {formatDate(voucher.date)}
                     </p>
                   </div>
                   
@@ -113,7 +113,7 @@ export function RecentVouchers() {
                       className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
                       onClick={(e) => {
                         e.stopPropagation();
-                        setSelectedVoucher(voucher);
+                        setSelectedVoucherForPreview(voucher);
                       }}
                     >
                       <Printer size={14} />
@@ -127,7 +127,7 @@ export function RecentVouchers() {
                         handleEditVoucher(voucher);
                       }}
                     >
-                      <span className="text-xs">Edit</span>
+                      <Edit size={14} />
                     </Button>
                     <div className="text-right">
                       <p className={cn(
@@ -152,11 +152,11 @@ export function RecentVouchers() {
       </div>
 
       {/* Invoice Preview Modal */}
-      {selectedVoucher && (
+      {selectedVoucherForPreview && (
         <InvoicePreviewModal
-          voucher={selectedVoucher}
-          isOpen={!!selectedVoucher}
-          onClose={() => setSelectedVoucher(null)}
+          voucher={selectedVoucherForPreview}
+          isOpen={!!selectedVoucherForPreview}
+          onClose={() => setSelectedVoucherForPreview(null)}
         />
       )}
 
@@ -165,8 +165,9 @@ export function RecentVouchers() {
         <VoucherForm
           type={voucherForm.type}
           isOpen={voucherForm.isOpen}
-          onClose={() => setVoucherForm({ isOpen: false, type: null })}
+          onClose={() => setVoucherForm({ isOpen: false, type: null, voucher: null })}
           onSave={handleSaveVoucher}
+          voucher={voucherForm.voucher}
         />
       )}
     </div>

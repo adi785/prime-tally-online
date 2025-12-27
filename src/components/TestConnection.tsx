@@ -12,18 +12,23 @@ export function TestConnection() {
     setTestResult(null);
     
     try {
-      // Test basic connection
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      // Test table access
+      // Get current user
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError) throw userError;
+
+      const userId = user?.id;
+
+      // Test table access with user_id filter
       const { data: ledgers, error: ledgersError } = await supabase
         .from('ledgers')
         .select('count(*)', { count: 'exact' })
+        .eq('user_id', userId) // Filter by user_id
         .limit(1);
       
       const { data: companies, error: companiesError } = await supabase
         .from('companies')
         .select('count(*)', { count: 'exact' })
+        .eq('user_id', userId) // Filter by user_id
         .limit(1);
 
       setTestResult({
@@ -63,14 +68,14 @@ export function TestConnection() {
                 <p className="font-semibold">{testResult.user ? `${testResult.user.email} (${testResult.user.id})` : 'Not authenticated'}</p>
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Ledgers Count</p>
+                <p className="text-sm text-muted-foreground">Ledgers Count (for user)</p>
                 <p className="font-semibold">{testResult.ledgers || 0}</p>
                 {testResult.ledgersError && (
                   <p className="text-sm text-destructive">Error: {testResult.ledgersError.message}</p>
                 )}
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Companies Count</p>
+                <p className="text-sm text-muted-foreground">Companies Count (for user)</p>
                 <p className="font-semibold">{testResult.companies || 0}</p>
                 {testResult.companiesError && (
                   <p className="text-sm text-destructive">Error: {testResult.companiesError.message}</p>

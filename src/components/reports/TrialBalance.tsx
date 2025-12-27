@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
-import { useLedgers } from '@/integrations/supabase/hooks';
+import { useTrialBalance, useCompany } from '@/integrations/supabase/hooks'; // Use useTrialBalance and useCompany
 import { cn } from '@/lib/utils';
 import { Download, Printer, Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
+import { AlertCircle } from 'lucide-react';
 
 interface TrialBalanceData {
   ledgers: Array<{
@@ -17,40 +19,8 @@ interface TrialBalanceData {
 }
 
 export function TrialBalance() {
-  const { data: ledgers = [] } = useLedgers();
-  const [period, setPeriod] = useState({
-    start: '2024-04-01',
-    end: '2024-12-31'
-  });
-  const [trialBalance, setTrialBalance] = useState<TrialBalanceData | null>(null);
-
-  useEffect(() => {
-    // Generate trial balance data from ledgers
-    const generateTrialBalance = () => {
-      const ledgerData = ledgers.map(ledger => {
-        const debit = ledger.currentBalance > 0 ? ledger.currentBalance : 0;
-        const credit = ledger.currentBalance < 0 ? Math.abs(ledger.currentBalance) : 0;
-        
-        return {
-          name: ledger.name,
-          group: ledger.group,
-          debit,
-          credit
-        };
-      });
-
-      const totalDebit = ledgerData.reduce((sum, l) => sum + l.debit, 0);
-      const totalCredit = ledgerData.reduce((sum, l) => sum + l.credit, 0);
-
-      setTrialBalance({
-        ledgers: ledgerData,
-        totalDebit,
-        totalCredit
-      });
-    };
-
-    generateTrialBalance();
-  }, [ledgers]);
+  const { data: trialBalance, isLoading, error } = useTrialBalance();
+  const { data: company, isLoading: isCompanyLoading } = useCompany();
 
   const formatAmount = (amount: number) => {
     return new Intl.NumberFormat('en-IN', {
@@ -69,7 +39,44 @@ export function TrialBalance() {
     window.print();
   };
 
-  if (!trialBalance) return null;
+  if (isLoading || isCompanyLoading) {
+    return (
+      <div className="p-6 space-y-6">
+        <div className="flex items-center justify-center h-64">
+          <LoadingSpinner size="lg" />
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-6 text-center py-8">
+        <div className="text-destructive mb-4">
+          <AlertCircle size={32} className="mx-auto" />
+        </div>
+        <h3 className="text-lg font-semibold text-foreground mb-2">Error Loading Trial Balance</h3>
+        <p className="text-muted-foreground">Failed to load trial balance data. Please try again.</p>
+        <Button onClick={() => window.location.reload()} className="mt-4">
+          Retry
+        </Button>
+      </div>
+    );
+  }
+
+  if (!trialBalance) {
+    return (
+      <div className="p-6 text-center py-8">
+        <div className="text-muted-foreground mb-4">
+          <PieChart size={32} className="mx-auto mb-2 opacity-50" />
+        </div>
+        <h3 className="text-lg font-semibold text-foreground mb-2">No Trial Balance Data</h3>
+        <p className="text-muted-foreground">Please ensure you have ledgers with balances recorded.</p>
+      </div>
+    );
+  }
+
+  const financialYearEnd = company?.financial_year_end ? new Date(company.financial_year_end).toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' }) : 'N/A';
 
   return (
     <div className="p-6 space-y-6">
@@ -77,7 +84,7 @@ export function TrialBalance() {
       <div className="flex items-center justify-between animate-fade-in">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Trial Balance</h1>
-          <p className="text-muted-foreground">As of {new Date(period.end).toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' })}</p>
+          <p className="text-muted-foreground">As of {financialYearEnd}</p>
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" onClick={handlePrint} className="gap-2">
@@ -107,7 +114,7 @@ export function TrialBalance() {
             </tr>
           </thead>
           <tbody className="divide-y divide-table-border">
-            {trialBalance.ledgers.map((ledger, index) => (
+            {trialBalance.ledgers.map((ledger: any, index: number) => (
               <tr key={ledger.name} className="hover:bg-table-row-hover transition-colors cursor-pointer animate-slide-in" style={{ animationDelay: `${index * 20}ms` }}>
                 <td className="px-4 py-3">
                   <p className="font-medium text-foreground">{ledger.name}</p>

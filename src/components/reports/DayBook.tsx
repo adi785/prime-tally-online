@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
-import { useVouchers } from '@/integrations/supabase/hooks';
+import { useDayBook, useVoucherTypes } from '@/integrations/supabase/hooks'; // Use useDayBook and useVoucherTypes
 import { cn } from '@/lib/utils';
 import { Download, Printer, Calendar, Filter } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
+import { AlertCircle } from 'lucide-react';
 
 interface DayBookData {
   transactions: Array<{
@@ -21,66 +23,17 @@ interface DayBookData {
 }
 
 export function DayBook() {
-  const { data: vouchers = [] } = useVouchers();
+  const today = new Date();
+  const thirtyDaysAgo = new Date(today);
+  thirtyDaysAgo.setDate(today.getDate() - 30);
+
   const [filters, setFilters] = useState({
-    startDate: '2024-12-01',
-    endDate: '2024-12-31',
+    startDate: thirtyDaysAgo.toISOString().split('T')[0],
+    endDate: today.toISOString().split('T')[0],
     type: 'all'
   });
-  const [dayBook, setDayBook] = useState<DayBookData | null>(null);
-
-  useEffect(() => {
-    // Generate day book data from vouchers
-    const generateDayBook = () => {
-      const filteredVouchers = vouchers.filter(v => {
-        const date = new Date(v.date);
-        const startDate = new Date(filters.startDate);
-        const endDate = new Date(filters.endDate);
-        const withinDateRange = date >= startDate && date <= endDate;
-        const typeMatch = filters.type === 'all' || v.type === filters.type;
-        return withinDateRange && typeMatch;
-      });
-
-      const transactions = filteredVouchers.flatMap(voucher => {
-        // Get debit and credit amounts from voucher items
-        const debitAmount = voucher.items?.find(item => item.type === 'debit')?.amount || 0;
-        const creditAmount = voucher.items?.find(item => item.type === 'credit')?.amount || 0;
-
-        return [
-          {
-            date: voucher.date,
-            voucherNumber: voucher.voucherNumber,
-            voucherType: voucher.type.toUpperCase(),
-            particulars: voucher.partyName,
-            debit: debitAmount,
-            credit: 0
-          },
-          {
-            date: voucher.date,
-            voucherNumber: voucher.voucherNumber,
-            voucherType: voucher.type.toUpperCase(),
-            particulars: voucher.partyName,
-            debit: 0,
-            credit: creditAmount
-          }
-        ];
-      });
-
-      // Sort by date
-      transactions.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-
-      const totalDebit = transactions.reduce((sum, t) => sum + t.debit, 0);
-      const totalCredit = transactions.reduce((sum, t) => sum + t.credit, 0);
-
-      setDayBook({
-        transactions,
-        totalDebit,
-        totalCredit
-      });
-    };
-
-    generateDayBook();
-  }, [vouchers, filters]);
+  const { data: dayBook, isLoading, error } = useDayBook(filters);
+  const { data: voucherTypes = [], isLoading: isVoucherTypesLoading } = useVoucherTypes();
 
   const formatAmount = (amount: number) => {
     return new Intl.NumberFormat('en-IN', {
@@ -107,17 +60,44 @@ export function DayBook() {
     window.print();
   };
 
-  const voucherTypes = [
-    { value: 'all', label: 'All Types' },
-    { value: 'sales', label: 'Sales' },
-    { value: 'purchase', label: 'Purchase' },
-    { value: 'payment', label: 'Payment' },
-    { value: 'receipt', label: 'Receipt' },
-    { value: 'journal', label: 'Journal' },
-    { value: 'contra', label: 'Contra' }
-  ];
+  const allVoucherTypes = [{ value: 'all', label: 'All Types' }, ...voucherTypes.map(vt => ({ value: vt.name, label: vt.name.replace('-', ' ') }))];
 
-  if (!dayBook) return null;
+  if (isLoading || isVoucherTypesLoading) {
+    return (
+      <div className="p-6 space-y-6">
+        <div className="flex items-center justify-center h-64">
+          <LoadingSpinner size="lg" />
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-6 text-center py-8">
+        <div className="text-destructive mb-4">
+          <AlertCircle size={32} className="mx-auto" />
+        </div>
+        <h3 className="text-lg font-semibold text-foreground mb-2">Error Loading Day Book</h3>
+        <p className="text-muted-foreground">Failed to load day book data. Please try again.</p>
+        <Button onClick={() => window.location.reload()} className="mt-4">
+          Retry
+        </Button>
+      </div>
+    );
+  }
+
+  if (!dayBook || dayBook.transactions.length === 0) {
+    return (
+      <div className="p-6 text-center py-8">
+        <div className="text-muted-foreground mb-4">
+          <FileText size={32} className="mx-auto mb-2 opacity-50" />
+        </div>
+        <h3 className="text-lg font-semibold text-foreground mb-2">No Day Book Data</h3>
+        <p className="text-muted-foreground">No transactions found for the selected period and type.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 space-y-6">
@@ -125,7 +105,7 @@ export function DayBook() {
       <div className="flex items-center justify-between animate-fade-in">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Day Book</h1>
-          <p className="text-muted-foreground">Daily transaction register for {new Date(filters.startDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'long' })} to {new Date(filters.endDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' })}</p>
+          <p className="text-muted-foreground">Daily transaction register for {formatDate(filters.startDate)} to {formatDate(filters.endDate)}</p>
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" onClick={handlePrint} className="gap-2">
@@ -175,7 +155,7 @@ export function DayBook() {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {voucherTypes.map(type => (
+              {allVoucherTypes.map(type => (
                 <SelectItem key={type.value} value={type.value}>
                   {type.label}
                 </SelectItem>

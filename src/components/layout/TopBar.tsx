@@ -1,7 +1,7 @@
 import { Search, Bell, Calendar, User, Building2, LogOut } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { useAuthState } from '@/integrations/supabase/hooks'
+import { useAuthState, useCompany } from '@/integrations/supabase/hooks' // Import useCompany
 import { useState } from 'react'
 
 interface TopBarProps {
@@ -10,6 +10,7 @@ interface TopBarProps {
 
 export function TopBar({ currentDate }: TopBarProps) {
   const { user, signOut } = useAuthState()
+  const { data: company, isLoading: isCompanyLoading } = useCompany() // Fetch company data
   const [showUserMenu, setShowUserMenu] = useState(false)
 
   return (
@@ -18,12 +19,14 @@ export function TopBar({ currentDate }: TopBarProps) {
       <div className="flex items-center gap-3">
         <div className="flex items-center gap-2 text-muted-foreground">
           <Building2 size={18} />
-          <span className="font-semibold text-foreground">ABC Enterprises</span>
+          <span className="font-semibold text-foreground">
+            {isCompanyLoading ? 'Loading Company...' : company?.name || 'Your Company'}
+          </span>
         </div>
         <span className="text-muted-foreground text-sm">|</span>
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Calendar size={14} />
-          <span>FY: 2024-25</span>
+          <span>FY: {isCompanyLoading ? '...' : `${company?.financial_year_start?.substring(0, 4) || 'YYYY'}-${company?.financial_year_end?.substring(0, 4) || 'YYYY'}`}</span>
         </div>
       </div>
       

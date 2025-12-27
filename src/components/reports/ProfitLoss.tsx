@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
-import { useVouchers, useLedgers } from '@/integrations/supabase/hooks';
+import { useProfitAndLoss, useCompany } from '@/integrations/supabase/hooks'; // Use useProfitAndLoss and useCompany
 import { cn } from '@/lib/utils';
 import { Download, Printer, Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
+import { AlertCircle } from 'lucide-react';
 
 interface ProfitLossData {
   income: Array<{
@@ -28,98 +30,8 @@ interface ProfitLossData {
 }
 
 export function ProfitLoss() {
-  const { data: vouchers = [] } = useVouchers();
-  const { data: ledgers = [] } = useLedgers();
-  const [period, setPeriod] = useState({
-    start: '2024-04-01',
-    end: '2024-12-31'
-  });
-  const [profitLoss, setProfitLoss] = useState<ProfitLossData | null>(null);
-
-  useEffect(() => {
-    // Generate P&L data from vouchers and ledgers
-    const generateProfitLoss = () => {
-      // Calculate income from sales vouchers
-      const salesTotal = vouchers
-        .filter(v => v.type === 'sales')
-        .reduce((sum, v) => sum + v.total_amount, 0);
-
-      // Calculate expenses from purchase vouchers
-      const purchasesTotal = vouchers
-        .filter(v => v.type === 'purchase')
-        .reduce((sum, v) => sum + v.total_amount, 0);
-
-      // Calculate other income and expenses from ledgers
-      const otherIncome = ledgers
-        .filter(l => l.group === 'indirect-incomes')
-        .reduce((sum, l) => sum + l.currentBalance, 0);
-
-      const directExpenses = ledgers
-        .filter(l => l.group === 'direct-expenses')
-        .reduce((sum, l) => sum + Math.abs(l.currentBalance), 0);
-
-      const indirectExpenses = ledgers
-        .filter(l => l.group === 'indirect-expenses')
-        .reduce((sum, l) => sum + Math.abs(l.currentBalance), 0);
-
-      const income = [
-        {
-          category: 'Sales Revenue',
-          items: [
-            { name: 'Sales - Goods', amount: salesTotal * 0.7 },
-            { name: 'Sales - Services', amount: salesTotal * 0.3 }
-          ],
-          total: salesTotal
-        },
-        {
-          category: 'Other Income',
-          items: [
-            { name: 'Interest Income', amount: otherIncome }
-          ],
-          total: otherIncome
-        }
-      ];
-
-      const expenses = [
-        {
-          category: 'Cost of Goods Sold',
-          items: [
-            { name: 'Purchase - Raw Materials', amount: purchasesTotal * 0.6 },
-            { name: 'Purchase - Trading Goods', amount: purchasesTotal * 0.4 }
-          ],
-          total: purchasesTotal
-        },
-        {
-          category: 'Direct Expenses',
-          items: ledgers
-            .filter(l => l.group === 'direct-expenses')
-            .map(l => ({ name: l.name, amount: Math.abs(l.currentBalance) })),
-          total: directExpenses
-        },
-        {
-          category: 'Indirect Expenses',
-          items: ledgers
-            .filter(l => l.group === 'indirect-expenses')
-            .map(l => ({ name: l.name, amount: Math.abs(l.currentBalance) })),
-          total: indirectExpenses
-        }
-      ];
-
-      const totalIncome = income.reduce((sum, cat) => sum + cat.total, 0);
-      const totalExpenses = expenses.reduce((sum, cat) => sum + cat.total, 0);
-      const netProfit = totalIncome - totalExpenses;
-
-      setProfitLoss({
-        income,
-        expenses,
-        totalIncome,
-        totalExpenses,
-        netProfit
-      });
-    };
-
-    generateProfitLoss();
-  }, [vouchers, ledgers]);
+  const { data: profitLoss, isLoading, error } = useProfitAndLoss();
+  const { data: company, isLoading: isCompanyLoading } = useCompany();
 
   const formatAmount = (amount: number) => {
     return new Intl.NumberFormat('en-IN', {
@@ -138,7 +50,45 @@ export function ProfitLoss() {
     window.print();
   };
 
-  if (!profitLoss) return null;
+  if (isLoading || isCompanyLoading) {
+    return (
+      <div className="p-6 space-y-6">
+        <div className="flex items-center justify-center h-64">
+          <LoadingSpinner size="lg" />
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-6 text-center py-8">
+        <div className="text-destructive mb-4">
+          <AlertCircle size={32} className="mx-auto" />
+        </div>
+        <h3 className="text-lg font-semibold text-foreground mb-2">Error Loading Profit & Loss</h3>
+        <p className="text-muted-foreground">Failed to load profit and loss data. Please try again.</p>
+        <Button onClick={() => window.location.reload()} className="mt-4">
+          Retry
+        </Button>
+      </div>
+    );
+  }
+
+  if (!profitLoss) {
+    return (
+      <div className="p-6 text-center py-8">
+        <div className="text-muted-foreground mb-4">
+          <TrendingUp size={32} className="mx-auto mb-2 opacity-50" />
+        </div>
+        <h3 className="text-lg font-semibold text-foreground mb-2">No Profit & Loss Data</h3>
+        <p className="text-muted-foreground">Please ensure you have sales and purchase transactions recorded.</p>
+      </div>
+    );
+  }
+
+  const financialYearStart = company?.financial_year_start ? new Date(company.financial_year_start).toLocaleDateString('en-IN', { day: '2-digit', month: 'long' }) : 'N/A';
+  const financialYearEnd = company?.financial_year_end ? new Date(company.financial_year_end).toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' }) : 'N/A';
 
   return (
     <div className="p-6 space-y-6">
@@ -146,7 +96,7 @@ export function ProfitLoss() {
       <div className="flex items-center justify-between animate-fade-in">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Profit & Loss Statement</h1>
-          <p className="text-muted-foreground">For the period {new Date(period.start).toLocaleDateString('en-IN', { day: '2-digit', month: 'long' })} to {new Date(period.end).toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' })}</p>
+          <p className="text-muted-foreground">For the period {financialYearStart} to {financialYearEnd}</p>
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" onClick={handlePrint} className="gap-2">
@@ -173,11 +123,11 @@ export function ProfitLoss() {
           <div>
             <h3 className="font-semibold text-foreground mb-4">Income</h3>
             
-            {profitLoss.income.map((category, index) => (
+            {profitLoss.income.map((category: any, index: number) => (
               <div key={index} className="mb-6">
                 <h4 className="font-medium text-muted-foreground mb-3">{category.category}</h4>
                 <div className="space-y-2">
-                  {category.items.map((item, itemIndex) => (
+                  {category.items.map((item: any, itemIndex: number) => (
                     <div key={itemIndex} className="flex items-center justify-between">
                       <span className="text-sm text-foreground">{item.name}</span>
                       <span className="font-mono font-semibold text-success">
@@ -207,11 +157,11 @@ export function ProfitLoss() {
           <div>
             <h3 className="font-semibold text-foreground mb-4">Expenses</h3>
             
-            {profitLoss.expenses.map((category, index) => (
+            {profitLoss.expenses.map((category: any, index: number) => (
               <div key={index} className="mb-6">
                 <h4 className="font-medium text-muted-foreground mb-3">{category.category}</h4>
                 <div className="space-y-2">
-                  {category.items.map((item, itemIndex) => (
+                  {category.items.map((item: any, itemIndex: number) => (
                     <div key={itemIndex} className="flex items-center justify-between">
                       <span className="text-sm text-foreground">{item.name}</span>
                       <span className="font-mono font-semibold text-destructive">
@@ -265,7 +215,7 @@ export function ProfitLoss() {
         <div className="bg-card rounded-xl border border-border p-6 text-center">
           <p className="text-sm text-muted-foreground mb-2">Net Profit Margin</p>
           <p className="text-2xl font-bold text-tally-blue">
-            {((profitLoss.netProfit / profitLoss.totalIncome) * 100).toFixed(1)}%
+            {profitLoss.totalIncome > 0 ? ((profitLoss.netProfit / profitLoss.totalIncome) * 100).toFixed(1) : 0}%
           </p>
         </div>
       </div>

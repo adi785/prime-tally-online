@@ -11,8 +11,10 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { useDashboardMetrics } from '@/integrations/supabase/hooks';
+import { useDashboardMetrics, useCompany } from '@/integrations/supabase/hooks'; // Import useCompany
 import { toast } from 'sonner';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
+import { AlertCircle } from 'lucide-react';
 
 interface ReportCard {
   id: string;
@@ -94,12 +96,8 @@ const categories = [
 ];
 
 export function ReportsSection() {
-  const [period, setPeriod] = useState({
-    start: '2024-04-01',
-    end: '2024-12-31'
-  });
-
-  const { data: metrics } = useDashboardMetrics();
+  const { data: metrics, isLoading: isMetricsLoading, error: metricsError } = useDashboardMetrics();
+  const { data: company, isLoading: isCompanyLoading } = useCompany();
 
   const formatAmount = (amount: number) => {
     return new Intl.NumberFormat('en-IN', {
@@ -124,6 +122,9 @@ export function ReportsSection() {
       case 'day-book':
         window.location.href = '/reports/day-book';
         break;
+      case 'stock-summary':
+        window.location.href = '/inventory/analysis'; // Redirect to stock analysis for summary
+        break;
       default:
         toast.info(`Report ${reportId} is under development`);
     }
@@ -137,6 +138,39 @@ export function ReportsSection() {
     toast.info(`Printing ${reportId}...`);
   };
 
+  if (isMetricsLoading || isCompanyLoading) {
+    return (
+      <div className="p-6 space-y-6">
+        <div className="flex items-center justify-center h-64">
+          <LoadingSpinner size="lg" />
+        </div>
+      </div>
+    );
+  }
+
+  if (metricsError) {
+    return (
+      <div className="p-6 text-center py-8">
+        <div className="text-destructive mb-4">
+          <AlertCircle size={32} className="mx-auto" />
+        </div>
+        <h3 className="text-lg font-semibold text-foreground mb-2">Error Loading Reports</h3>
+        <p className="text-muted-foreground">Failed to load report data. Please try again.</p>
+        <Button onClick={() => window.location.reload()} className="mt-4">
+          Retry
+        </Button>
+      </div>
+    );
+  }
+
+  const financialYearStart = company?.financial_year_start ? new Date(company.financial_year_start).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }) : 'N/A';
+  const financialYearEnd = company?.financial_year_end ? new Date(company.financial_year_end).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : 'N/A';
+
+  const grossProfit = (metrics?.totalSales || 0) - (metrics?.totalPurchases || 0);
+  const netProfit = grossProfit - 150000; // Placeholder for other expenses
+  const currentRatio = (metrics?.totalReceivables || 0) / Math.max(metrics?.totalPayables || 1, 1);
+  const debtToEquity = (metrics?.totalPayables || 0) / Math.max((metrics?.totalReceivables || 1), 1);
+
   return (
     <div className="p-6 space-y-6">
       {/* Page Header */}
@@ -148,7 +182,7 @@ export function ReportsSection() {
         <div className="flex items-center gap-2">
           <Button variant="outline" className="gap-2">
             <Calendar size={16} />
-            Period: Apr 2024 - Dec 2024
+            Period: {financialYearStart} - {financialYearEnd}
           </Button>
         </div>
       </div>
@@ -229,28 +263,32 @@ export function ReportsSection() {
           <div>
             <p className="text-sm text-muted-foreground">Gross Profit</p>
             <p className="text-xl font-bold font-mono amount-positive">
-              ₹{formatAmount((metrics?.totalSales || 0) - (metrics?.totalPurchases || 0))}
+              ₹{formatAmount(grossProfit)}
             </p>
-            <p className="text-xs text-muted-foreground">23.5% margin</p>
+            <p className="text-xs text-muted-foreground">
+              {metrics?.totalSales > 0 ? ((grossProfit / metrics.totalSales) * 100).toFixed(1) : 0}% margin
+            </p>
           </div>
           <div>
             <p className="text-sm text-muted-foreground">Net Profit</p>
             <p className="text-xl font-bold font-mono amount-positive">
-              ₹{formatAmount((metrics?.totalSales || 0) - (metrics?.totalPurchases || 0) - 150000)}
+              ₹{formatAmount(netProfit)}
             </p>
-            <p className="text-xs text-muted-foreground">10.9% margin</p>
+            <p className="text-xs text-muted-foreground">
+              {metrics?.totalSales > 0 ? ((netProfit / metrics.totalSales) * 100).toFixed(1) : 0}% margin
+            </p>
           </div>
           <div>
             <p className="text-sm text-muted-foreground">Current Ratio</p>
             <p className="text-xl font-bold font-mono text-foreground">
-              {((metrics?.totalReceivables || 0) / Math.max(metrics?.totalPayables || 1, 1)).toFixed(2)}
+              {currentRatio.toFixed(2)}
             </p>
             <p className="text-xs text-success">Healthy</p>
           </div>
           <div>
             <p className="text-sm text-muted-foreground">Debt to Equity</p>
             <p className="text-xl font-bold font-mono text-foreground">
-              {((metrics?.totalPayables || 0) / Math.max((metrics?.totalReceivables || 1), 1)).toFixed(2)}
+              {debtToEquity.toFixed(2)}
             </p>
             <p className="text-xs text-success">Low Risk</p>
           </div>
