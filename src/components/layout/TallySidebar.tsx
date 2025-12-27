@@ -19,7 +19,9 @@ import {
   PieChart, 
   TrendingUp, 
   Building2, 
-  HelpCircle 
+  HelpCircle,
+  AlertTriangle,
+  RefreshCw
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useLocation, useNavigate } from 'react-router-dom'
@@ -29,6 +31,7 @@ interface MenuItem {
   label: string
   icon: React.ReactNode
   shortcut?: string
+  path?: string
   children?: MenuItem[]
 }
 
@@ -37,65 +40,154 @@ interface TallySidebarProps {
 }
 
 const menuItems: MenuItem[] = [
-  { 
-    id: 'dashboard', 
-    label: 'Dashboard', 
-    icon: <LayoutDashboard size={18} />, 
-    shortcut: 'F1' 
+  {
+    id: 'dashboard',
+    label: 'Dashboard',
+    icon: <LayoutDashboard size={18} />,
+    shortcut: 'F1',
+    path: '/dashboard'
   },
-  { 
-    id: 'vouchers', 
-    label: 'Vouchers', 
-    icon: <FileText size={18} />, 
+  {
+    id: 'vouchers',
+    label: 'Vouchers',
+    icon: <FileText size={18} />,
     shortcut: 'V',
     children: [
-      { id: 'sales', label: 'Sales', icon: <ArrowUpFromLine size={16} />, shortcut: 'F8' },
-      { id: 'purchase', label: 'Purchase', icon: <ArrowDownToLine size={16} />, shortcut: 'F9' },
-      { id: 'payment', label: 'Payment', icon: <CreditCard size={16} />, shortcut: 'F5' },
-      { id: 'receipt', label: 'Receipt', icon: <Wallet size={16} />, shortcut: 'F6' },
-      { id: 'journal', label: 'Journal', icon: <Receipt size={16} />, shortcut: 'F7' },
-      { id: 'contra', label: 'Contra', icon: <Calculator size={16} />, shortcut: 'F4' },
+      {
+        id: 'sales',
+        label: 'Sales',
+        icon: <ArrowUpFromLine size={16} />,
+        shortcut: 'F8',
+        path: '/vouchers'
+      },
+      {
+        id: 'purchase',
+        label: 'Purchase',
+        icon: <ArrowDownToLine size={16} />,
+        shortcut: 'F9',
+        path: '/vouchers'
+      },
+      {
+        id: 'payment',
+        label: 'Payment',
+        icon: <CreditCard size={16} />,
+        shortcut: 'F5',
+        path: '/vouchers'
+      },
+      {
+        id: 'receipt',
+        label: 'Receipt',
+        icon: <Wallet size={16} />,
+        shortcut: 'F6',
+        path: '/vouchers'
+      },
+      {
+        id: 'journal',
+        label: 'Journal',
+        icon: <Receipt size={16} />,
+        shortcut: 'F7',
+        path: '/vouchers'
+      },
+      {
+        id: 'contra',
+        label: 'Contra',
+        icon: <Calculator size={16} />,
+        shortcut: 'F4',
+        path: '/vouchers'
+      },
     ]
   },
-  { 
-    id: 'masters', 
-    label: 'Masters', 
-    icon: <BookOpen size={18} />, 
+  {
+    id: 'masters',
+    label: 'Masters',
+    icon: <BookOpen size={18} />,
     shortcut: 'M',
     children: [
-      { id: 'ledgers', label: 'Ledgers', icon: <BookOpen size={16} /> },
-      { id: 'groups', label: 'Groups', icon: <Users size={16} /> },
-      { id: 'stock-items', label: 'Stock Items', icon: <Package size={16} /> },
+      {
+        id: 'ledgers',
+        label: 'Ledgers',
+        icon: <BookOpen size={16} />,
+        path: '/ledgers'
+      },
+      {
+        id: 'groups',
+        label: 'Groups',
+        icon: <Users size={16} />,
+        path: '/ledgers'
+      },
+      {
+        id: 'stock-items',
+        label: 'Stock Items',
+        icon: <Package size={16} />,
+        path: '/inventory'
+      },
     ]
   },
-  { 
-    id: 'reports', 
-    label: 'Reports', 
-    icon: <BarChart3 size={18} />, 
+  {
+    id: 'reports',
+    label: 'Reports',
+    icon: <BarChart3 size={18} />,
     shortcut: 'R',
     children: [
-      { id: 'balance-sheet', label: 'Balance Sheet', icon: <FileSpreadsheet size={16} /> },
-      { id: 'profit-loss', label: 'Profit & Loss', icon: <TrendingUp size={16} /> },
-      { id: 'trial-balance', label: 'Trial Balance', icon: <PieChart size={16} /> },
-      { id: 'day-book', label: 'Day Book', icon: <FileText size={16} /> },
+      {
+        id: 'balance-sheet',
+        label: 'Balance Sheet',
+        icon: <FileSpreadsheet size={16} />,
+        path: '/reports/balance-sheet'
+      },
+      {
+        id: 'profit-loss',
+        label: 'Profit & Loss',
+        icon: <TrendingUp size={16} />,
+        path: '/reports/profit-loss'
+      },
+      {
+        id: 'trial-balance',
+        label: 'Trial Balance',
+        icon: <PieChart size={16} />,
+        path: '/reports/trial-balance'
+      },
+      {
+        id: 'day-book',
+        label: 'Day Book',
+        icon: <FileText size={16} />,
+        path: '/reports/day-book'
+      },
     ]
   },
-  { 
-    id: 'inventory', 
-    label: 'Inventory', 
-    icon: <Package size={18} />, 
-    shortcut: 'I' 
+  {
+    id: 'inventory',
+    label: 'Inventory',
+    icon: <Package size={18} />,
+    shortcut: 'I',
+    path: '/inventory'
   },
 ]
 
 const bottomMenuItems: MenuItem[] = [
-  { id: 'company', label: 'Company Info', icon: <Building2 size={18} /> },
-  { id: 'settings', label: 'Settings', icon: <Settings size={18} /> },
-  { id: 'help', label: 'Help', icon: <HelpCircle size={18} />, shortcut: 'F1' },
+  {
+    id: 'company',
+    label: 'Company Info',
+    icon: <Building2 size={18} />,
+    path: '/company'
+  },
+  {
+    id: 'settings',
+    label: 'Settings',
+    icon: <Settings size={18} />,
+    path: '/settings'
+  },
+  {
+    id: 'help',
+    label: 'Help',
+    icon: <HelpCircle size={18} />,
+    shortcut: 'F1',
+    path: '/help'
+  },
 ]
 
 export function TallySidebar({ activeSection }: TallySidebarProps) {
-  const [expandedItems, setExpandedItems] = useState<string[]>(['vouchers'])
+  const [expandedItems, setExpandedItems] = useState<string[]>(['vouchers', 'masters', 'reports'])
   const navigate = useNavigate()
   const location = useLocation()
 
@@ -107,26 +199,32 @@ export function TallySidebar({ activeSection }: TallySidebarProps) {
     )
   }
 
-  const handleNavigation = (path: string, e: React.MouseEvent) => {
+  const handleNavigation = (path: string | undefined, e: React.MouseEvent) => {
     e.preventDefault()
-    navigate(path)
+    if (path) {
+      navigate(path)
+    }
   }
 
   const renderMenuItem = (item: MenuItem, isChild = false) => {
     const hasChildren = item.children && item.children.length > 0
     const isExpanded = expandedItems.includes(item.id)
-    const isActive = activeSection === item.id
+    const isActive = location.pathname === item.path || 
+                     (item.id === 'vouchers' && location.pathname.startsWith('/vouchers')) ||
+                     (item.id === 'reports' && location.pathname.startsWith('/reports')) ||
+                     (item.id === 'inventory' && location.pathname.startsWith('/inventory')) ||
+                     (item.id === 'masters' && location.pathname.startsWith('/ledgers'))
 
     return (
       <div key={item.id}>
-        <a
-          href={`/${item.id}`}
+        <a 
+          href={item.path || `/${item.id}`} 
           onClick={(e) => {
             if (hasChildren) {
               e.preventDefault()
               toggleExpand(item.id)
             } else {
-              handleNavigation(`/${item.id}`, e)
+              handleNavigation(item.path, e)
             }
           }}
           className={cn(
@@ -174,19 +272,19 @@ export function TallySidebar({ activeSection }: TallySidebarProps) {
           </div>
         </div>
       </div>
-      
+
       {/* Main Menu */}
       <nav className="flex-1 py-4 overflow-y-auto tally-scrollbar">
         <div className="space-y-1">
           {menuItems.map(item => renderMenuItem(item))}
         </div>
       </nav>
-      
+
       {/* Bottom Menu */}
       <div className="border-t border-sidebar-border py-2">
         {bottomMenuItems.map(item => renderMenuItem(item))}
       </div>
-      
+
       {/* Version Info */}
       <div className="p-4 border-t border-sidebar-border">
         <p className="text-sidebar-muted text-xs text-center">
