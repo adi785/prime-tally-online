@@ -21,9 +21,13 @@ export const supabaseIntegration = {
     useDashboardMetrics,
     useStockItems,
     useCreateStockItem,
+    useUpdateStockItem, // Added useUpdateStockItem
+    useDeleteStockItem, // Added useDeleteStockItem
     useCompany,
     useUpdateCompany,
     useAuthState,
+    useVoucherTypes, // Added useVoucherTypes
+    useLedgerGroups, // Added useLedgerGroups
   },
   services: {
     ledgerService,

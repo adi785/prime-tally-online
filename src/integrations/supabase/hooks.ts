@@ -2,6 +2,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from './client'
 import { toast } from 'sonner'
 import { authService } from './auth'
+import { companyService } from './services/companyService' // Import companyService
+import { Company, UpdateCompanyRequest } from './types' // Import Company and UpdateCompanyRequest types
 
 // Auth Hook
 export const useAuthState = () => {
@@ -359,6 +361,36 @@ export const useDeleteStockItem = () => {
     },
     onError: (error) => {
       toast.error(`Failed to delete stock item: ${error.message}`)
+    },
+  })
+}
+
+// Company Hooks
+export const useCompany = () => {
+  return useQuery<Company, Error>({
+    queryKey: ['company'],
+    queryFn: async () => {
+      const data = await companyService.getCompany()
+      return data
+    },
+    staleTime: Infinity, // Company info doesn't change often
+  })
+}
+
+export const useUpdateCompany = () => {
+  const queryClient = useQueryClient()
+  
+  return useMutation<Company, Error, UpdateCompanyRequest>({
+    mutationFn: async (updates) => {
+      const data = await companyService.updateCompany(updates)
+      return data
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['company'] })
+      toast.success('Company information updated successfully')
+    },
+    onError: (error) => {
+      toast.error(`Failed to update company information: ${error.message}`)
     },
   })
 }
