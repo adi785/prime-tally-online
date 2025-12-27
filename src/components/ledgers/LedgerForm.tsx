@@ -59,13 +59,13 @@ export function LedgerForm({ isOpen, onClose, ledger, onSave }: LedgerFormProps)
   const [formData, setFormData] = useState({
     name: ledger?.name || '',
     group: ledger?.group || 'sundry-debtors' as LedgerGroup,
-    openingBalance: ledger?.openingBalance?.toString() || '0',
+    openingBalance: ledger?.opening_balance?.toString() || '0',
     address: ledger?.address || '',
     phone: ledger?.phone || '',
     gstin: ledger?.gstin || '',
     email: ledger?.email || '',
-    isBillwise: ledger ? true : false,
-    isInventory: ledger ? false : false,
+    isBillwise: ledger?.is_billwise || false,
+    isInventory: ledger?.is_inventory || false,
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -73,23 +73,23 @@ export function LedgerForm({ isOpen, onClose, ledger, onSave }: LedgerFormProps)
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
-
+    
     if (!formData.name.trim()) {
       newErrors.name = 'Ledger name is required';
     }
-
+    
     if (formData.gstin && !/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}[Z]{1}[0-9A-Z]{1}$/.test(formData.gstin)) {
       newErrors.gstin = 'Invalid GSTIN format';
     }
-
+    
     if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
       newErrors.email = 'Invalid email format';
     }
-
+    
     if (formData.phone && !/^[6-9]\d{9}$/.test(formData.phone)) {
       newErrors.phone = 'Invalid Indian phone number';
     }
-
+    
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -98,25 +98,37 @@ export function LedgerForm({ isOpen, onClose, ledger, onSave }: LedgerFormProps)
     e.preventDefault();
     
     if (!validateForm()) {
-      toast({
-        title: "Validation Error",
+      toast.error("Validation Error", {
         description: "Please fix the errors in the form",
-        variant: "destructive",
       });
       return;
     }
-
+    
     setIsSubmitting(true);
-
+    
     try {
-      const ledgerData: Omit<Ledger, 'id' | 'currentBalance'> = {
+      // Get group_id from ledger_groups table
+      const groupResponse = await fetch('/rest/v1/ledger_groups?name=eq.' + formData.group, {
+        headers: {
+          'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY || '',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY || ''}`,
+        }
+      });
+      
+      const groupData = await groupResponse.json();
+      const groupId = groupData[0]?.id || null;
+      
+      const ledgerData: Omit<Ledger, 'id' | 'current_balance'> = {
         name: formData.name.trim(),
         group: formData.group,
-        openingBalance: parseFloat(formData.openingBalance) || 0,
+        group_id: groupId,
+        opening_balance: parseFloat(formData.openingBalance) || 0,
         address: formData.address.trim(),
         phone: formData.phone.trim(),
         gstin: formData.gstin.trim(),
         email: formData.email.trim(),
+        is_billwise: formData.isBillwise,
+        is_inventory: formData.isInventory,
       };
 
       if (ledger) {
@@ -125,17 +137,15 @@ export function LedgerForm({ isOpen, onClose, ledger, onSave }: LedgerFormProps)
         createLedger(ledgerData);
       }
       
-      toast({
-        title: ledger ? "Ledger Updated" : "Ledger Created",
+      toast.success(ledger ? "Ledger Updated" : "Ledger Created", {
         description: `${formData.name} has been ${ledger ? 'updated' : 'created'} successfully`,
       });
-
+      
       handleClose();
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to save ledger. Please try again.",
-        variant: "destructive",
+    } catch (error: any) {
+      console.error('Error saving ledger:', error);
+      toast.error("Error", {
+        description: error.message || "Failed to save ledger. Please try again.",
       });
     } finally {
       setIsSubmitting(false);
@@ -174,10 +184,7 @@ export function LedgerForm({ isOpen, onClose, ledger, onSave }: LedgerFormProps)
                 {ledger ? 'Update ledger details' : 'Add a new ledger account'}
               </p>
             </div>
-            <button 
-              onClick={handleClose} 
-              className="text-muted-foreground hover:text-foreground transition-colors"
-            >
+            <button onClick={handleClose} className="text-muted-foreground hover:text-foreground transition-colors">
               <X size={20} />
             </button>
           </div>
@@ -189,11 +196,11 @@ export function LedgerForm({ isOpen, onClose, ledger, onSave }: LedgerFormProps)
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="name">Ledger Name *</Label>
-              <Input
-                id="name"
-                placeholder="Enter ledger name"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              <Input 
+                id="name" 
+                placeholder="Enter ledger name" 
+                value={formData.name} 
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })} 
                 className={errors.name ? "border-destructive" : ""}
               />
               {errors.name && (
@@ -203,11 +210,10 @@ export function LedgerForm({ isOpen, onClose, ledger, onSave }: LedgerFormProps)
                 </p>
               )}
             </div>
-
             <div className="space-y-2">
               <Label htmlFor="group">Group</Label>
-              <Select
-                value={formData.group}
+              <Select 
+                value={formData.group} 
                 onValueChange={(value) => setFormData({ ...formData, group: value as LedgerGroup })}
               >
                 <SelectTrigger className={errors.group ? "border-destructive" : ""}>
@@ -228,26 +234,25 @@ export function LedgerForm({ isOpen, onClose, ledger, onSave }: LedgerFormProps)
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="openingBalance">Opening Balance (₹)</Label>
-              <Input
-                id="openingBalance"
-                type="number"
-                placeholder="0.00"
-                value={formData.openingBalance}
-                onChange={(e) => setFormData({ ...formData, openingBalance: e.target.value })}
+              <Input 
+                id="openingBalance" 
+                type="number" 
+                placeholder="0.00" 
+                value={formData.openingBalance} 
+                onChange={(e) => setFormData({ ...formData, openingBalance: e.target.value })} 
                 className="font-mono"
               />
               <p className="text-xs text-muted-foreground">
                 Positive for Dr (Debit), Negative for Cr (Credit)
               </p>
             </div>
-
             <div className="space-y-2">
               <Label htmlFor="gstin">GSTIN</Label>
-              <Input
-                id="gstin"
-                placeholder="27AABCU9603R1ZM"
-                value={formData.gstin}
-                onChange={(e) => setFormData({ ...formData, gstin: e.target.value })}
+              <Input 
+                id="gstin" 
+                placeholder="27AABCU9603R1ZM" 
+                value={formData.gstin} 
+                onChange={(e) => setFormData({ ...formData, gstin: e.target.value })} 
                 className={errors.gstin ? "border-destructive" : ""}
                 maxLength={15}
               />
@@ -263,15 +268,14 @@ export function LedgerForm({ isOpen, onClose, ledger, onSave }: LedgerFormProps)
           {/* Contact Information */}
           <div className="space-y-4">
             <h3 className="text-sm font-semibold text-foreground">Contact Information</h3>
-            
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="phone">Phone</Label>
-                <Input
-                  id="phone"
-                  placeholder="+91 9876543210"
-                  value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                <Input 
+                  id="phone" 
+                  placeholder="+91 9876543210" 
+                  value={formData.phone} 
+                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })} 
                   className={errors.phone ? "border-destructive" : ""}
                 />
                 {errors.phone && (
@@ -281,15 +285,14 @@ export function LedgerForm({ isOpen, onClose, ledger, onSave }: LedgerFormProps)
                   </p>
                 )}
               </div>
-
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="contact@example.com"
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                <Input 
+                  id="email" 
+                  type="email" 
+                  placeholder="contact@example.com" 
+                  value={formData.email} 
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })} 
                   className={errors.email ? "border-destructive" : ""}
                 />
                 {errors.email && (
@@ -300,14 +303,13 @@ export function LedgerForm({ isOpen, onClose, ledger, onSave }: LedgerFormProps)
                 )}
               </div>
             </div>
-
             <div className="space-y-2">
               <Label htmlFor="address">Address</Label>
-              <Textarea
-                id="address"
-                placeholder="Enter complete address"
-                value={formData.address}
-                onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+              <Textarea 
+                id="address" 
+                placeholder="Enter complete address" 
+                value={formData.address} 
+                onChange={(e) => setFormData({ ...formData, address: e.target.value })} 
                 rows={3}
               />
             </div>
@@ -316,27 +318,25 @@ export function LedgerForm({ isOpen, onClose, ledger, onSave }: LedgerFormProps)
           {/* Options */}
           <div className="space-y-4">
             <h3 className="text-sm font-semibold text-foreground">Options</h3>
-            
             <div className="grid grid-cols-2 gap-6">
               <div className="flex items-center justify-between p-3 border border-border rounded-lg">
                 <div>
                   <p className="font-medium text-foreground">Enable Bill-wise Details</p>
                   <p className="text-sm text-muted-foreground">Track bills and invoices</p>
                 </div>
-                <Switch
-                  checked={formData.isBillwise}
-                  onCheckedChange={(checked) => setFormData({ ...formData, isBillwise: checked })}
+                <Switch 
+                  checked={formData.isBillwise} 
+                  onCheckedChange={(checked) => setFormData({ ...formData, isBillwise: checked })} 
                 />
               </div>
-
               <div className="flex items-center justify-between p-3 border border-border rounded-lg">
                 <div>
                   <p className="font-medium text-foreground">Enable Inventory</p>
                   <p className="text-sm text-muted-foreground">Track stock and quantities</p>
                 </div>
-                <Switch
-                  checked={formData.isInventory}
-                  onCheckedChange={(checked) => setFormData({ ...formData, isInventory: checked })}
+                <Switch 
+                  checked={formData.isInventory} 
+                  onCheckedChange={(checked) => setFormData({ ...formData, isInventory: checked })} 
                 />
               </div>
             </div>
