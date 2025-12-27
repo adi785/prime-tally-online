@@ -110,6 +110,33 @@ export function ReportsSection() {
     }).format(amount);
   };
 
+  const handleReportClick = (reportId: string) => {
+    switch (reportId) {
+      case 'balance-sheet':
+        window.location.href = '/reports/balance-sheet';
+        break;
+      case 'profit-loss':
+        window.location.href = '/reports/profit-loss';
+        break;
+      case 'trial-balance':
+        window.location.href = '/reports/trial-balance';
+        break;
+      case 'day-book':
+        window.location.href = '/reports/day-book';
+        break;
+      default:
+        toast.info(`Report ${reportId} is under development`);
+    }
+  };
+
+  const handleExport = (reportId: string, format: 'pdf' | 'excel') => {
+    toast.info(`Exporting ${reportId} as ${format.toUpperCase()}...`);
+  };
+
+  const handlePrint = (reportId: string) => {
+    toast.info(`Printing ${reportId}...`);
+  };
+
   return (
     <div className="p-6 space-y-6">
       {/* Page Header */}
@@ -148,6 +175,7 @@ export function ReportsSection() {
                     "hover:border-primary/50 hover:shadow-md group animate-scale-in"
                   )}
                   style={{ animationDelay: `${(catIndex * 100) + (index * 50)}ms` }}
+                  onClick={() => handleReportClick(report.id)}
                 >
                   <div className="flex items-start justify-between mb-4">
                     <div className="p-3 rounded-lg bg-primary/10 text-primary">
@@ -168,14 +196,23 @@ export function ReportsSection() {
                   </p>
                   
                   <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Button variant="ghost" size="sm" className="h-8 px-2">
-                      <ExternalLink size={14} />
-                    </Button>
-                    <Button variant="ghost" size="sm" className="h-8 px-2">
+                    <Button variant="ghost" size="sm" className="h-8 px-2" onClick={(e) => {
+                      e.stopPropagation();
+                      handlePrint(report.id);
+                    }}>
                       <Printer size={14} />
                     </Button>
-                    <Button variant="ghost" size="sm" className="h-8 px-2">
+                    <Button variant="ghost" size="sm" className="h-8 px-2" onClick={(e) => {
+                      e.stopPropagation();
+                      handleExport(report.id, 'pdf');
+                    }}>
                       <Download size={14} />
+                    </Button>
+                    <Button variant="ghost" size="sm" className="h-8 px-2" onClick={(e) => {
+                      e.stopPropagation();
+                      handleExport(report.id, 'excel');
+                    }}>
+                      <ExternalLink size={14} />
                     </Button>
                   </div>
                 </div>

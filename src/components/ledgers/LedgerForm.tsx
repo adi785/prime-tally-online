@@ -187,7 +187,7 @@ export function LedgerForm({ isOpen, onClose, ledger, onSave }: LedgerFormProps)
                 {ledger ? 'Update ledger details' : 'Add a new ledger account'}
               </p>
             </div>
-            <button onClick={handleClose} className="text-muted-foreground hover:text-foreground transition-colors">
+            <button onClick={handleClose} className="text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50" disabled={isSubmitting}>
               <X size={20} />
             </button>
           </div>
@@ -205,6 +205,7 @@ export function LedgerForm({ isOpen, onClose, ledger, onSave }: LedgerFormProps)
                 value={formData.name} 
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })} 
                 className={errors.name ? "border-destructive" : ""}
+                disabled={isSubmitting}
               />
               {errors.name && (
                 <p className="text-sm text-destructive flex items-center gap-1">
@@ -218,6 +219,7 @@ export function LedgerForm({ isOpen, onClose, ledger, onSave }: LedgerFormProps)
               <Select 
                 value={formData.group} 
                 onValueChange={(value) => setFormData({ ...formData, group: value as LedgerGroup })}
+                disabled={isSubmitting}
               >
                 <SelectTrigger className={errors.group ? "border-destructive" : ""}>
                   <SelectValue placeholder="Select group" />
@@ -244,6 +246,7 @@ export function LedgerForm({ isOpen, onClose, ledger, onSave }: LedgerFormProps)
                 value={formData.openingBalance} 
                 onChange={(e) => setFormData({ ...formData, openingBalance: e.target.value })} 
                 className="font-mono"
+                disabled={isSubmitting}
               />
               <p className="text-xs text-muted-foreground">
                 Positive for Dr (Debit), Negative for Cr (Credit)
@@ -258,6 +261,7 @@ export function LedgerForm({ isOpen, onClose, ledger, onSave }: LedgerFormProps)
                 onChange={(e) => setFormData({ ...formData, gstin: e.target.value })} 
                 className={errors.gstin ? "border-destructive" : ""}
                 maxLength={15}
+                disabled={isSubmitting}
               />
               {errors.gstin && (
                 <p className="text-sm text-destructive flex items-center gap-1">
@@ -280,6 +284,7 @@ export function LedgerForm({ isOpen, onClose, ledger, onSave }: LedgerFormProps)
                   value={formData.phone} 
                   onChange={(e) => setFormData({ ...formData, phone: e.target.value })} 
                   className={errors.phone ? "border-destructive" : ""}
+                  disabled={isSubmitting}
                 />
                 {errors.phone && (
                   <p className="text-sm text-destructive flex items-center gap-1">
@@ -297,6 +302,7 @@ export function LedgerForm({ isOpen, onClose, ledger, onSave }: LedgerFormProps)
                   value={formData.email} 
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })} 
                   className={errors.email ? "border-destructive" : ""}
+                  disabled={isSubmitting}
                 />
                 {errors.email && (
                   <p className="text-sm text-destructive flex items-center gap-1">
@@ -314,6 +320,7 @@ export function LedgerForm({ isOpen, onClose, ledger, onSave }: LedgerFormProps)
                 value={formData.address} 
                 onChange={(e) => setFormData({ ...formData, address: e.target.value })} 
                 rows={3}
+                disabled={isSubmitting}
               />
             </div>
           </div>
@@ -330,6 +337,7 @@ export function LedgerForm({ isOpen, onClose, ledger, onSave }: LedgerFormProps)
                 <Switch 
                   checked={formData.isBillwise} 
                   onCheckedChange={(checked) => setFormData({ ...formData, isBillwise: checked })} 
+                  disabled={isSubmitting}
                 />
               </div>
               <div className="flex items-center justify-between p-3 border border-border rounded-lg">
@@ -340,6 +348,7 @@ export function LedgerForm({ isOpen, onClose, ledger, onSave }: LedgerFormProps)
                 <Switch 
                   checked={formData.isInventory} 
                   onCheckedChange={(checked) => setFormData({ ...formData, isInventory: checked })} 
+                  disabled={isSubmitting}
                 />
               </div>
             </div>
@@ -351,7 +360,7 @@ export function LedgerForm({ isOpen, onClose, ledger, onSave }: LedgerFormProps)
               {ledger ? 'Last updated: Today' : 'All fields marked with * are required'}
             </div>
             <div className="flex items-center gap-3">
-              <Button variant="outline" onClick={handleClose} type="button">
+              <Button variant="outline" onClick={handleClose} type="button" disabled={isSubmitting}>
                 Cancel
               </Button>
               <Button type="submit" className="gap-2" disabled={isSubmitting}>

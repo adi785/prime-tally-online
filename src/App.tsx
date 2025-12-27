@@ -10,6 +10,10 @@ import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
 import Test from "./pages/Test";
 import { ProtectedRoute } from "./components/auth/ProtectedRoute";
+import { BalanceSheet } from "./components/reports/BalanceSheet";
+import { ProfitLoss } from "./components/reports/ProfitLoss";
+import { TrialBalance } from "./components/reports/TrialBalance";
+import { DayBook } from "./components/reports/DayBook";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -59,6 +63,36 @@ const App = () => (
           <Route path="/test" element={
             <ProtectedRoute>
               <Test />
+            </ProtectedRoute>
+          } />
+          
+          {/* Report Routes */}
+          <Route path="/reports/balance-sheet" element={
+            <ProtectedRoute>
+              <div className="p-6">
+                <BalanceSheet />
+              </div>
+            </ProtectedRoute>
+          } />
+          <Route path="/reports/profit-loss" element={
+            <ProtectedRoute>
+              <div className="p-6">
+                <ProfitLoss />
+              </div>
+            </ProtectedRoute>
+          } />
+          <Route path="/reports/trial-balance" element={
+            <ProtectedRoute>
+              <div className="p-6">
+                <TrialBalance />
+              </div>
+            </ProtectedRoute>
+          } />
+          <Route path="/reports/day-book" element={
+            <ProtectedRoute>
+              <div className="p-6">
+                <DayBook />
+              </div>
             </ProtectedRoute>
           } />
           

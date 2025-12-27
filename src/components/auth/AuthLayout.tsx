@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
+import { authService } from '@/integrations/supabase/auth';
 import { cn } from '@/lib/utils';
 
 export function AuthLayout() {
@@ -20,49 +20,60 @@ export function AuthLayout() {
 
   const isSignup = location.pathname === '/signup';
 
+  const validateForm = () => {
+    const errors: string[] = [];
+
+    if (!formData.email) {
+      errors.push('Email is required');
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      errors.push('Invalid email format');
+    }
+
+    if (!formData.password) {
+      errors.push('Password is required');
+    } else if (formData.password.length < 6) {
+      errors.push('Password must be at least 6 characters long');
+    }
+
+    if (isSignup) {
+      if (!formData.displayName) {
+        errors.push('Display name is required');
+      }
+
+      if (!formData.confirmPassword) {
+        errors.push('Confirm password is required');
+      } else if (formData.password !== formData.confirmPassword) {
+        errors.push('Passwords do not match');
+      }
+    }
+
+    return errors;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    const errors = validateForm();
+    if (errors.length > 0) {
+      errors.forEach(error => toast.error(error));
+      return;
+    }
+
     setIsLoading(true);
 
     try {
       if (isSignup) {
-        if (formData.password !== formData.confirmPassword) {
-          toast({
-            title: "Passwords don't match",
-            description: "Please make sure both passwords are identical.",
-            variant: "destructive",
-          });
-          return;
-        }
-
-        const { error } = await supabase.auth.signUp({
-          email: formData.email,
-          password: formData.password,
-          options: {
-            data: {
-              display_name: formData.displayName,
-            },
-          },
+        await authService.signUp(formData.email, formData.password, {
+          displayName: formData.displayName,
         });
-
-        if (error) throw error;
-
-        toast.success('Account created successfully');
       } else {
-        const { error } = await supabase.auth.signInWithPassword({
-          email: formData.email,
-          password: formData.password,
-        });
-
-        if (error) throw error;
-
-        toast.success('Signed in successfully');
+        await authService.signIn(formData.email, formData.password);
       }
 
       navigate('/dashboard');
     } catch (error) {
       console.error('Auth error:', error);
-      toast.error('Authentication failed. Please try again.');
+      // Error is already handled in authService
     } finally {
       setIsLoading(false);
     }
@@ -70,25 +81,15 @@ export function AuthLayout() {
 
   const handleForgotPassword = async () => {
     if (!formData.email) {
-      toast({
-        title: "Email required",
-        description: "Please enter your email address first.",
-        variant: "destructive",
-      });
+      toast.error('Please enter your email address first.');
       return;
     }
 
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(formData.email, {
-        redirectTo: `${window.location.origin}/reset-password`,
-      });
-
-      if (error) throw error;
-
-      toast.success('Password reset email sent. Please check your inbox.');
+      await authService.resetPassword(formData.email);
     } catch (error) {
       console.error('Password reset error:', error);
-      toast.error('Failed to send reset email. Please try again.');
+      // Error is already handled in authService
     }
   };
 
@@ -120,6 +121,7 @@ export function AuthLayout() {
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 required
                 className="bg-gray-50 border-gray-200 focus:border-tally-blue focus:ring-tally-blue"
+                disabled={isLoading}
               />
             </div>
 
@@ -134,6 +136,7 @@ export function AuthLayout() {
                   onChange={(e) => setFormData({ ...formData, displayName: e.target.value })}
                   required
                   className="bg-gray-50 border-gray-200 focus:border-tally-blue focus:ring-tally-blue"
+                  disabled={isLoading}
                 />
               </div>
             )}
@@ -150,6 +153,7 @@ export function AuthLayout() {
                 required
                 minLength={6}
                 className="bg-gray-50 border-gray-200 focus:border-tally-blue focus:ring-tally-blue"
+                disabled={isLoading}
               />
             </div>
 
@@ -166,6 +170,7 @@ export function AuthLayout() {
                   required
                   minLength={6}
                   className="bg-gray-50 border-gray-200 focus:border-tally-blue focus:ring-tally-blue"
+                  disabled={isLoading}
                 />
               </div>
             )}
@@ -176,7 +181,8 @@ export function AuthLayout() {
                 <button
                   type="button"
                   onClick={handleForgotPassword}
-                  className="text-sm text-tally-blue hover:text-tally-blue/80 transition-colors"
+                  className="text-sm text-tally-blue hover:text-tally-blue/80 transition-colors disabled:opacity-50"
+                  disabled={isLoading}
                 >
                   Forgot Password?
                 </button>
@@ -206,7 +212,8 @@ export function AuthLayout() {
               {isSignup ? "Already have an account?" : "Don't have an account?"}
               <button
                 onClick={() => navigate(isSignup ? '/login' : '/signup')}
-                className="ml-2 text-tally-blue hover:text-tally-blue/80 font-medium transition-colors"
+                className="ml-2 text-tally-blue hover:text-tally-blue/80 font-medium transition-colors disabled:opacity-50"
+                disabled={isLoading}
               >
                 {isSignup ? 'Sign In' : 'Sign Up'}
               </button>

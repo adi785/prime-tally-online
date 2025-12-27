@@ -9,6 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { VoucherType, Ledger, LedgerGroup } from '@/types/tally';
 import { useLedgers } from '@/integrations/supabase/hooks';
+import { useCreateVoucher, useUpdateVoucher } from '@/integrations/supabase/hooks';
 import { toast } from 'sonner';
 
 interface VoucherFormProps {
@@ -39,6 +40,8 @@ interface LineItem {
 export function VoucherForm({ type, isOpen, onClose, onSave }: VoucherFormProps) {
   const { toast: showToast } = useToast();
   const { data: ledgers = [], isLoading } = useLedgers();
+  const { mutate: createVoucher, isPending: isCreating } = useCreateVoucher();
+  const { mutate: updateVoucher, isPending: isUpdating } = useUpdateVoucher();
   
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [voucherNumber, setVoucherNumber] = useState('');
@@ -47,6 +50,8 @@ export function VoucherForm({ type, isOpen, onClose, onSave }: VoucherFormProps)
   const [items, setItems] = useState<LineItem[]>([
     { id: '1', ledgerId: '', amount: '', type: 'debit' }
   ]);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const config = voucherConfig[type];
 
@@ -107,73 +112,81 @@ export function VoucherForm({ type, isOpen, onClose, onSave }: VoucherFormProps)
   };
 
   const validateForm = () => {
-    const errors: string[] = [];
+    const newErrors: Record<string, string> = {};
 
     if (!date) {
-      errors.push('Date is required');
+      newErrors.date = 'Date is required';
     }
 
     if (!partyLedger) {
-      errors.push('Party account is required');
+      newErrors.partyLedger = 'Party account is required';
     }
 
     const validItems = items.filter(item => item.ledgerId && item.amount);
     if (validItems.length === 0) {
-      errors.push('At least one ledger entry is required');
+      newErrors.items = 'At least one ledger entry is required';
     }
 
     const totalDebit = items.filter(item => item.type === 'debit').reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0);
     const totalCredit = items.filter(item => item.type === 'credit').reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0);
 
     if (Math.abs(totalDebit - totalCredit) > 0.01) {
-      errors.push('Debit and Credit amounts must be equal');
+      newErrors.balance = 'Debit and Credit amounts must be equal';
     }
 
-    return errors;
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    const errors = validateForm();
-    if (errors.length > 0) {
-      toast({
-        title: "Validation Error",
-        description: errors.join(', '),
-        variant: "destructive",
+    if (!validateForm()) {
+      toast.error("Validation Error", {
+        description: "Please fix the errors in the form",
       });
       return;
     }
 
-    const voucherData = {
-      type,
-      date,
-      voucherNumber: voucherNumber || `AUTO-${Date.now()}`,
-      party_ledger_id: partyLedger,
-      narration,
-      items: items.filter(item => item.ledgerId && item.amount).map(item => ({
-        ledger_id: item.ledgerId,
-        amount: parseFloat(item.amount),
-        type: item.type
-      })),
-      total_amount: totalAmount,
-    };
+    setIsSubmitting(true);
 
     try {
+      const voucherData = {
+        type_id: type, // Use type_id instead of type
+        date,
+        voucher_number: voucherNumber || `AUTO-${Date.now()}`,
+        party_ledger_id: partyLedger,
+        narration,
+        items: items.filter(item => item.ledgerId && item.amount).map(item => ({
+          ledger_id: item.ledgerId,
+          amount: parseFloat(item.amount),
+          type: item.type
+        })),
+        total_amount: totalAmount,
+      };
+
+      if (voucherData.items.length === 0) {
+        throw new Error('At least one ledger entry is required');
+      }
+
+      if (voucherData.items.length < 2) {
+        throw new Error('Voucher must have at least one debit and one credit entry');
+      }
+
       onSave(voucherData);
       
-      toast({
-        title: "Voucher Created",
+      toast.success("Voucher Created", {
         description: `${voucherConfig[type].title} has been created successfully`,
       });
 
       handleClose();
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to save voucher. Please try again.",
-        variant: "destructive",
+    } catch (error: any) {
+      console.error('Error saving voucher:', error);
+      toast.error("Error", {
+        description: error.message || "Failed to save voucher. Please try again.",
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -183,6 +196,7 @@ export function VoucherForm({ type, isOpen, onClose, onSave }: VoucherFormProps)
     setPartyLedger('');
     setNarration('');
     setItems([{ id: '1', ledgerId: '', amount: '', type: 'debit' }]);
+    setErrors({});
     onClose();
   };
 
@@ -190,7 +204,7 @@ export function VoucherForm({ type, isOpen, onClose, onSave }: VoucherFormProps)
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 animate-fade-in">
-      <div className="bg-card w-full max-w-4xl rounded-xl shadow-2xl overflow-hidden animate-scale-in">
+      <div className="bg-card w-full max-w-4xl h-[90vh] rounded-xl shadow-2xl overflow-hidden animate-scale-in">
         {/* Header */}
         <div className={cn(
           "px-6 py-4 flex items-center justify-between",
@@ -200,7 +214,7 @@ export function VoucherForm({ type, isOpen, onClose, onSave }: VoucherFormProps)
             <h2 className="text-lg font-semibold text-white">{config.title}</h2>
             <span className="text-white/70 text-sm">F8</span>
           </div>
-          <button onClick={handleClose} className="text-white/70 hover:text-white transition-colors">
+          <button onClick={handleClose} className="text-white/70 hover:text-white transition-colors disabled:opacity-50" disabled={isSubmitting}>
             <X size={20} />
           </button>
         </div>
@@ -209,7 +223,7 @@ export function VoucherForm({ type, isOpen, onClose, onSave }: VoucherFormProps)
         <form onSubmit={handleSubmit} className="p-6 space-y-6 max-h-[70vh] overflow-y-auto tally-scrollbar">
           {/* Basic Details */}
           <div className="grid grid-cols-3 gap-4">
-            <div>
+            <div className="space-y-2">
               <Label htmlFor="date">Date</Label>
               <div className="relative">
                 <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={16} />
@@ -219,23 +233,32 @@ export function VoucherForm({ type, isOpen, onClose, onSave }: VoucherFormProps)
                   value={date}
                   onChange={(e) => setDate(e.target.value)}
                   className="pl-10"
+                  disabled={isSubmitting}
                 />
               </div>
+              {errors.date && (
+                <p className="text-sm text-destructive flex items-center gap-1">
+                  <AlertCircle size={12} />
+                  {errors.date}
+                </p>
+              )}
             </div>
-            <div>
+            <div className="space-y-2">
               <Label htmlFor="voucherNumber">Voucher No.</Label>
               <Input 
                 id="voucherNumber"
                 placeholder="Auto-generate"
                 value={voucherNumber}
                 onChange={(e) => setVoucherNumber(e.target.value)}
+                disabled={isSubmitting}
               />
             </div>
-            <div>
+            <div className="space-y-2">
               <Label htmlFor="partyLedger">Party Account</Label>
               <Select
                 value={partyLedger}
                 onValueChange={setPartyLedger}
+                disabled={isSubmitting || isLoading}
               >
                 <SelectTrigger>
                   <SelectValue placeholder={isLoading ? "Loading..." : "Select Party"} />
@@ -248,6 +271,12 @@ export function VoucherForm({ type, isOpen, onClose, onSave }: VoucherFormProps)
                   ))}
                 </SelectContent>
               </Select>
+              {errors.partyLedger && (
+                <p className="text-sm text-destructive flex items-center gap-1">
+                  <AlertCircle size={12} />
+                  {errors.partyLedger}
+                </p>
+              )}
             </div>
           </div>
 
@@ -255,7 +284,7 @@ export function VoucherForm({ type, isOpen, onClose, onSave }: VoucherFormProps)
           <div>
             <div className="flex items-center justify-between mb-3">
               <Label>Particulars</Label>
-              <Button variant="outline" size="sm" onClick={addItem} className="gap-1">
+              <Button variant="outline" size="sm" onClick={addItem} className="gap-1" disabled={isSubmitting}>
                 <Plus size={14} />
                 Add Row
               </Button>
@@ -278,6 +307,7 @@ export function VoucherForm({ type, isOpen, onClose, onSave }: VoucherFormProps)
                         <Select
                           value={item.type}
                           onValueChange={(value) => updateItem(item.id, 'type', value)}
+                          disabled={isSubmitting}
                         >
                           <SelectTrigger>
                             <SelectValue />
@@ -295,6 +325,7 @@ export function VoucherForm({ type, isOpen, onClose, onSave }: VoucherFormProps)
                         <Select
                           value={item.ledgerId}
                           onValueChange={(value) => updateItem(item.id, 'ledgerId', value)}
+                          disabled={isSubmitting || isLoading}
                         >
                           <SelectTrigger>
                             <SelectValue placeholder={isLoading ? "Loading..." : "Select Account"} />
@@ -315,15 +346,16 @@ export function VoucherForm({ type, isOpen, onClose, onSave }: VoucherFormProps)
                           value={item.amount}
                           onChange={(e) => updateItem(item.id, 'amount', e.target.value)}
                           className="text-right font-mono"
+                          disabled={isSubmitting}
                         />
                       </td>
                       <td className="p-2">
                         <Button 
                           variant="ghost" 
                           size="icon" 
-                          className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                          className="h-8 w-8 text-muted-foreground hover:text-destructive disabled:opacity-50"
                           onClick={() => removeItem(item.id)}
-                          disabled={items.length === 1}
+                          disabled={items.length === 1 || isSubmitting}
                         >
                           <Trash2 size={14} />
                         </Button>
@@ -333,6 +365,12 @@ export function VoucherForm({ type, isOpen, onClose, onSave }: VoucherFormProps)
                 </tbody>
               </table>
             </div>
+            {errors.items && (
+              <p className="text-sm text-destructive flex items-center gap-1 mt-2">
+                <AlertCircle size={12} />
+                {errors.items}
+              </p>
+            )}
           </div>
 
           {/* Total */}
@@ -350,13 +388,16 @@ export function VoucherForm({ type, isOpen, onClose, onSave }: VoucherFormProps)
                 ₹{items.filter(i => i.type === 'credit').reduce((sum, i) => sum + (parseFloat(i.amount) || 0), 0).toLocaleString('en-IN')}
               </p>
               <p className="text-lg font-bold font-mono text-foreground mt-2">
-                ₹0.00
+                ₹{Math.abs(
+                  items.filter(i => i.type === 'debit').reduce((sum, i) => sum + (parseFloat(i.amount) || 0), 0) -
+                  items.filter(i => i.type === 'credit').reduce((sum, i) => sum + (parseFloat(i.amount) || 0), 0)
+                ).toFixed(2)}
               </p>
             </div>
           </div>
 
           {/* Narration */}
-          <div>
+          <div className="space-y-2">
             <Label htmlFor="narration">Narration</Label>
             <Textarea
               id="narration"
@@ -364,6 +405,7 @@ export function VoucherForm({ type, isOpen, onClose, onSave }: VoucherFormProps)
               value={narration}
               onChange={(e) => setNarration(e.target.value)}
               rows={3}
+              disabled={isSubmitting}
             />
           </div>
 
@@ -378,12 +420,12 @@ export function VoucherForm({ type, isOpen, onClose, onSave }: VoucherFormProps)
               <span>Ctrl+A: Accept</span>
             </div>
             <div className="flex items-center gap-3">
-              <Button variant="outline" onClick={handleClose} type="button">
+              <Button variant="outline" onClick={handleClose} type="button" disabled={isSubmitting}>
                 Cancel
               </Button>
-              <Button type="submit" className="gap-2">
+              <Button type="submit" className="gap-2" disabled={isSubmitting}>
                 <Save size={16} />
-                Save Voucher
+                {isSubmitting ? 'Saving...' : 'Save Voucher'}
               </Button>
             </div>
           </div>
