@@ -7,14 +7,16 @@ import {
   Calendar,
   Download,
   Printer,
-  ExternalLink
+  ExternalLink,
+  FileSpreadsheet as FileSpreadsheetIcon // Alias to avoid conflict with component
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { useDashboardMetrics, useCompany } from '@/integrations/supabase/hooks'; // Import useCompany
+import { useDashboardMetrics, useCompany, useProfitAndLoss } from '@/integrations/supabase/hooks'; // Import useCompany and useProfitAndLoss
 import { toast } from 'sonner';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { AlertCircle } from 'lucide-react';
+import { useNavigate } from 'react-router-dom'; // Import useNavigate
 
 interface ReportCard {
   id: string;
@@ -30,7 +32,7 @@ const reports: ReportCard[] = [
     id: 'balance-sheet', 
     title: 'Balance Sheet', 
     description: 'View financial position as of date',
-    icon: <FileSpreadsheet size={24} />,
+    icon: <FileSpreadsheetIcon size={24} />,
     category: 'financial',
     shortcut: 'B'
   },
@@ -96,8 +98,10 @@ const categories = [
 ];
 
 export function ReportsSection() {
+  const navigate = useNavigate();
   const { data: metrics, isLoading: isMetricsLoading, error: metricsError } = useDashboardMetrics();
   const { data: company, isLoading: isCompanyLoading } = useCompany();
+  const { data: profitLoss, isLoading: isProfitLossLoading, error: profitLossError } = useProfitAndLoss();
 
   const formatAmount = (amount: number) => {
     return new Intl.NumberFormat('en-IN', {
@@ -111,19 +115,19 @@ export function ReportsSection() {
   const handleReportClick = (reportId: string) => {
     switch (reportId) {
       case 'balance-sheet':
-        window.location.href = '/reports/balance-sheet';
+        navigate('/reports/balance-sheet');
         break;
       case 'profit-loss':
-        window.location.href = '/reports/profit-loss';
+        navigate('/reports/profit-loss');
         break;
       case 'trial-balance':
-        window.location.href = '/reports/trial-balance';
+        navigate('/reports/trial-balance');
         break;
       case 'day-book':
-        window.location.href = '/reports/day-book';
+        navigate('/reports/day-book');
         break;
       case 'stock-summary':
-        window.location.href = '/inventory/analysis'; // Redirect to stock analysis for summary
+        navigate('/inventory/analysis'); // Redirect to stock analysis for summary
         break;
       default:
         toast.info(`Report ${reportId} is under development`);
@@ -138,7 +142,7 @@ export function ReportsSection() {
     toast.info(`Printing ${reportId}...`);
   };
 
-  if (isMetricsLoading || isCompanyLoading) {
+  if (isMetricsLoading || isCompanyLoading || isProfitLossLoading) {
     return (
       <div className="p-6 space-y-6">
         <div className="flex items-center justify-center h-64">
@@ -148,7 +152,7 @@ export function ReportsSection() {
     );
   }
 
-  if (metricsError) {
+  if (metricsError || profitLossError) {
     return (
       <div className="p-6 text-center py-8">
         <div className="text-destructive mb-4">
@@ -167,7 +171,7 @@ export function ReportsSection() {
   const financialYearEnd = company?.financial_year_end ? new Date(company.financial_year_end).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : 'N/A';
 
   const grossProfit = (metrics?.totalSales || 0) - (metrics?.totalPurchases || 0);
-  const netProfit = grossProfit - 150000; // Placeholder for other expenses
+  const actualNetProfit = profitLoss?.netProfit || 0; // Use actual net profit from hook
   const currentRatio = (metrics?.totalReceivables || 0) / Math.max(metrics?.totalPayables || 1, 1);
   const debtToEquity = (metrics?.totalPayables || 0) / Math.max((metrics?.totalReceivables || 1), 1);
 
@@ -272,10 +276,10 @@ export function ReportsSection() {
           <div>
             <p className="text-sm text-muted-foreground">Net Profit</p>
             <p className="text-xl font-bold font-mono amount-positive">
-              ₹{formatAmount(netProfit)}
+              ₹{formatAmount(actualNetProfit)}
             </p>
             <p className="text-xs text-muted-foreground">
-              {metrics?.totalSales > 0 ? ((netProfit / metrics.totalSales) * 100).toFixed(1) : 0}% margin
+              {metrics?.totalSales > 0 ? ((actualNetProfit / metrics.totalSales) * 100).toFixed(1) : 0}% margin
             </p>
           </div>
           <div>

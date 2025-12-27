@@ -24,7 +24,7 @@ import {
   RefreshCw
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { useLocation, useNavigate, NavLink as RouterNavLink } from 'react-router-dom' // Import RouterNavLink
+import { useLocation, useNavigate, NavLink as RouterNavLink, useMatch } from 'react-router-dom' // Import RouterNavLink and useMatch
 import { useCompany } from '@/integrations/supabase/hooks'
 
 interface MenuItem {
@@ -206,12 +206,10 @@ export function TallySidebar({ activeSection }: TallySidebarProps) {
     const isExpanded = expandedItems.includes(item.id)
     
     // Determine if the current item or any of its children are active
-    const isActive = item.path === location.pathname || 
-                     (hasChildren && item.children.some(child => location.pathname.startsWith(child.path || ''))) ||
-                     (item.id === 'vouchers' && location.pathname.startsWith('/vouchers')) ||
-                     (item.id === 'masters' && (location.pathname.startsWith('/ledgers') || location.pathname.startsWith('/inventory'))) ||
-                     (item.id === 'reports' && location.pathname.startsWith('/reports')) ||
-                     (item.id === 'inventory' && location.pathname.startsWith('/inventory'))
+    const match = useMatch(item.path || '');
+    const isParentActive = hasChildren && item.children?.some(child => useMatch(`${child.path}/*` || child.path || ''));
+    const isActive = !!match || isParentActive || (item.path && location.pathname.startsWith(item.path));
+
 
     return (
       <div key={item.id}>
