@@ -6,9 +6,12 @@ import { Button } from '@/components/ui/button'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { toast } from 'sonner'
 import { useNavigate } from 'react-router-dom'
+import { VoucherForm } from './VoucherForm'
 
 export function VoucherList() {
   const [searchQuery, setSearchQuery] = useState('')
+  const [isFormOpen, setIsFormOpen] = useState(false)
+  const [voucherType, setVoucherType] = useState('sales')
   const { data: vouchers = [], isLoading } = useVouchers()
   const { mutate: createVoucher } = useCreateVoucher()
   const { mutate: updateVoucher } = useUpdateVoucher()
@@ -25,10 +28,14 @@ export function VoucherList() {
     }
   }
 
-  const handleCreate = () => {
-    // Navigate to voucher creation page or open a modal
-    toast.info('Create Voucher functionality would open here')
-    // For now, we'll just show a toast - in a real app, this would open a form
+  const handleCreate = (type: string) => {
+    setVoucherType(type)
+    setIsFormOpen(true)
+  }
+
+  const handleSaveVoucher = (voucherData: any) => {
+    createVoucher(voucherData)
+    setIsFormOpen(false)
   }
 
   const formatAmount = (amount: number) => {
@@ -56,9 +63,14 @@ export function VoucherList() {
           <h1 className="text-2xl font-bold text-foreground">Vouchers</h1>
           <p className="text-muted-foreground">Manage your voucher entries</p>
         </div>
-        <Button className="gap-2" onClick={handleCreate}>
-          <Plus size={16} /> Create Voucher
-        </Button>
+        <div className="flex gap-2">
+          <Button className="gap-2" onClick={() => handleCreate('sales')}>
+            <Plus size={16} /> Sales Voucher
+          </Button>
+          <Button variant="outline" className="gap-2" onClick={() => handleCreate('purchase')}>
+            <Plus size={16} /> Purchase Voucher
+          </Button>
+        </div>
       </div>
       
       {/* Filters */}
@@ -104,7 +116,7 @@ export function VoucherList() {
                   </div>
                   <p className="text-muted-foreground">No vouchers found.</p>
                   <p className="text-sm text-muted-foreground mt-1">Create your first voucher to get started.</p>
-                  <Button variant="outline" className="mt-4" onClick={handleCreate}>
+                  <Button variant="outline" className="mt-4" onClick={() => handleCreate('sales')}>
                     Create First Voucher
                   </Button>
                 </TableCell>
@@ -150,6 +162,16 @@ export function VoucherList() {
           </TableBody>
         </Table>
       </div>
+      
+      {/* Voucher Form Modal */}
+      {isFormOpen && (
+        <VoucherForm 
+          type={voucherType}
+          isOpen={isFormOpen} 
+          onClose={() => setIsFormOpen(false)} 
+          onSave={handleSaveVoucher}
+        />
+      )}
     </div>
   )
 }

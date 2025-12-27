@@ -139,6 +139,22 @@ export const useDeleteLedger = () => {
   })
 }
 
+// Voucher Types Hook
+export const useVoucherTypes = () => {
+  return useQuery({
+    queryKey: ['voucherTypes'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('voucher_types')
+        .select('*')
+        .order('name')
+      
+      if (error) throw error
+      return data || []
+    },
+  })
+}
+
 // Voucher Hooks
 export const useVouchers = () => {
   return useQuery({
@@ -164,13 +180,30 @@ export const useCreateVoucher = () => {
   
   return useMutation({
     mutationFn: async (newVoucher: any) => {
-      const { data, error } = await supabase
-        .from('vouchers')
-        .insert([newVoucher])
-        .select()
-        .single()
+      // Use the RPC function to create voucher with items
+      const { data: voucherId, error } = await supabase.rpc('create_voucher_with_items', {
+        p_voucher_number: newVoucher.voucher_number,
+        p_type: newVoucher.type_id,
+        p_date: newVoucher.date,
+        p_party_ledger_id: newVoucher.party_ledger_id,
+        p_narration: newVoucher.narration,
+        p_items: newVoucher.items
+      })
       
       if (error) throw error
+      
+      // Fetch the created voucher
+      const { data, error: fetchError } = await supabase
+        .from('vouchers')
+        .select(`
+          *,
+          party_ledger:ledgers(name),
+          voucher_items(*, ledger:ledgers(name))
+        `)
+        .eq('id', voucherId)
+        .single()
+      
+      if (fetchError) throw fetchError
       return data
     },
     onSuccess: () => {
