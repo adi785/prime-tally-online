@@ -2,11 +2,10 @@ import { useRef } from 'react'
 import { X, Printer, Download, Mail, Copy } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { InvoiceTemplate } from './InvoiceTemplate'
-import { Voucher } from '@/types/tally'
 import { toast } from 'sonner'
 
 interface InvoicePreviewModalProps {
-  voucher: Voucher
+  voucher: any
   isOpen: boolean
   onClose: () => void
 }
@@ -28,7 +27,7 @@ export function InvoicePreviewModal({ voucher, isOpen, onClose }: InvoicePreview
       <!DOCTYPE html>
       <html>
         <head>
-          <title>Invoice ${voucher.voucherNumber}</title>
+          <title>Invoice ${voucher.voucher_number}</title>
           <style>
             * {
               margin: 0;
@@ -94,6 +93,7 @@ export function InvoicePreviewModal({ voucher, isOpen, onClose }: InvoicePreview
             .rounded { border-radius: 4px; }
             .bg-gray-50 { background-color: #f9fafb; }
             .bg-gray-100 { background-color: #f3f4f6; }
+            .bg-gray-200 { background-color: #e5e7eb; }
             .text-gray-400 { color: #9ca3af; }
             .text-gray-500 { color: #6b7280; }
             .text-gray-600 { color: #4b5563; }
@@ -164,7 +164,7 @@ export function InvoicePreviewModal({ voucher, isOpen, onClose }: InvoicePreview
         <div className="px-6 py-4 flex items-center justify-between border-b border-border bg-muted/50">
           <div>
             <h2 className="text-lg font-semibold text-foreground">Invoice Preview</h2>
-            <p className="text-sm text-muted-foreground">{voucher.voucherNumber} • {voucher.party_name}</p>
+            <p className="text-sm text-muted-foreground">{voucher.voucher_number} • {voucher.party_ledger?.name}</p>
           </div>
           <div className="flex items-center gap-2">
             <Button variant="outline" size="sm" onClick={handleCopyLink} className="gap-2">

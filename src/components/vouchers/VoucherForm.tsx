@@ -1,15 +1,14 @@
 import { useState, useEffect } from 'react'
-import { X, Save, Plus, Trash2, Calculator, Calendar, AlertCircle } from 'lucide-react'
+import { X, Save, Plus, Trash2, Calculator, Calendar, AlertCircle, PlusCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { useToast } from '@/hooks/use-toast'
+import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { useLedgers, useVoucherTypes } from '@/integrations/supabase/hooks'
 import { useCreateVoucher, useUpdateVoucher } from '@/integrations/supabase/hooks'
-import { toast } from 'sonner'
 
 interface VoucherFormProps {
   type: string
@@ -34,10 +33,10 @@ interface LineItem {
   ledgerId: string
   amount: string
   type: 'debit' | 'credit'
+  description?: string
 }
 
 export function VoucherForm({ type, isOpen, onClose, onSave }: VoucherFormProps) {
-  const { toast: showToast } = useToast()
   const { data: ledgers = [], isLoading: isLedgersLoading } = useLedgers()
   const { data: voucherTypes = [] } = useVoucherTypes()
   const { mutate: createVoucher, isPending: isCreating } = useCreateVoucher()
@@ -63,32 +62,37 @@ export function VoucherForm({ type, isOpen, onClose, onSave }: VoucherFormProps)
     !['sundry-debtors', 'sundry-creditors'].includes(l.group_name || l.group?.name || '')
   )
   
+  // Sales-specific accounts
+  const salesAccounts = ledgers.filter(l => 
+    l.group_name === 'sales-accounts' || l.group?.name === 'sales-accounts'
+  )
+  
   const getVoucherTypeOptions = () => {
     switch (type) {
       case 'sales':
         return [
-          { value: 'debit', label: 'Debit Party Account' },
-          { value: 'credit', label: 'Credit Sales Account' }
+          { value: 'debit', label: 'Debit Party Account (Sundry Debtors)', accounts: partyLedgers },
+          { value: 'credit', label: 'Credit Sales Account', accounts: salesAccounts }
         ]
       case 'purchase':
         return [
-          { value: 'debit', label: 'Debit Purchase Account' },
-          { value: 'credit', label: 'Credit Party Account' }
+          { value: 'debit', label: 'Debit Purchase Account', accounts: accountLedgers.filter(l => l.group_name === 'purchase-accounts') },
+          { value: 'credit', label: 'Credit Party Account (Sundry Creditors)', accounts: partyLedgers }
         ]
       case 'receipt':
         return [
-          { value: 'debit', label: 'Debit Bank/Cash Account' },
-          { value: 'credit', label: 'Credit Party Account' }
+          { value: 'debit', label: 'Debit Bank/Cash Account', accounts: accountLedgers.filter(l => ['bank-accounts', 'cash-in-hand'].includes(l.group_name || '')) },
+          { value: 'credit', label: 'Credit Party Account (Sundry Debtors)', accounts: partyLedgers }
         ]
       case 'payment':
         return [
-          { value: 'debit', label: 'Debit Party Account' },
-          { value: 'credit', label: 'Credit Bank/Cash Account' }
+          { value: 'debit', label: 'Debit Party Account (Sundry Creditors)', accounts: partyLedgers },
+          { value: 'credit', label: 'Credit Bank/Cash Account', accounts: accountLedgers.filter(l => ['bank-accounts', 'cash-in-hand'].includes(l.group_name || '')) }
         ]
       default:
         return [
-          { value: 'debit', label: 'Debit Account' },
-          { value: 'credit', label: 'Credit Account' }
+          { value: 'debit', label: 'Debit Account', accounts: accountLedgers },
+          { value: 'credit', label: 'Credit Account', accounts: accountLedgers }
         ]
     }
   }
@@ -281,7 +285,7 @@ export function VoucherForm({ type, isOpen, onClose, onSave }: VoucherFormProps)
             <div className="flex items-center justify-between mb-3">
               <Label>Particulars</Label>
               <Button variant="outline" size="sm" onClick={addItem} className="gap-1">
-                <Plus size={14} /> Add Row
+                <PlusCircle size={14} /> Add Row
               </Button>
             </div>
             <div className="border border-border rounded-lg overflow-hidden">
@@ -323,11 +327,13 @@ export function VoucherForm({ type, isOpen, onClose, onSave }: VoucherFormProps)
                             <SelectValue placeholder={isLedgersLoading ? "Loading..." : "Select Account"} />
                           </SelectTrigger>
                           <SelectContent>
-                            {accountLedgers.map(ledger => (
-                              <SelectItem key={ledger.id} value={ledger.id}>
-                                {ledger.name}
-                              </SelectItem>
-                            ))}
+                            {getVoucherTypeOptions()
+                              .find(opt => opt.value === item.type)?.accounts
+                              .map(ledger => (
+                                <SelectItem key={ledger.id} value={ledger.id}>
+                                  {ledger.name}
+                                </SelectItem>
+                              ))}
                           </SelectContent>
                         </Select>
                       </td>
@@ -421,8 +427,9 @@ export function VoucherForm({ type, isOpen, onClose, onSave }: VoucherFormProps)
               <Button variant="outline" onClick={handleClose} type="button">
                 Cancel
               </Button>
-              <Button type="submit" className="gap-2">
-                <Save size={16} /> Save Voucher
+              <Button type="submit" className="gap-2" disabled={isCreating || isUpdating}>
+                <Save size={16} />
+                {isCreating || isUpdating ? 'Saving...' : 'Save Voucher'}
               </Button>
             </div>
           </div>
