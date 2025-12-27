@@ -1,362 +1,312 @@
-import { useState, useEffect } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from './client';
-import { toast } from 'sonner';
-import { 
-  ledgerService, 
-  voucherService, 
-  dashboardService, 
-  stockService, 
-  companyService,
-  utilityService 
-} from './services';
-import { 
-  Ledger, 
-  Voucher, 
-  DashboardMetrics, 
-  StockItem, 
-  Company, 
-  CreateLedgerRequest, 
-  UpdateLedgerRequest, 
-  CreateVoucherRequest, 
-  UpdateVoucherRequest, 
-  CreateStockItemRequest, 
-  UpdateStockItemRequest, 
-  UpdateCompanyRequest, 
-  LedgerQueryParams, 
-  VoucherQueryParams, 
-  StockQueryParams, 
-  DashboardMetricsResponse 
-} from './types';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { supabase } from './client'
+import { toast } from 'sonner'
+import { authService } from './auth'
 
-// --- Auth Hook ---
+// Auth Hook
 export const useAuthState = () => {
-  const [user, setUser] = useState<any>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const queryClient = useQueryClient()
   
-  useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        setUser(user);
-        setIsLoading(false);
-      } catch (error) {
-        console.warn('Auth check failed, assuming no user');
-        setUser(null);
-        setIsLoading(false);
-      }
-    };
-    
-    checkAuth();
-    
-    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-      setIsLoading(false);
-    });
-    
-    return () => {
-      authListener?.subscription.unsubscribe();
-    };
-  }, []);
+  const { data: user, isLoading } = useQuery({
+    queryKey: ['auth'],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      return user
+    },
+    staleTime: Infinity,
+  })
 
   const signOut = async () => {
     try {
-      const { error } = await supabase.auth.signOut();
-      if (error) throw error;
-      toast.success('Signed out successfully');
+      await authService.signOut()
+      queryClient.setQueryData(['auth'], null)
     } catch (error) {
-      toast.error('Failed to sign out. Please try again.');
-      console.error('Sign out error:', error);
+      console.error('Sign out error:', error)
     }
-  };
+  }
 
   return {
     user,
     isLoading,
     isAuthenticated: !!user,
     signOut,
-  };
-};
+  }
+}
 
-// --- Ledger Hooks ---
-export const useLedgers = (params?: LedgerQueryParams) => {
-  console.log('useLedgers called with params:', params);
-  
-  return useQuery<Ledger[], Error>({
-    queryKey: ['ledgers', params],
-    queryFn: () => ledgerService.getLedgers(params),
-    enabled: true,
-  });
-};
-
-export const useLedger = (id: string) => {
-  console.log('useLedger called with id:', id);
-  
-  return useQuery<Ledger, Error>({
-    queryKey: ['ledgers', id],
-    queryFn: () => ledgerService.getLedger(id),
-    enabled: !!id,
-  });
-};
+// Ledger Hooks
+export const useLedgers = () => {
+  return useQuery({
+    queryKey: ['ledgers'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('ledgers')
+        .select('*')
+        .order('name')
+      
+      if (error) throw error
+      return data || []
+    },
+  })
+}
 
 export const useCreateLedger = () => {
-  const queryClient = useQueryClient();
+  const queryClient = useQueryClient()
   
-  return useMutation<Ledger, Error, CreateLedgerRequest>({
-    mutationFn: (data) => ledgerService.createLedger(data),
+  return useMutation({
+    mutationFn: async (newLedger: any) => {
+      const { data, error } = await supabase
+        .from('ledgers')
+        .insert([newLedger])
+        .select()
+        .single()
+      
+      if (error) throw error
+      return data
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['ledgers'] });
-      queryClient.invalidateQueries({ queryKey: ['dashboardMetrics'] });
-      toast.success('Ledger created successfully.');
+      queryClient.invalidateQueries({ queryKey: ['ledgers'] })
+      toast.success('Ledger created successfully')
     },
     onError: (error) => {
-      toast.error(`Failed to create ledger: ${error.message}`);
+      toast.error(`Failed to create ledger: ${error.message}`)
     },
-  });
-};
+  })
+}
 
 export const useUpdateLedger = () => {
-  const queryClient = useQueryClient();
+  const queryClient = useQueryClient()
   
-  return useMutation<Ledger, Error, UpdateLedgerRequest>({
-    mutationFn: (data) => ledgerService.updateLedger(data.id, data),
-    onSuccess: (updatedLedger) => {
-      queryClient.invalidateQueries({ queryKey: ['ledgers'] });
-      queryClient.invalidateQueries({ queryKey: ['dashboardMetrics'] });
-      queryClient.invalidateQueries({ queryKey: ['ledgers', updatedLedger.id] });
-      toast.success('Ledger updated successfully.');
+  return useMutation({
+    mutationFn: async ({ id, ...updates }: any) => {
+      const { data, error } = await supabase
+        .from('ledgers')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single()
+      
+      if (error) throw error
+      return data
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['ledgers'] })
+      toast.success('Ledger updated successfully')
     },
     onError: (error) => {
-      toast.error(`Failed to update ledger: ${error.message}`);
+      toast.error(`Failed to update ledger: ${error.message}`)
     },
-  });
-};
+  })
+}
 
 export const useDeleteLedger = () => {
-  const queryClient = useQueryClient();
+  const queryClient = useQueryClient()
   
-  return useMutation<void, Error, string>({
-    mutationFn: (id) => ledgerService.deleteLedger(id),
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('ledgers')
+        .delete()
+        .eq('id', id)
+      
+      if (error) throw error
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['ledgers'] });
-      queryClient.invalidateQueries({ queryKey: ['dashboardMetrics'] });
-      toast.success('Ledger deleted successfully.');
+      queryClient.invalidateQueries({ queryKey: ['ledgers'] })
+      toast.success('Ledger deleted successfully')
     },
     onError: (error) => {
-      toast.error(`Failed to delete ledger: ${error.message}`);
+      toast.error(`Failed to delete ledger: ${error.message}`)
     },
-  });
-};
+  })
+}
 
-// --- Voucher Hooks ---
-export const useVouchers = (params?: VoucherQueryParams) => {
-  console.log('useVouchers called with params:', params);
-  
-  return useQuery<Voucher[], Error>({
-    queryKey: ['vouchers', params],
-    queryFn: () => voucherService.getVouchers(params),
-    enabled: true,
-  });
-};
-
-export const useVoucher = (id: string) => {
-  console.log('useVoucher called with id:', id);
-  
-  return useQuery<Voucher, Error>({
-    queryKey: ['vouchers', id],
-    queryFn: () => voucherService.getVoucher(id),
-    enabled: !!id,
-  });
-};
+// Voucher Hooks
+export const useVouchers = () => {
+  return useQuery({
+    queryKey: ['vouchers'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('vouchers')
+        .select(`
+          *,
+          party_ledger:ledgers(name),
+          voucher_items(*, ledger:ledgers(name))
+        `)
+        .order('date', { ascending: false })
+      
+      if (error) throw error
+      return data || []
+    },
+  })
+}
 
 export const useCreateVoucher = () => {
-  const queryClient = useQueryClient();
+  const queryClient = useQueryClient()
   
-  return useMutation<Voucher, Error, CreateVoucherRequest>({
-    mutationFn: (data) => voucherService.createVoucher(data),
+  return useMutation({
+    mutationFn: async (newVoucher: any) => {
+      const { data, error } = await supabase
+        .from('vouchers')
+        .insert([newVoucher])
+        .select()
+        .single()
+      
+      if (error) throw error
+      return data
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['vouchers'] });
-      queryClient.invalidateQueries({ queryKey: ['ledgers'] });
-      queryClient.invalidateQueries({ queryKey: ['dashboardMetrics'] });
-      toast.success('Voucher created successfully.');
+      queryClient.invalidateQueries({ queryKey: ['vouchers'] })
+      toast.success('Voucher created successfully')
     },
     onError: (error) => {
-      toast.error(`Failed to create voucher: ${error.message}`);
+      toast.error(`Failed to create voucher: ${error.message}`)
     },
-  });
-};
+  })
+}
 
 export const useUpdateVoucher = () => {
-  const queryClient = useQueryClient();
+  const queryClient = useQueryClient()
   
-  return useMutation<Voucher, Error, UpdateVoucherRequest>({
-    mutationFn: (data) => voucherService.updateVoucher(data.id, data),
-    onSuccess: (updatedVoucher) => {
-      queryClient.invalidateQueries({ queryKey: ['vouchers'] });
-      queryClient.invalidateQueries({ queryKey: ['ledgers'] });
-      queryClient.invalidateQueries({ queryKey: ['dashboardMetrics'] });
-      queryClient.invalidateQueries({ queryKey: ['vouchers', updatedVoucher.id] });
-      toast.success('Voucher updated successfully.');
+  return useMutation({
+    mutationFn: async ({ id, ...updates }: any) => {
+      const { data, error } = await supabase
+        .from('vouchers')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single()
+      
+      if (error) throw error
+      return data
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['vouchers'] })
+      toast.success('Voucher updated successfully')
     },
     onError: (error) => {
-      toast.error(`Failed to update voucher: ${error.message}`);
+      toast.error(`Failed to update voucher: ${error.message}`)
     },
-  });
-};
+  })
+}
 
 export const useDeleteVoucher = () => {
-  const queryClient = useQueryClient();
+  const queryClient = useQueryClient()
   
-  return useMutation<void, Error, string>({
-    mutationFn: (id) => voucherService.deleteVoucher(id),
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('vouchers')
+        .delete()
+        .eq('id', id)
+      
+      if (error) throw error
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['vouchers'] });
-      queryClient.invalidateQueries({ queryKey: ['ledgers'] });
-      queryClient.invalidateQueries({ queryKey: ['dashboardMetrics'] });
-      toast.success('Voucher deleted successfully.');
+      queryClient.invalidateQueries({ queryKey: ['vouchers'] })
+      toast.success('Voucher deleted successfully')
     },
     onError: (error) => {
-      toast.error(`Failed to delete voucher: ${error.message}`);
+      toast.error(`Failed to delete voucher: ${error.message}`)
     },
-  });
-};
+  })
+}
 
-// --- Dashboard Hooks ---
+// Dashboard Metrics Hook
 export const useDashboardMetrics = () => {
-  console.log('useDashboardMetrics called');
-  
-  return useQuery<DashboardMetricsResponse, Error>({
+  return useQuery({
     queryKey: ['dashboardMetrics'],
-    queryFn: () => dashboardService.getDashboardMetrics(),
-    staleTime: 1000 * 60 * 5, // 5 minutes
-  });
-};
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('get_dashboard_metrics')
+      if (error) throw error
+      return data
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  })
+}
 
-// --- Stock Item Hooks ---
-export const useStockItems = (params?: StockQueryParams) => {
-  console.log('useStockItems called with params:', params);
-  
-  return useQuery<StockItem[], Error>({
-    queryKey: ['stockItems', params],
-    queryFn: () => stockService.getStockItems(params),
-    enabled: true,
-  });
-};
-
-export const useStockItem = (id: string) => {
-  console.log('useStockItem called with id:', id);
-  
-  return useQuery<StockItem, Error>({
-    queryKey: ['stockItems', id],
-    queryFn: () => stockService.getStockItem(id),
-    enabled: !!id,
-  });
-};
+// Stock Items Hooks
+export const useStockItems = () => {
+  return useQuery({
+    queryKey: ['stockItems'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('stock_items')
+        .select('*')
+        .order('name')
+      
+      if (error) throw error
+      return data || []
+    },
+  })
+}
 
 export const useCreateStockItem = () => {
-  const queryClient = useQueryClient();
+  const queryClient = useQueryClient()
   
-  return useMutation<StockItem, Error, CreateStockItemRequest>({
-    mutationFn: (data) => stockService.createStockItem(data),
+  return useMutation({
+    mutationFn: async (newStockItem: any) => {
+      const { data, error } = await supabase
+        .from('stock_items')
+        .insert([newStockItem])
+        .select()
+        .single()
+      
+      if (error) throw error
+      return data
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['stockItems'] });
-      toast.success('Stock item created successfully.');
+      queryClient.invalidateQueries({ queryKey: ['stockItems'] })
+      toast.success('Stock item created successfully')
     },
     onError: (error) => {
-      toast.error(`Failed to create stock item: ${error.message}`);
+      toast.error(`Failed to create stock item: ${error.message}`)
     },
-  });
-};
+  })
+}
 
 export const useUpdateStockItem = () => {
-  const queryClient = useQueryClient();
+  const queryClient = useQueryClient()
   
-  return useMutation<StockItem, Error, UpdateStockItemRequest>({
-    mutationFn: (data) => stockService.updateStockItem(data.id, data),
-    onSuccess: (updatedItem) => {
-      queryClient.invalidateQueries({ queryKey: ['stockItems'] });
-      queryClient.invalidateQueries({ queryKey: ['stockItems', updatedItem.id] });
-      toast.success('Stock item updated successfully.');
+  return useMutation({
+    mutationFn: async ({ id, ...updates }: any) => {
+      const { data, error } = await supabase
+        .from('stock_items')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single()
+      
+      if (error) throw error
+      return data
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['stockItems'] })
+      toast.success('Stock item updated successfully')
     },
     onError: (error) => {
-      toast.error(`Failed to update stock item: ${error.message}`);
+      toast.error(`Failed to update stock item: ${error.message}`)
     },
-  });
-};
+  })
+}
 
 export const useDeleteStockItem = () => {
-  const queryClient = useQueryClient();
+  const queryClient = useQueryClient()
   
-  return useMutation<void, Error, string>({
-    mutationFn: (id) => stockService.deleteStockItem(id),
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('stock_items')
+        .delete()
+        .eq('id', id)
+      
+      if (error) throw error
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['stockItems'] });
-      toast.success('Stock item deleted successfully.');
+      queryClient.invalidateQueries({ queryKey: ['stockItems'] })
+      toast.success('Stock item deleted successfully')
     },
     onError: (error) => {
-      toast.error(`Failed to delete stock item: ${error.message}`);
+      toast.error(`Failed to delete stock item: ${error.message}`)
     },
-  });
-};
-
-// --- Company Hooks ---
-export const useCompany = () => {
-  console.log('useCompany called');
-  
-  return useQuery<Company, Error>({
-    queryKey: ['company'],
-    queryFn: () => companyService.getCompany(),
-    staleTime: Infinity,
-  });
-};
-
-export const useUpdateCompany = () => {
-  const queryClient = useQueryClient();
-  
-  return useMutation<Company, Error, UpdateCompanyRequest>({
-    mutationFn: (data) => companyService.updateCompany(data),
-    onSuccess: (updatedCompany) => {
-      queryClient.invalidateQueries({ queryKey: ['company'] });
-      toast.success('Company information updated successfully.');
-    },
-    onError: (error) => {
-      toast.error(`Failed to update company information: ${error.message}`);
-    },
-  });
-};
-
-export const useCreateCompany = () => {
-  const queryClient = useQueryClient();
-  
-  return useMutation<Company, Error, Omit<Company, 'id' | 'created_at' | 'updated_at'>>({
-    mutationFn: (data) => companyService.createCompany(data),
-    onSuccess: (newCompany) => {
-      queryClient.invalidateQueries({ queryKey: ['company'] });
-      toast.success('Company created successfully.');
-    },
-    onError: (error) => {
-      toast.error(`Failed to create company: ${error.message}`);
-    },
-  });
-};
-
-// --- Utility Hooks ---
-export const useVoucherTypes = () => {
-  console.log('useVoucherTypes called');
-  
-  return useQuery<Array<{ id: string; name: string; description: string }>, Error>({
-    queryKey: ['voucherTypes'],
-    queryFn: () => utilityService.getVoucherTypes(),
-    staleTime: Infinity,
-  });
-};
-
-export const useLedgerGroups = () => {
-  console.log('useLedgerGroups called');
-  
-  return useQuery<Array<{ id: string; name: string }>, Error>({
-    queryKey: ['ledgerGroups'],
-    queryFn: () => utilityService.getLedgerGroups(),
-    staleTime: Infinity,
-  });
-};
+  })
+}

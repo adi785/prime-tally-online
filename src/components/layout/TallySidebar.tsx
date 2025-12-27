@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState } from 'react'
 import { 
   LayoutDashboard, 
   FileText, 
@@ -7,49 +7,46 @@ import {
   Package, 
   Settings, 
   Users, 
-  Calculator,
-  ChevronDown,
-  ChevronRight,
-  Receipt,
-  CreditCard,
-  Wallet,
-  ArrowDownToLine,
-  ArrowUpFromLine,
-  FileSpreadsheet,
-  PieChart,
-  TrendingUp,
-  Building2,
-  HelpCircle
-} from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { VoucherType } from '@/types/tally';
-import { VoucherForm } from '@/components/vouchers/VoucherForm';
-import { useCreateVoucher } from '@/integrations/supabase/hooks';
+  Calculator, 
+  ChevronDown, 
+  ChevronRight, 
+  Receipt, 
+  CreditCard, 
+  Wallet, 
+  ArrowDownToLine, 
+  ArrowUpFromLine, 
+  FileSpreadsheet, 
+  PieChart, 
+  TrendingUp, 
+  Building2, 
+  HelpCircle 
+} from 'lucide-react'
+import { cn } from '@/lib/utils'
+import { NavLink } from 'react-router-dom'
 
 interface MenuItem {
-  id: string;
-  label: string;
-  icon: React.ReactNode;
-  shortcut?: string;
-  children?: MenuItem[];
+  id: string
+  label: string
+  icon: React.ReactNode
+  shortcut?: string
+  children?: MenuItem[]
 }
 
 interface TallySidebarProps {
-  activeSection: string;
-  onSectionChange: (section: string) => void;
+  activeSection: string
 }
 
 const menuItems: MenuItem[] = [
   { 
     id: 'dashboard', 
     label: 'Dashboard', 
-    icon: <LayoutDashboard size={18} />,
-    shortcut: 'F1'
+    icon: <LayoutDashboard size={18} />, 
+    shortcut: 'F1' 
   },
   { 
     id: 'vouchers', 
     label: 'Vouchers', 
-    icon: <FileText size={18} />,
+    icon: <FileText size={18} />, 
     shortcut: 'V',
     children: [
       { id: 'sales', label: 'Sales', icon: <ArrowUpFromLine size={16} />, shortcut: 'F8' },
@@ -63,7 +60,7 @@ const menuItems: MenuItem[] = [
   { 
     id: 'masters', 
     label: 'Masters', 
-    icon: <BookOpen size={18} />,
+    icon: <BookOpen size={18} />, 
     shortcut: 'M',
     children: [
       { id: 'ledgers', label: 'Ledgers', icon: <BookOpen size={16} /> },
@@ -74,7 +71,7 @@ const menuItems: MenuItem[] = [
   { 
     id: 'reports', 
     label: 'Reports', 
-    icon: <BarChart3 size={18} />,
+    icon: <BarChart3 size={18} />, 
     shortcut: 'R',
     children: [
       { id: 'balance-sheet', label: 'Balance Sheet', icon: <FileSpreadsheet size={16} /> },
@@ -86,64 +83,41 @@ const menuItems: MenuItem[] = [
   { 
     id: 'inventory', 
     label: 'Inventory', 
-    icon: <Package size={18} />,
-    shortcut: 'I'
+    icon: <Package size={18} />, 
+    shortcut: 'I' 
   },
-];
+]
 
 const bottomMenuItems: MenuItem[] = [
   { id: 'company', label: 'Company Info', icon: <Building2 size={18} /> },
   { id: 'settings', label: 'Settings', icon: <Settings size={18} /> },
   { id: 'help', label: 'Help', icon: <HelpCircle size={18} />, shortcut: 'F1' },
-];
+]
 
-export function TallySidebar({ activeSection, onSectionChange }: TallySidebarProps) {
-  const [expandedItems, setExpandedItems] = useState<string[]>(['vouchers']);
-  const [voucherForm, setVoucherForm] = useState<{ isOpen: boolean; type: VoucherType | null }>({
-    isOpen: false,
-    type: null
-  });
-
-  const { mutate: createVoucher, isPending: isCreating } = useCreateVoucher();
+export function TallySidebar({ activeSection }: TallySidebarProps) {
+  const [expandedItems, setExpandedItems] = useState<string[]>(['vouchers'])
 
   const toggleExpand = (id: string) => {
     setExpandedItems(prev => 
       prev.includes(id) 
-        ? prev.filter(item => item !== id)
+        ? prev.filter(item => item !== id) 
         : [...prev, id]
-    );
-  };
-
-  const handleVoucherClick = (voucherType: VoucherType) => {
-    setVoucherForm({ isOpen: true, type: voucherType });
-  };
-
-  const handleSaveVoucher = (voucherData: any) => {
-    createVoucher(voucherData);
-    setVoucherForm({ isOpen: false, type: null });
-  };
+    )
+  }
 
   const renderMenuItem = (item: MenuItem, isChild = false) => {
-    const hasChildren = item.children && item.children.length > 0;
-    const isExpanded = expandedItems.includes(item.id);
-    const isActive = activeSection === item.id;
+    const hasChildren = item.children && item.children.length > 0
+    const isExpanded = expandedItems.includes(item.id)
+    const isActive = activeSection === item.id
 
     return (
       <div key={item.id}>
-        <button
-          onClick={() => {
-            if (hasChildren) {
-              toggleExpand(item.id);
-            } else {
-              onSectionChange(item.id);
-            }
-          }}
+        <NavLink
+          to={`/${item.id}`}
           className={cn(
             "w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-all duration-200",
             isChild ? "pl-10" : "pl-4",
-            isActive 
-              ? "bg-sidebar-accent text-sidebar-foreground border-l-2 border-sidebar-primary" 
-              : "text-sidebar-muted hover:bg-sidebar-accent/50 hover:text-sidebar-foreground border-l-2 border-transparent",
+            isActive ? "bg-sidebar-accent text-sidebar-foreground border-l-2 border-sidebar-primary" : "text-sidebar-muted hover:bg-sidebar-accent/50 hover:text-sidebar-foreground border-l-2 border-transparent",
           )}
         >
           <span className={cn(
@@ -161,16 +135,15 @@ export function TallySidebar({ activeSection, onSectionChange }: TallySidebarPro
               {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
             </span>
           )}
-        </button>
-        
+        </NavLink>
         {hasChildren && isExpanded && (
           <div className="animate-fade-in">
             {item.children?.map(child => renderMenuItem(child, true))}
           </div>
         )}
       </div>
-    );
-  };
+    )
+  }
 
   return (
     <aside className="w-64 h-screen bg-sidebar flex flex-col border-r border-sidebar-border">
@@ -186,35 +159,25 @@ export function TallySidebar({ activeSection, onSectionChange }: TallySidebarPro
           </div>
         </div>
       </div>
-
+      
       {/* Main Menu */}
       <nav className="flex-1 py-4 overflow-y-auto tally-scrollbar">
         <div className="space-y-1">
           {menuItems.map(item => renderMenuItem(item))}
         </div>
       </nav>
-
+      
       {/* Bottom Menu */}
       <div className="border-t border-sidebar-border py-2">
         {bottomMenuItems.map(item => renderMenuItem(item))}
       </div>
-
+      
       {/* Version Info */}
       <div className="p-4 border-t border-sidebar-border">
         <p className="text-sidebar-muted text-xs text-center">
           Version 4.0 • Release 1.1
         </p>
       </div>
-
-      {/* Voucher Form Modal */}
-      {voucherForm.type && (
-        <VoucherForm
-          type={voucherForm.type}
-          isOpen={voucherForm.isOpen}
-          onClose={() => setVoucherForm({ isOpen: false, type: null })}
-          onSave={handleSaveVoucher}
-        />
-      )}
     </aside>
-  );
+  )
 }

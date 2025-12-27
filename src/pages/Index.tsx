@@ -1,83 +1,54 @@
-import { useState } from 'react';
-import { TallySidebar } from '@/components/layout/TallySidebar';
-import { TopBar } from '@/components/layout/TopBar';
-import { Dashboard } from '@/components/dashboard/Dashboard';
-import { LedgerList } from '@/components/ledgers/LedgerList';
-import { VoucherForm } from '@/components/vouchers/VoucherForm';
-import { ReportsSection } from '@/components/reports/ReportsSection';
-import { InventorySection } from '@/components/inventory/InventorySection';
-import { DebugInfo } from '@/components/DebugInfo';
-import { TestConnection } from '@/components/TestConnection';
-import { VoucherType } from '@/types/tally';
+import { useState } from 'react'
+import { TallySidebar } from '@/components/layout/TallySidebar'
+import { TopBar } from '@/components/layout/TopBar'
+import { Dashboard } from '@/components/dashboard/Dashboard'
+import { LedgerList } from '@/components/ledgers/LedgerList'
+import { VoucherList } from '@/components/vouchers/VoucherList'
+import { StockList } from '@/components/inventory/StockList'
+import { useLocation } from 'react-router-dom'
 
 const Index = () => {
-  const [activeSection, setActiveSection] = useState('dashboard');
-  const [voucherForm, setVoucherForm] = useState<{ isOpen: boolean; type: VoucherType | null }>({
-    isOpen: false,
-    type: null
-  });
-
+  const location = useLocation()
   const currentDate = new Date().toLocaleDateString('en-IN', {
     weekday: 'short',
     day: '2-digit',
     month: 'short',
     year: 'numeric'
-  });
-
-  const handleVoucherCreate = (type: VoucherType) => {
-    setVoucherForm({ isOpen: true, type });
-  };
-
-  const handleSaveVoucher = (voucherData: any) => {
-    console.log('Saving voucher:', voucherData);
-    setVoucherForm({ isOpen: false, type: null });
-  };
+  })
 
   const renderContent = () => {
-    switch (activeSection) {
-      case 'dashboard':
-        return <Dashboard onVoucherCreate={handleVoucherCreate} />;
-      case 'ledgers':
-        return <LedgerList />;
-      case 'reports':
-      case 'balance-sheet':
-      case 'profit-loss':
-      case 'trial-balance':
-      case 'day-book':
-        return <ReportsSection />;
-      case 'inventory':
-        return <InventorySection />;
-      default:
-        return <Dashboard onVoucherCreate={handleVoucherCreate} />;
+    if (location.pathname === '/ledgers') {
+      return <LedgerList />
+    } else if (location.pathname === '/vouchers') {
+      return <VoucherList />
+    } else if (location.pathname === '/inventory') {
+      return <StockList />
+    } else {
+      return <Dashboard />
     }
-  };
+  }
+
+  // Extract active section from pathname
+  const getActiveSection = () => {
+    const path = location.pathname.substring(1)
+    if (path === '') return 'dashboard'
+    return path
+  }
 
   return (
     <div className="flex h-screen bg-background overflow-hidden">
       {/* Sidebar */}
-      <TallySidebar activeSection={activeSection} onSectionChange={setActiveSection} />
+      <TallySidebar activeSection={getActiveSection()} />
       
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
         <TopBar currentDate={currentDate} />
         <main className="flex-1 overflow-y-auto tally-scrollbar">
-          <DebugInfo />
-          <TestConnection />
           {renderContent()}
         </main>
       </div>
-
-      {/* Voucher Form Modal */}
-      {voucherForm.type && (
-        <VoucherForm
-          type={voucherForm.type}
-          isOpen={voucherForm.isOpen}
-          onClose={() => setVoucherForm({ isOpen: false, type: null })}
-          onSave={handleSaveVoucher}
-        />
-      )}
     </div>
-  );
-};
+  )
+}
 
-export default Index;
+export default Index

@@ -1,40 +1,40 @@
-import { cn } from '@/lib/utils';
-import { LucideIcon } from 'lucide-react';
+import { cn } from '@/lib/utils'
+import { LucideIcon } from 'lucide-react'
 
 interface MetricCardProps {
-  title: string;
-  value: number;
-  icon: LucideIcon;
-  trend?: { value: number; isPositive: boolean };
-  variant?: 'default' | 'success' | 'warning' | 'destructive';
-  prefix?: string;
+  title: string
+  value: number
+  icon: LucideIcon
+  trend?: { value: number; isPositive: boolean }
+  variant?: 'default' | 'success' | 'warning' | 'destructive'
+  prefix?: string
 }
 
 export function MetricCard({ title, value, icon: Icon, trend, variant = 'default', prefix = '₹' }: MetricCardProps) {
   const formatAmount = (amount: number) => {
     if (amount >= 10000000) {
-      return `${(amount / 10000000).toFixed(2)} Cr`;
+      return `${(amount / 10000000).toFixed(2)} Cr`
     } else if (amount >= 100000) {
-      return `${(amount / 100000).toFixed(2)} L`;
+      return `${(amount / 100000).toFixed(2)} L`
     } else if (amount >= 1000) {
-      return `${(amount / 1000).toFixed(2)} K`;
+      return `${(amount / 1000).toFixed(2)} K`
     }
-    return amount.toLocaleString('en-IN');
-  };
+    return amount.toLocaleString('en-IN')
+  }
 
   const variantStyles = {
     default: 'bg-card border-border',
     success: 'bg-success/5 border-success/20',
     warning: 'bg-warning/5 border-warning/20',
     destructive: 'bg-destructive/5 border-destructive/20',
-  };
+  }
 
   const iconStyles = {
     default: 'bg-primary/10 text-primary',
     success: 'bg-success/10 text-success',
     warning: 'bg-warning/10 text-warning',
     destructive: 'bg-destructive/10 text-destructive',
-  };
+  }
 
   return (
     <div className={cn(
@@ -65,5 +65,5 @@ export function MetricCard({ title, value, icon: Icon, trend, variant = 'default
         </div>
       </div>
     </div>
-  );
+  )
 }

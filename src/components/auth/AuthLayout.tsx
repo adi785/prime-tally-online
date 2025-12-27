@@ -1,97 +1,92 @@
-import { useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { toast } from 'sonner';
-import { authService } from '@/integrations/supabase/auth';
-import { cn } from '@/lib/utils';
+import { useState } from 'react'
+import { useNavigate, useLocation } from 'react-router-dom'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { toast } from 'sonner'
+import { authService } from '@/integrations/supabase/auth'
 
 export function AuthLayout() {
-  const navigate = useNavigate();
-  const location = useLocation();
-  const [isLoading, setIsLoading] = useState(false);
+  const navigate = useNavigate()
+  const location = useLocation()
+  const [isLoading, setIsLoading] = useState(false)
   const [formData, setFormData] = useState({
     email: '',
     password: '',
     confirmPassword: '',
     displayName: '',
-  });
+  })
 
-  const isSignup = location.pathname === '/signup';
+  const isSignup = location.pathname === '/signup'
 
   const validateForm = () => {
-    const errors: string[] = [];
-
+    const errors: string[] = []
+    
     if (!formData.email) {
-      errors.push('Email is required');
+      errors.push('Email is required')
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      errors.push('Invalid email format');
+      errors.push('Invalid email format')
     }
-
+    
     if (!formData.password) {
-      errors.push('Password is required');
+      errors.push('Password is required')
     } else if (formData.password.length < 6) {
-      errors.push('Password must be at least 6 characters long');
+      errors.push('Password must be at least 6 characters long')
     }
-
+    
     if (isSignup) {
       if (!formData.displayName) {
-        errors.push('Display name is required');
+        errors.push('Display name is required')
       }
-
       if (!formData.confirmPassword) {
-        errors.push('Confirm password is required');
+        errors.push('Confirm password is required')
       } else if (formData.password !== formData.confirmPassword) {
-        errors.push('Passwords do not match');
+        errors.push('Passwords do not match')
       }
     }
-
-    return errors;
-  };
+    
+    return errors
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+    e.preventDefault()
+    const errors = validateForm()
     
-    const errors = validateForm();
     if (errors.length > 0) {
-      errors.forEach(error => toast.error(error));
-      return;
+      errors.forEach(error => toast.error(error))
+      return
     }
-
-    setIsLoading(true);
-
+    
+    setIsLoading(true)
+    
     try {
       if (isSignup) {
         await authService.signUp(formData.email, formData.password, {
           displayName: formData.displayName,
-        });
+        })
       } else {
-        await authService.signIn(formData.email, formData.password);
+        await authService.signIn(formData.email, formData.password)
       }
-
-      navigate('/dashboard');
+      navigate('/dashboard')
     } catch (error) {
-      console.error('Auth error:', error);
-      // Error is already handled in authService
+      console.error('Auth error:', error)
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
 
   const handleForgotPassword = async () => {
     if (!formData.email) {
-      toast.error('Please enter your email address first.');
-      return;
+      toast.error('Please enter your email address first.')
+      return
     }
-
+    
     try {
-      await authService.resetPassword(formData.email);
+      await authService.resetPassword(formData.email)
     } catch (error) {
-      console.error('Password reset error:', error);
-      // Error is already handled in authService
+      console.error('Password reset error:', error)
     }
-  };
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-tally-navy to-tally-blue flex items-center justify-center p-4">
@@ -106,7 +101,7 @@ export function AuthLayout() {
             {isSignup ? 'Create your account' : 'Welcome back'}
           </p>
         </div>
-
+        
         {/* Auth Form */}
         <div className="bg-white rounded-xl shadow-2xl p-8">
           <form onSubmit={handleSubmit} className="space-y-6">
@@ -124,7 +119,7 @@ export function AuthLayout() {
                 disabled={isLoading}
               />
             </div>
-
+            
             {/* Display Name (Signup only) */}
             {isSignup && (
               <div className="space-y-2">
@@ -140,7 +135,7 @@ export function AuthLayout() {
                 />
               </div>
             )}
-
+            
             {/* Password Field */}
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
@@ -156,7 +151,7 @@ export function AuthLayout() {
                 disabled={isLoading}
               />
             </div>
-
+            
             {/* Confirm Password (Signup only) */}
             {isSignup && (
               <div className="space-y-2">
@@ -174,7 +169,7 @@ export function AuthLayout() {
                 />
               </div>
             )}
-
+            
             {/* Forgot Password (Login only) */}
             {!isSignup && (
               <div className="flex justify-end">
@@ -188,7 +183,7 @@ export function AuthLayout() {
                 </button>
               </div>
             )}
-
+            
             {/* Submit Button */}
             <Button
               type="submit"
@@ -205,7 +200,7 @@ export function AuthLayout() {
               )}
             </Button>
           </form>
-
+          
           {/* Switch Auth Type */}
           <div className="mt-6 text-center">
             <p className="text-sm text-gray-600">
@@ -220,12 +215,12 @@ export function AuthLayout() {
             </p>
           </div>
         </div>
-
+        
         {/* Footer */}
         <div className="text-center text-tally-navy-light text-xs">
           <p>By continuing, you agree to our Terms of Service and Privacy Policy</p>
         </div>
       </div>
     </div>
-  );
+  )
 }

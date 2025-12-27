@@ -1,19 +1,12 @@
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import Index from "./pages/Index";
-import Login from "./pages/Login";
-import Signup from "./pages/Signup";
-import ResetPassword from "./pages/ResetPassword";
-import NotFound from "./pages/NotFound";
-import Test from "./pages/Test";
-import { ProtectedRoute } from "./components/auth/ProtectedRoute";
-import { BalanceSheet } from "./components/reports/BalanceSheet";
-import { ProfitLoss } from "./components/reports/ProfitLoss";
-import { TrialBalance } from "./components/reports/TrialBalance";
-import { DayBook } from "./components/reports/DayBook";
+import { Toaster } from "@/components/ui/toaster"
+import { Toaster as Sonner } from "@/components/ui/sonner"
+import { TooltipProvider } from "@/components/ui/tooltip"
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom"
+import Index from "./pages/Index"
+import Login from "./pages/Login"
+import Signup from "./pages/Signup"
+import { useAuthState } from "./integrations/supabase/hooks"
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -23,7 +16,43 @@ const queryClient = new QueryClient({
       staleTime: 5 * 60 * 1000, // 5 minutes
     },
   },
-});
+})
+
+function ProtectedRoute({ children }: { children: React.ReactNode }) {
+  const { isAuthenticated, isLoading } = useAuthState()
+  
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    )
+  }
+  
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />
+  }
+  
+  return <>{children}</>
+}
+
+function PublicRoute({ children }: { children: React.ReactNode }) {
+  const { isAuthenticated, isLoading } = useAuthState()
+  
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    )
+  }
+  
+  if (isAuthenticated) {
+    return <Navigate to="/dashboard" replace />
+  }
+  
+  return <>{children}</>
+}
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -34,74 +63,45 @@ const App = () => (
         <Routes>
           {/* Public Routes */}
           <Route path="/login" element={
-            <ProtectedRoute requireAuth={false}>
+            <PublicRoute>
               <Login />
-            </ProtectedRoute>
+            </PublicRoute>
           } />
           <Route path="/signup" element={
-            <ProtectedRoute requireAuth={false}>
+            <PublicRoute>
               <Signup />
-            </ProtectedRoute>
-          } />
-          <Route path="/reset-password" element={
-            <ProtectedRoute requireAuth={false}>
-              <ResetPassword />
-            </ProtectedRoute>
+            </PublicRoute>
           } />
           
           {/* Protected Routes */}
-          <Route path="/" element={
-            <ProtectedRoute>
-              <Navigate to="/dashboard" replace />
-            </ProtectedRoute>
-          } />
+          <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="/dashboard" element={
             <ProtectedRoute>
               <Index />
             </ProtectedRoute>
           } />
-          <Route path="/test" element={
+          <Route path="/ledgers" element={
             <ProtectedRoute>
-              <Test />
+              <Index />
+            </ProtectedRoute>
+          } />
+          <Route path="/vouchers" element={
+            <ProtectedRoute>
+              <Index />
+            </ProtectedRoute>
+          } />
+          <Route path="/inventory" element={
+            <ProtectedRoute>
+              <Index />
             </ProtectedRoute>
           } />
           
-          {/* Report Routes */}
-          <Route path="/reports/balance-sheet" element={
-            <ProtectedRoute>
-              <div className="p-6">
-                <BalanceSheet />
-              </div>
-            </ProtectedRoute>
-          } />
-          <Route path="/reports/profit-loss" element={
-            <ProtectedRoute>
-              <div className="p-6">
-                <ProfitLoss />
-              </div>
-            </ProtectedRoute>
-          } />
-          <Route path="/reports/trial-balance" element={
-            <ProtectedRoute>
-              <div className="p-6">
-                <TrialBalance />
-              </div>
-            </ProtectedRoute>
-          } />
-          <Route path="/reports/day-book" element={
-            <ProtectedRoute>
-              <div className="p-6">
-                <DayBook />
-              </div>
-            </ProtectedRoute>
-          } />
-          
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
+          {/* Catch-all route */}
+          <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
-);
+)
 
-export default App;
+export default App
