@@ -22,7 +22,7 @@ import {
   HelpCircle 
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { NavLink } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 
 interface MenuItem {
   id: string
@@ -96,6 +96,8 @@ const bottomMenuItems: MenuItem[] = [
 
 export function TallySidebar({ activeSection }: TallySidebarProps) {
   const [expandedItems, setExpandedItems] = useState<string[]>(['vouchers'])
+  const navigate = useNavigate()
+  const location = useLocation()
 
   const toggleExpand = (id: string) => {
     setExpandedItems(prev => 
@@ -105,6 +107,11 @@ export function TallySidebar({ activeSection }: TallySidebarProps) {
     )
   }
 
+  const handleNavigation = (path: string, e: React.MouseEvent) => {
+    e.preventDefault()
+    navigate(path)
+  }
+
   const renderMenuItem = (item: MenuItem, isChild = false) => {
     const hasChildren = item.children && item.children.length > 0
     const isExpanded = expandedItems.includes(item.id)
@@ -112,8 +119,16 @@ export function TallySidebar({ activeSection }: TallySidebarProps) {
 
     return (
       <div key={item.id}>
-        <NavLink
-          to={`/${item.id}`}
+        <a
+          href={`/${item.id}`}
+          onClick={(e) => {
+            if (hasChildren) {
+              e.preventDefault()
+              toggleExpand(item.id)
+            } else {
+              handleNavigation(`/${item.id}`, e)
+            }
+          }}
           className={cn(
             "w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-all duration-200",
             isChild ? "pl-10" : "pl-4",
@@ -135,7 +150,7 @@ export function TallySidebar({ activeSection }: TallySidebarProps) {
               {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
             </span>
           )}
-        </NavLink>
+        </a>
         {hasChildren && isExpanded && (
           <div className="animate-fade-in">
             {item.children?.map(child => renderMenuItem(child, true))}
