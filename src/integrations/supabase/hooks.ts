@@ -7,7 +7,8 @@ import {
   voucherService, 
   dashboardService, 
   stockService, 
-  companyService 
+  companyService,
+  utilityService 
 } from './services';
 import { 
   Ledger, 
@@ -336,5 +337,26 @@ export const useCreateCompany = () => {
     onError: (error) => {
       toast.error(`Failed to create company: ${error.message}`);
     },
+  });
+};
+
+// --- Utility Hooks ---
+export const useVoucherTypes = () => {
+  console.log('useVoucherTypes called');
+  
+  return useQuery<Array<{ id: string; name: string; description: string }>, Error>({
+    queryKey: ['voucherTypes'],
+    queryFn: () => utilityService.getVoucherTypes(),
+    staleTime: Infinity,
+  });
+};
+
+export const useLedgerGroups = () => {
+  console.log('useLedgerGroups called');
+  
+  return useQuery<Array<{ id: string; name: string }>, Error>({
+    queryKey: ['ledgerGroups'],
+    queryFn: () => utilityService.getLedgerGroups(),
+    staleTime: Infinity,
   });
 };

@@ -5,7 +5,8 @@ import {
   useStockItems, 
   useVouchers,
   useCompany,
-  useVoucherTypes
+  useVoucherTypes,
+  useLedgerGroups
 } from '@/integrations/supabase/hooks';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -19,6 +20,7 @@ export default function Test() {
   const { data: vouchers, isLoading: vouchersLoading, error: vouchersError } = useVouchers();
   const { data: company, isLoading: companyLoading, error: companyError } = useCompany();
   const { data: voucherTypes, isLoading: typesLoading, error: typesError } = useVoucherTypes();
+  const { data: ledgerGroups, isLoading: groupsLoading, error: groupsError } = useLedgerGroups();
 
   return (
     <div className="p-6 space-y-6">
@@ -111,6 +113,22 @@ export default function Test() {
             {showData && voucherTypes && (
               <pre className="mt-2 text-xs overflow-auto max-h-40">
                 {JSON.stringify(voucherTypes, null, 2)}
+              </pre>
+            )}
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader>
+            <CardTitle>Ledger Groups</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p>Loading: {groupsLoading ? 'Yes' : 'No'}</p>
+            <p>Error: {groupsError ? groupsError.message : 'None'}</p>
+            <p>Count: {ledgerGroups?.length || 0}</p>
+            {showData && ledgerGroups && (
+              <pre className="mt-2 text-xs overflow-auto max-h-40">
+                {JSON.stringify(ledgerGroups, null, 2)}
               </pre>
             )}
           </CardContent>
