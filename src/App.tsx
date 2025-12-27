@@ -1,107 +1,68 @@
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import Index from "./pages/Index";
-import Login from "./pages/Login";
-import Signup from "./pages/Signup";
-import ResetPassword from "./pages/ResetPassword";
-import NotFound from "./pages/NotFound";
-import Test from "./pages/Test";
-import { ProtectedRoute } from "./components/auth/ProtectedRoute";
-import { BalanceSheet } from "./components/reports/BalanceSheet";
-import { ProfitLoss } from "./components/reports/ProfitLoss";
-import { TrialBalance } from "./components/reports/TrialBalance";
-import { DayBook } from "./components/reports/DayBook";
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { Toaster } from 'sonner'
+import { useAuth } from '@/integrations/supabase/hooks'
+import Login from '@/pages/Login'
+import Signup from '@/pages/Signup'
+import Dashboard from '@/pages/Dashboard'
+import Ledgers from '@/pages/Ledgers'
+import Vouchers from '@/pages/Vouchers'
+import Inventory from '@/pages/Inventory'
+import { Header } from '@/components/layout/Header'
+import { Sidebar } from '@/components/layout/Sidebar'
+import { useState } from 'react'
 
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      retry: 1,
-      refetchOnWindowFocus: false,
-      staleTime: 5 * 60 * 1000, // 5 minutes
-    },
-  },
-});
+const queryClient = new QueryClient()
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
+function App() {
+  const { isAuthenticated, loading } = useAuth()
+  const [sidebarOpen, setSidebarOpen] = useState(true)
+
+  if (loading) {
+    return <div className="flex items-center justify-center min-h-screen">Loading...</div>
+  }
+
+  return (
+    <QueryClientProvider client={queryClient}>
       <BrowserRouter>
-        <Routes>
-          {/* Public Routes */}
-          <Route path="/login" element={
-            <ProtectedRoute requireAuth={false}>
-              <Login />
-            </ProtectedRoute>
-          } />
-          <Route path="/signup" element={
-            <ProtectedRoute requireAuth={false}>
-              <Signup />
-            </ProtectedRoute>
-          } />
-          <Route path="/reset-password" element={
-            <ProtectedRoute requireAuth={false}>
-              <ResetPassword />
-            </ProtectedRoute>
-          } />
+        <Toaster />
+        <div className="flex h-screen bg-gray-50">
+          {isAuthenticated && (
+            <>
+              <div className={`fixed inset-y-0 left-0 z-30 w-64 transform bg-white shadow-lg transition-transform duration-300 ease-in-out md:translate-x-0 md:static md:z-auto ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+                <Sidebar />
+              </div>
+              <div className="flex-1 flex flex-col overflow-hidden">
+                <Header 
+                  toggleSidebar={() => setSidebarOpen(!sidebarOpen)} 
+                  sidebarOpen={sidebarOpen} 
+                />
+                <main className="flex-1 overflow-y-auto">
+                  <Routes>
+                    <Route path="/login" element={<Login />} />
+                    <Route path="/signup" element={<Signup />} />
+                    <Route path="/dashboard" element={<Dashboard />} />
+                    <Route path="/ledgers" element={<Ledgers />} />
+                    <Route path="/vouchers" element={<Vouchers />} />
+                    <Route path="/inventory" element={<Inventory />} />
+                    <Route path="/" element={<Navigate to="/dashboard" replace />} />
+                  </Routes>
+                </main>
+              </div>
+            </>
+          )}
           
-          {/* Protected Routes */}
-          <Route path="/" element={
-            <ProtectedRoute>
-              <Navigate to="/dashboard" replace />
-            </ProtectedRoute>
-          } />
-          <Route path="/dashboard" element={
-            <ProtectedRoute>
-              <Index />
-            </ProtectedRoute>
-          } />
-          <Route path="/test" element={
-            <ProtectedRoute>
-              <Test />
-            </ProtectedRoute>
-          } />
-          
-          {/* Report Routes */}
-          <Route path="/reports/balance-sheet" element={
-            <ProtectedRoute>
-              <div className="p-6">
-                <BalanceSheet />
-              </div>
-            </ProtectedRoute>
-          } />
-          <Route path="/reports/profit-loss" element={
-            <ProtectedRoute>
-              <div className="p-6">
-                <ProfitLoss />
-              </div>
-            </ProtectedRoute>
-          } />
-          <Route path="/reports/trial-balance" element={
-            <ProtectedRoute>
-              <div className="p-6">
-                <TrialBalance />
-              </div>
-            </ProtectedRoute>
-          } />
-          <Route path="/reports/day-book" element={
-            <ProtectedRoute>
-              <div className="p-6">
-                <DayBook />
-              </div>
-            </ProtectedRoute>
-          } />
-          
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+          {!isAuthenticated && (
+            <Routes>
+              <Route path="/login" element={<Login />} />
+              <Route path="/signup" element={<Signup />} />
+              <Route path="*" element={<Navigate to="/login" replace />} />
+            </Routes>
+          )}
+        </div>
       </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+    </QueryClientProvider>
+  )
+}
 
-export default App;
+export default App

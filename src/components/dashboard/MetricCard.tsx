@@ -1,69 +1,36 @@
-import { cn } from '@/lib/utils';
-import { LucideIcon } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { cn } from '@/lib/utils'
 
 interface MetricCardProps {
-  title: string;
-  value: number;
-  icon: LucideIcon;
-  trend?: { value: number; isPositive: boolean };
-  variant?: 'default' | 'success' | 'warning' | 'destructive';
-  prefix?: string;
+  title: string
+  value: string
+  description: string
+  icon: React.ReactNode
+  trend?: {
+    value: number
+    isPositive: boolean
+  }
 }
 
-export function MetricCard({ title, value, icon: Icon, trend, variant = 'default', prefix = '₹' }: MetricCardProps) {
-  const formatAmount = (amount: number) => {
-    if (amount >= 10000000) {
-      return `${(amount / 10000000).toFixed(2)} Cr`;
-    } else if (amount >= 100000) {
-      return `${(amount / 100000).toFixed(2)} L`;
-    } else if (amount >= 1000) {
-      return `${(amount / 1000).toFixed(2)} K`;
-    }
-    return amount.toLocaleString('en-IN');
-  };
-
-  const variantStyles = {
-    default: 'bg-card border-border',
-    success: 'bg-success/5 border-success/20',
-    warning: 'bg-warning/5 border-warning/20',
-    destructive: 'bg-destructive/5 border-destructive/20',
-  };
-
-  const iconStyles = {
-    default: 'bg-primary/10 text-primary',
-    success: 'bg-success/10 text-success',
-    warning: 'bg-warning/10 text-warning',
-    destructive: 'bg-destructive/10 text-destructive',
-  };
-
+export function MetricCard({ title, value, description, icon, trend }: MetricCardProps) {
   return (
-    <div className={cn(
-      "p-5 rounded-xl border transition-all duration-200 hover:shadow-md animate-fade-in",
-      variantStyles[variant]
-    )}>
-      <div className="flex items-start justify-between">
-        <div>
-          <p className="text-sm text-muted-foreground font-medium">{title}</p>
-          <p className="text-2xl font-bold mt-2 font-mono">
-            {prefix}{formatAmount(value)}
-          </p>
-          {trend && (
-            <p className={cn(
-              "text-xs mt-2 flex items-center gap-1",
-              trend.isPositive ? "text-success" : "text-destructive"
-            )}>
-              <span>{trend.isPositive ? '↑' : '↓'}</span>
-              <span>{Math.abs(trend.value)}% from last month</span>
-            </p>
-          )}
-        </div>
-        <div className={cn(
-          "p-3 rounded-lg",
-          iconStyles[variant]
-        )}>
-          <Icon size={22} />
-        </div>
-      </div>
-    </div>
-  );
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardTitle className="text-sm font-medium">{title}</CardTitle>
+        {icon}
+      </CardHeader>
+      <CardContent>
+        <div className="text-2xl font-bold">{value}</div>
+        <p className="text-xs text-muted-foreground">{description}</p>
+        {trend && (
+          <div className={cn(
+            "text-xs mt-1",
+            trend.isPositive ? "text-green-600" : "text-red-600"
+          )}>
+            {trend.isPositive ? "↑" : "↓"} {Math.abs(trend.value)}% from last month
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  )
 }
