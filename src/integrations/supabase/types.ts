@@ -1,5 +1,3 @@
-import { Ledger, Voucher, DashboardMetrics, StockItem, Company } from '@/types/tally';
-
 // API Response types
 export interface ApiResponse<T> {
   data: T;
@@ -17,9 +15,30 @@ export interface PaginatedResponse<T> extends ApiResponse<T[]> {
 }
 
 // Ledger API types
+export interface Ledger {
+  id: string;
+  name: string;
+  group_name: string;
+  group_id: string;
+  opening_balance: number;
+  current_balance: number;
+  address?: string;
+  phone?: string;
+  gstin?: string;
+  email?: string;
+  is_billwise?: boolean;
+  is_inventory?: boolean;
+  created_at?: string;
+  updated_at?: string;
+  group?: {
+    name: string;
+  };
+}
+
 export interface CreateLedgerRequest {
   name: string;
   group: string;
+  group_id: string;
   opening_balance: number;
   address?: string;
   phone?: string;
@@ -34,6 +53,37 @@ export interface UpdateLedgerRequest extends Partial<CreateLedgerRequest> {
 }
 
 // Voucher API types
+export interface VoucherItem {
+  id: string;
+  particulars?: string;
+  ledger_id: string;
+  ledger?: {
+    name: string;
+  };
+  amount: number;
+  type: 'debit' | 'credit';
+  created_at?: string;
+}
+
+export interface Voucher {
+  id: string;
+  voucher_number: string;
+  type_id: string;
+  type?: {
+    name: string;
+  };
+  date: string;
+  party_ledger_id: string;
+  party?: {
+    name: string;
+  };
+  items: VoucherItem[];
+  narration?: string;
+  total_amount: number;
+  created_at?: string;
+  updated_at?: string;
+}
+
 export interface CreateVoucherRequest {
   voucher_number?: string;
   type_id: string;
@@ -52,6 +102,17 @@ export interface UpdateVoucherRequest extends Partial<CreateVoucherRequest> {
 }
 
 // Dashboard API types
+export interface DashboardMetrics {
+  totalSales: number;
+  totalPurchases: number;
+  totalReceivables: number;
+  totalPayables: number;
+  cashInHand: number;
+  bankBalance: number;
+  todayTransactions: number;
+  pendingInvoices: number;
+}
+
 export interface DashboardMetricsResponse extends DashboardMetrics {
   period: {
     start: string;
@@ -60,6 +121,18 @@ export interface DashboardMetricsResponse extends DashboardMetrics {
 }
 
 // Stock API types
+export interface StockItem {
+  id: string;
+  name: string;
+  unit: string;
+  quantity: number;
+  rate: number;
+  value: number;
+  group_name: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
 export interface CreateStockItemRequest {
   name: string;
   unit: string;
@@ -74,6 +147,20 @@ export interface UpdateStockItemRequest extends Partial<CreateStockItemRequest> 
 }
 
 // Company API types
+export interface Company {
+  id: string;
+  name: string;
+  address: string;
+  gstin: string;
+  pan: string;
+  phone?: string;
+  email?: string;
+  financial_year_start: string;
+  financial_year_end: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
 export interface UpdateCompanyRequest extends Partial<Company> {
   id: string;
 }

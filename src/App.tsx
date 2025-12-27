@@ -8,6 +8,7 @@ import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
+import Test from "./pages/Test";
 import { ProtectedRoute } from "./components/auth/ProtectedRoute";
 
 const queryClient = new QueryClient({
@@ -43,7 +44,7 @@ const App = () => (
               <ResetPassword />
             </ProtectedRoute>
           } />
-
+          
           {/* Protected Routes */}
           <Route path="/" element={
             <ProtectedRoute>
@@ -55,7 +56,12 @@ const App = () => (
               <Index />
             </ProtectedRoute>
           } />
-
+          <Route path="/test" element={
+            <ProtectedRoute>
+              <Test />
+            </ProtectedRoute>
+          } />
+          
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

@@ -25,7 +25,15 @@ export const supabaseIntegration = {
     useUpdateCompany,
     useAuthState,
   },
-  services: supabaseService,
+  services: {
+    ledgerService,
+    voucherService,
+    dashboardService,
+    stockService,
+    companyService,
+    utilityService,
+    reportService,
+  },
   auth: authService,
   realtime: realTimeService,
 };

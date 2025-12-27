@@ -4,52 +4,32 @@ import { DashboardMetrics, DashboardMetricsResponse } from '../types';
 export class DashboardService {
   async getDashboardMetrics(): Promise<DashboardMetricsResponse> {
     console.log('getDashboardMetrics called');
+    
     try {
-      // Get total sales
-      const { data: salesData } = await supabase
-        .from('vouchers')
-        .select('total_amount')
-        .eq('type', 'sales');
+      // Use the Supabase function to get dashboard metrics
+      const { data, error } = await supabase.rpc('get_dashboard_metrics');
       
-      // Get total purchases
-      const { data: purchasesData } = await supabase
-        .from('vouchers')
-        .select('total_amount')
-        .eq('type', 'purchase');
+      if (error) {
+        console.error('getDashboardMetrics error:', error);
+        throw error;
+      }
       
-      // Get receivables (sundry debtors)
-      const { data: debtorsData } = await supabase
-        .from('ledgers')
-        .select('current_balance')
-        .eq('group_name', 'sundry-debtors');
-      
-      // Get payables (sundry creditors)
-      const { data: creditorsData } = await supabase
-        .from('ledgers')
-        .select('current_balance')
-        .eq('group_name', 'sundry-creditors');
-      
-      // Get cash and bank balances
-      const { data: cashData } = await supabase
-        .from('ledgers')
-        .select('current_balance')
-        .in('group_name', ['cash-in-hand', 'bank-accounts']);
-
-      const result = {
-        totalSales: salesData?.reduce((sum, v) => sum + v.total_amount, 0) || 0,
-        totalPurchases: purchasesData?.reduce((sum, v) => sum + v.total_amount, 0) || 0,
-        totalReceivables: debtorsData?.reduce((sum, l) => sum + l.current_balance, 0) || 0,
-        totalPayables: creditorsData?.reduce((sum, l) => sum + l.current_balance, 0) || 0,
-        cashInHand: cashData?.reduce((sum, l) => sum + l.current_balance, 0) || 0,
-        bankBalance: cashData?.reduce((sum, l) => sum + l.current_balance, 0) || 0,
-        todayTransactions: 0, // Would need to calculate based on today's date
-        pendingInvoices: 0, // Would need to calculate based on payment status
+      // Transform the result to match our DashboardMetrics interface
+      const result: DashboardMetricsResponse = {
+        totalSales: data.totalSales || 0,
+        totalPurchases: data.totalPurchases || 0,
+        totalReceivables: data.totalReceivables || 0,
+        totalPayables: data.totalPayables || 0,
+        cashInHand: data.cashInHand || 0,
+        bankBalance: data.bankBalance || 0,
+        todayTransactions: data.todayTransactions || 0,
+        pendingInvoices: data.pendingInvoices || 0,
         period: {
-          start: new Date().toISOString().split('T')[0],
-          end: new Date().toISOString().split('T')[0],
-        },
+          start: data.period?.start || new Date().toISOString().split('T')[0],
+          end: data.period?.end || new Date().toISOString().split('T')[0],
+        }
       };
-
+      
       console.log('getDashboardMetrics success, result:', result);
       return result;
     } catch (error) {

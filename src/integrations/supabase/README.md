@@ -8,7 +8,6 @@ This directory contains the complete backend integration for the TallyPrime clon
 - **Database**: PostgreSQL with Row Level Security (RLS) for data isolation
 - **API Services**: Modular service architecture with dedicated services for each domain
 - **Real-time**: Supabase Realtime for live updates
-- **File Storage**: Supabase Storage for document uploads
 - **Security**: Built-in security with RLS policies and JWT authentication
 
 ## Modular Service Architecture
@@ -16,6 +15,7 @@ This directory contains the complete backend integration for the TallyPrime clon
 The services are organized into dedicated modules for better maintainability:
 
 ### Core Services
+
 - **Ledger Service** (`ledgerService`): Manage account ledgers and groups
 - **Voucher Service** (`voucherService`): Handle all voucher types and items
 - **Dashboard Service** (`dashboardService`): Calculate and provide dashboard metrics
@@ -23,6 +23,7 @@ The services are organized into dedicated modules for better maintainability:
 - **Company Service** (`companyService`): Company information management
 
 ### Utility Services
+
 - **Utility Service** (`utilityService`): Common utilities and search functions
 - **Report Service** (`reportService`): Financial report generation
 
@@ -40,27 +41,32 @@ The schema includes tables for:
 ## API Endpoints
 
 ### Ledgers
+
 - `GET /rest/v1/ledgers` - Get all ledgers with filtering
 - `POST /rest/v1/ledgers` - Create new ledger
 - `PATCH /rest/v1/ledgers` - Update ledger
 - `DELETE /rest/v1/ledgers` - Delete ledger
 
 ### Vouchers
+
 - `GET /rest/v1/vouchers` - Get all vouchers with items
 - `POST /rest/v1/vouchers` - Create new voucher
 - `PATCH /rest/v1/vouchers` - Update voucher
 - `DELETE /rest/v1/vouchers` - Delete voucher
 
 ### Dashboard
+
 - Custom function to calculate dashboard metrics
 
 ### Stock
+
 - `GET /rest/v1/stock_items` - Get all stock items
 - `POST /rest/v1/stock_items` - Create new stock item
 - `PATCH /rest/v1/stock_items` - Update stock item
 - `DELETE /rest/v1/stock_items` - Delete stock item
 
 ### Company
+
 - `GET /rest/v1/companies` - Get company information
 - `PATCH /rest/v1/companies` - Update company information
 
@@ -93,6 +99,7 @@ const metrics = await dashboardService.getDashboardMetrics();
 ## Service Methods
 
 ### Ledger Service
+
 - `getLedgers(params?: LedgerQueryParams): Promise<Ledger[]>`
 - `getLedger(id: string): Promise<Ledger>`
 - `createLedger(data: CreateLedgerRequest): Promise<Ledger>`
@@ -102,6 +109,7 @@ const metrics = await dashboardService.getDashboardMetrics();
 - `getLedgerGroups(): Promise<Array<{ id: string; name: string }>>`
 
 ### Voucher Service
+
 - `getVouchers(params?: VoucherQueryParams): Promise<Voucher[]>`
 - `getVoucher(id: string): Promise<Voucher>`
 - `createVoucher(data: CreateVoucherRequest): Promise<Voucher>`
@@ -110,9 +118,11 @@ const metrics = await dashboardService.getDashboardMetrics();
 - `getVoucherTypes(): Promise<Array<{ id: string; name: string }>>`
 
 ### Dashboard Service
+
 - `getDashboardMetrics(): Promise<DashboardMetricsResponse>`
 
 ### Stock Service
+
 - `getStockItems(params?: StockQueryParams): Promise<StockItem[]>`
 - `getStockItem(id: string): Promise<StockItem>`
 - `createStockItem(data: CreateStockItemRequest): Promise<StockItem>`
@@ -120,15 +130,18 @@ const metrics = await dashboardService.getDashboardMetrics();
 - `deleteStockItem(id: string): Promise<void>`
 
 ### Company Service
+
 - `getCompany(): Promise<Company>`
 - `updateCompany(data: UpdateCompanyRequest): Promise<Company>`
 
 ### Utility Service
+
 - `searchLedgers(query: string): Promise<Ledger[]>`
 - `getVoucherTypes(): Promise<Array<{ id: string; name: string }>>`
 - `getLedgerGroups(): Promise<Array<{ id: string; name: string }>>`
 
 ### Report Service
+
 - `getBalanceSheet(): Promise<any>`
 - `getProfitAndLoss(): Promise<any>`
 - `getTrialBalance(): Promise<any>`
@@ -176,23 +189,17 @@ const subscription = realTimeService.subscribeToLedgers(
 ## Authentication
 
 Supabase Auth provides:
+
 - Email/password authentication
 - Password reset functionality
 - User metadata storage
 - Session management
 - JWT token handling
 
-## File Storage
-
-Supabase Storage can be used for:
-- Invoice PDFs
-- Company documents
-- User avatars
-- Backup files
-
 ## Error Handling
 
 The integration includes comprehensive error handling:
+
 - Database constraint violations
 - Network errors
 - Authentication failures
@@ -201,6 +208,7 @@ The integration includes comprehensive error handling:
 ## Performance
 
 Optimized for performance with:
+
 - Proper indexing
 - Efficient queries
 - Caching with React Query

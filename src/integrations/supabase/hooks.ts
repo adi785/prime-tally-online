@@ -3,37 +3,36 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from './client';
 import { toast } from 'sonner';
 import { 
-  ledgerService,
-  voucherService,
-  dashboardService,
-  stockService,
-  companyService
+  ledgerService, 
+  voucherService, 
+  dashboardService, 
+  stockService, 
+  companyService 
 } from './services';
 import { 
   Ledger, 
   Voucher, 
   DashboardMetrics, 
   StockItem, 
-  Company,
-  CreateLedgerRequest,
-  UpdateLedgerRequest,
-  CreateVoucherRequest,
-  UpdateVoucherRequest,
-  CreateStockItemRequest,
-  UpdateStockItemRequest,
-  UpdateCompanyRequest,
-  LedgerQueryParams,
-  VoucherQueryParams,
-  StockQueryParams,
-  DashboardMetricsResponse
+  Company, 
+  CreateLedgerRequest, 
+  UpdateLedgerRequest, 
+  CreateVoucherRequest, 
+  UpdateVoucherRequest, 
+  CreateStockItemRequest, 
+  UpdateStockItemRequest, 
+  UpdateCompanyRequest, 
+  LedgerQueryParams, 
+  VoucherQueryParams, 
+  StockQueryParams, 
+  DashboardMetricsResponse 
 } from './types';
 
 // --- Auth Hook ---
-
 export const useAuthState = () => {
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
-
+  
   useEffect(() => {
     const checkAuth = async () => {
       try {
@@ -46,14 +45,14 @@ export const useAuthState = () => {
         setIsLoading(false);
       }
     };
-
+    
     checkAuth();
-
+    
     const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
       setIsLoading(false);
     });
-
+    
     return () => {
       authListener?.subscription.unsubscribe();
     };
@@ -79,9 +78,9 @@ export const useAuthState = () => {
 };
 
 // --- Ledger Hooks ---
-
 export const useLedgers = (params?: LedgerQueryParams) => {
   console.log('useLedgers called with params:', params);
+  
   return useQuery<Ledger[], Error>({
     queryKey: ['ledgers', params],
     queryFn: () => ledgerService.getLedgers(params),
@@ -91,6 +90,7 @@ export const useLedgers = (params?: LedgerQueryParams) => {
 
 export const useLedger = (id: string) => {
   console.log('useLedger called with id:', id);
+  
   return useQuery<Ledger, Error>({
     queryKey: ['ledgers', id],
     queryFn: () => ledgerService.getLedger(id),
@@ -100,6 +100,7 @@ export const useLedger = (id: string) => {
 
 export const useCreateLedger = () => {
   const queryClient = useQueryClient();
+  
   return useMutation<Ledger, Error, CreateLedgerRequest>({
     mutationFn: (data) => ledgerService.createLedger(data),
     onSuccess: () => {
@@ -115,6 +116,7 @@ export const useCreateLedger = () => {
 
 export const useUpdateLedger = () => {
   const queryClient = useQueryClient();
+  
   return useMutation<Ledger, Error, UpdateLedgerRequest>({
     mutationFn: (data) => ledgerService.updateLedger(data.id, data),
     onSuccess: (updatedLedger) => {
@@ -131,6 +133,7 @@ export const useUpdateLedger = () => {
 
 export const useDeleteLedger = () => {
   const queryClient = useQueryClient();
+  
   return useMutation<void, Error, string>({
     mutationFn: (id) => ledgerService.deleteLedger(id),
     onSuccess: () => {
@@ -145,9 +148,9 @@ export const useDeleteLedger = () => {
 };
 
 // --- Voucher Hooks ---
-
 export const useVouchers = (params?: VoucherQueryParams) => {
   console.log('useVouchers called with params:', params);
+  
   return useQuery<Voucher[], Error>({
     queryKey: ['vouchers', params],
     queryFn: () => voucherService.getVouchers(params),
@@ -157,6 +160,7 @@ export const useVouchers = (params?: VoucherQueryParams) => {
 
 export const useVoucher = (id: string) => {
   console.log('useVoucher called with id:', id);
+  
   return useQuery<Voucher, Error>({
     queryKey: ['vouchers', id],
     queryFn: () => voucherService.getVoucher(id),
@@ -166,6 +170,7 @@ export const useVoucher = (id: string) => {
 
 export const useCreateVoucher = () => {
   const queryClient = useQueryClient();
+  
   return useMutation<Voucher, Error, CreateVoucherRequest>({
     mutationFn: (data) => voucherService.createVoucher(data),
     onSuccess: () => {
@@ -182,6 +187,7 @@ export const useCreateVoucher = () => {
 
 export const useUpdateVoucher = () => {
   const queryClient = useQueryClient();
+  
   return useMutation<Voucher, Error, UpdateVoucherRequest>({
     mutationFn: (data) => voucherService.updateVoucher(data.id, data),
     onSuccess: (updatedVoucher) => {
@@ -199,6 +205,7 @@ export const useUpdateVoucher = () => {
 
 export const useDeleteVoucher = () => {
   const queryClient = useQueryClient();
+  
   return useMutation<void, Error, string>({
     mutationFn: (id) => voucherService.deleteVoucher(id),
     onSuccess: () => {
@@ -214,9 +221,9 @@ export const useDeleteVoucher = () => {
 };
 
 // --- Dashboard Hooks ---
-
 export const useDashboardMetrics = () => {
   console.log('useDashboardMetrics called');
+  
   return useQuery<DashboardMetricsResponse, Error>({
     queryKey: ['dashboardMetrics'],
     queryFn: () => dashboardService.getDashboardMetrics(),
@@ -225,9 +232,9 @@ export const useDashboardMetrics = () => {
 };
 
 // --- Stock Item Hooks ---
-
 export const useStockItems = (params?: StockQueryParams) => {
   console.log('useStockItems called with params:', params);
+  
   return useQuery<StockItem[], Error>({
     queryKey: ['stockItems', params],
     queryFn: () => stockService.getStockItems(params),
@@ -237,6 +244,7 @@ export const useStockItems = (params?: StockQueryParams) => {
 
 export const useStockItem = (id: string) => {
   console.log('useStockItem called with id:', id);
+  
   return useQuery<StockItem, Error>({
     queryKey: ['stockItems', id],
     queryFn: () => stockService.getStockItem(id),
@@ -246,6 +254,7 @@ export const useStockItem = (id: string) => {
 
 export const useCreateStockItem = () => {
   const queryClient = useQueryClient();
+  
   return useMutation<StockItem, Error, CreateStockItemRequest>({
     mutationFn: (data) => stockService.createStockItem(data),
     onSuccess: () => {
@@ -260,6 +269,7 @@ export const useCreateStockItem = () => {
 
 export const useUpdateStockItem = () => {
   const queryClient = useQueryClient();
+  
   return useMutation<StockItem, Error, UpdateStockItemRequest>({
     mutationFn: (data) => stockService.updateStockItem(data.id, data),
     onSuccess: (updatedItem) => {
@@ -275,6 +285,7 @@ export const useUpdateStockItem = () => {
 
 export const useDeleteStockItem = () => {
   const queryClient = useQueryClient();
+  
   return useMutation<void, Error, string>({
     mutationFn: (id) => stockService.deleteStockItem(id),
     onSuccess: () => {
@@ -288,9 +299,9 @@ export const useDeleteStockItem = () => {
 };
 
 // --- Company Hooks ---
-
 export const useCompany = () => {
   console.log('useCompany called');
+  
   return useQuery<Company, Error>({
     queryKey: ['company'],
     queryFn: () => companyService.getCompany(),
@@ -300,6 +311,7 @@ export const useCompany = () => {
 
 export const useUpdateCompany = () => {
   const queryClient = useQueryClient();
+  
   return useMutation<Company, Error, UpdateCompanyRequest>({
     mutationFn: (data) => companyService.updateCompany(data),
     onSuccess: (updatedCompany) => {
@@ -308,6 +320,21 @@ export const useUpdateCompany = () => {
     },
     onError: (error) => {
       toast.error(`Failed to update company information: ${error.message}`);
+    },
+  });
+};
+
+export const useCreateCompany = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation<Company, Error, Omit<Company, 'id' | 'created_at' | 'updated_at'>>({
+    mutationFn: (data) => companyService.createCompany(data),
+    onSuccess: (newCompany) => {
+      queryClient.invalidateQueries({ queryKey: ['company'] });
+      toast.success('Company created successfully.');
+    },
+    onError: (error) => {
+      toast.error(`Failed to create company: ${error.message}`);
     },
   });
 };

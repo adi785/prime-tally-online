@@ -1,21 +1,19 @@
 import { supabase } from '../client';
-import { 
-  Voucher, 
-  CreateVoucherRequest,
-  UpdateVoucherRequest,
-  VoucherQueryParams
-} from '../types';
+import { Voucher, CreateVoucherRequest, UpdateVoucherRequest, VoucherQueryParams } from '../types';
 
 export class VoucherService {
   async getVouchers(params?: VoucherQueryParams): Promise<Voucher[]> {
     console.log('getVouchers called with params:', params);
+    
     let query = supabase.from('vouchers').select(`
       *,
-      items: voucher_items(*)
+      type:voucher_types(name),
+      party:ledgers(name),
+      items:voucher_items(*, ledger:ledgers(name))
     `);
     
     if (params?.type) {
-      query = query.eq('type', params.type);
+      query = query.eq('type_id', params.type);
     }
     
     if (params?.startDate && params?.endDate) {
@@ -28,126 +26,148 @@ export class VoucherService {
       console.error('getVouchers error:', error);
       throw error;
     }
+    
     console.log('getVouchers success, data:', data);
     return data || [];
   }
 
   async getVoucher(id: string): Promise<Voucher> {
     console.log('getVoucher called with id:', id);
+    
     const { data, error } = await supabase
       .from('vouchers')
       .select(`
         *,
-        items: voucher_items(*)
+        type:voucher_types(name),
+        party:ledgers(name),
+        items:voucher_items(*, ledger:ledgers(name))
       `)
       .eq('id', id)
       .single();
-    
+      
     if (error) {
       console.error('getVoucher error:', error);
       throw error;
     }
+    
     console.log('getVoucher success, data:', data);
     return data;
   }
 
   async createVoucher(data: CreateVoucherRequest): Promise<Voucher> {
     console.log('createVoucher called with data:', data);
-    // Insert voucher
-    const { data: voucherData, error: voucherError } = await supabase
+    
+    // Use the Supabase function to create voucher with items
+    const { data: result, error } = await supabase
+      .rpc('create_voucher_with_items', {
+        p_voucher_number: data.voucher_number,
+        p_type_id: data.type_id,
+        p_date: data.date,
+        p_party_ledger_id: data.party_ledger_id,
+        p_narration: data.narration,
+        p_items: data.items
+      });
+      
+    if (error) {
+      console.error('createVoucher error:', error);
+      throw error;
+    }
+    
+    // Fetch the created voucher with all details
+    const { data: voucherData } = await supabase
       .from('vouchers')
-      .insert([{
-        voucher_number: data.voucher_number,
-        type: data.type_id,
-        date: data.date,
-        party_ledger_id: data.party_ledger_id,
-        narration: data.narration,
-        total_amount: data.items.reduce((sum, item) => sum + item.amount, 0),
-      }])
-      .select()
+      .select(`
+        *,
+        type:voucher_types(name),
+        party:ledgers(name),
+        items:voucher_items(*, ledger:ledgers(name))
+      `)
+      .eq('id', result)
       .single();
     
-    if (voucherError) {
-      console.error('createVoucher error:', voucherError);
-      throw voucherError;
-    }
-
-    // Insert items
-    const itemsData = data.items.map(item => ({
-      voucher_id: voucherData.id,
-      ledger_id: item.ledger_id,
-      amount: item.amount,
-      type: item.type,
-    }));
-
-    const { error: itemsError } = await supabase
-      .from('voucher_items')
-      .insert(itemsData);
-    
-    if (itemsError) {
-      console.error('createVoucher items error:', itemsError);
-      throw itemsError;
-    }
-
-    console.log('createVoucher success, result:', { ...voucherData, items: itemsData });
-    return { ...voucherData, items: itemsData };
+    console.log('createVoucher success, result:', voucherData);
+    return voucherData;
   }
 
   async updateVoucher(id: string, data: UpdateVoucherRequest): Promise<Voucher> {
     console.log('updateVoucher called with id:', id, 'data:', data);
-    const { data: result, error } = await supabase
-      .from('vouchers')
-      .update(data)
-      .eq('id', id)
-      .select()
-      .single();
     
+    // Use the Supabase function to update voucher with items
+    const { error } = await supabase
+      .rpc('update_voucher_with_items', {
+        p_voucher_id: id,
+        p_voucher_number: data.voucher_number,
+        p_type_id: data.type_id,
+        p_date: data.date,
+        p_party_ledger_id: data.party_ledger_id,
+        p_narration: data.narration,
+        p_items: data.items
+      });
+      
     if (error) {
       console.error('updateVoucher error:', error);
       throw error;
     }
+    
+    // Fetch the updated voucher with all details
+    const { data: result } = await supabase
+      .from('vouchers')
+      .select(`
+        *,
+        type:voucher_types(name),
+        party:ledgers(name),
+        items:voucher_items(*, ledger:ledgers(name))
+      `)
+      .eq('id', id)
+      .single();
+    
     console.log('updateVoucher success, result:', result);
     return result;
   }
 
   async deleteVoucher(id: string): Promise<void> {
     console.log('deleteVoucher called with id:', id);
-    // Delete items first
+    
+    // Delete items first (cascading should handle this, but being explicit)
     const { error: itemsError } = await supabase
       .from('voucher_items')
       .delete()
       .eq('voucher_id', id);
-    
+      
     if (itemsError) {
       console.error('deleteVoucher items error:', itemsError);
       throw itemsError;
     }
-
+    
     // Delete voucher
     const { error: voucherError } = await supabase
       .from('vouchers')
       .delete()
       .eq('id', id);
-    
+      
     if (voucherError) {
       console.error('deleteVoucher error:', voucherError);
       throw voucherError;
     }
+    
     console.log('deleteVoucher success');
   }
 
-  async getVoucherTypes(): Promise<Array<{ id: string; name: string }>> {
+  async getVoucherTypes(): Promise<Array<{ id: string; name: string; description: string }>> {
     console.log('getVoucherTypes called');
-    return [
-      { id: 'sales', name: 'Sales' },
-      { id: 'purchase', name: 'Purchase' },
-      { id: 'payment', name: 'Payment' },
-      { id: 'receipt', name: 'Receipt' },
-      { id: 'journal', name: 'Journal' },
-      { id: 'contra', name: 'Contra' },
-      { id: 'credit-note', name: 'Credit Note' },
-      { id: 'debit-note', name: 'Debit Note' },
-    ];
+    
+    const { data, error } = await supabase
+      .from('voucher_types')
+      .select('id, name, description')
+      .order('name', { ascending: true });
+      
+    if (error) {
+      console.error('getVoucherTypes error:', error);
+      throw error;
+    }
+    
+    console.log('getVoucherTypes success, data:', data);
+    return data || [];
   }
 }
 
