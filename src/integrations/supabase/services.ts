@@ -5,6 +5,7 @@ import { stockService } from './services/stockService';
 import { companyService } from './services/companyService';
 import { utilityService } from './services/utilityService';
 import { reportService } from './services/reportService';
+import { settingsService } from './services/settingsService'; // Import settingsService
 
 // Re-export all services for backward compatibility
 export {
@@ -15,6 +16,7 @@ export {
   companyService,
   utilityService,
   reportService,
+  settingsService, // Export settingsService
 };
 
 // Export the main integration object
@@ -26,4 +28,5 @@ export const supabaseService = {
   company: companyService,
   utility: utilityService,
   report: reportService,
+  settings: settingsService, // Add settingsService to the main integration object
 };

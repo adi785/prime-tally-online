@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { ExternalLink } from 'lucide-react'
+import { toast } from 'sonner'
 
 export default function Help() {
   const helpTopics = [
@@ -36,6 +37,11 @@ export default function Help() {
     }
   ]
 
+  const handleExternalLinkClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    toast.info("This feature is under development or uses a placeholder link.");
+  };
+
   return (
     <div className="p-6">
       <div className="max-w-4xl mx-auto">
@@ -60,7 +66,7 @@ export default function Help() {
                 <h3 className="font-medium">Business Hours</h3>
                 <p className="text-sm text-muted-foreground">Monday - Friday, 9:00 AM - 6:00 PM IST</p>
               </div>
-              <Button className="w-full">Send Message</Button>
+              <Button className="w-full" onClick={handleExternalLinkClick}>Send Message</Button>
             </CardContent>
           </Card>
           
@@ -72,14 +78,14 @@ export default function Help() {
               <div>
                 <h3 className="font-medium">User Manual</h3>
                 <p className="text-sm text-muted-foreground mb-2">Complete guide to all features</p>
-                <Button variant="outline" className="w-full">
+                <Button variant="outline" className="w-full" onClick={handleExternalLinkClick}>
                   Download PDF <ExternalLink className="ml-2 h-4 w-4" />
                 </Button>
               </div>
               <div>
                 <h3 className="font-medium">Video Tutorials</h3>
                 <p className="text-sm text-muted-foreground mb-2">Step-by-step video guides</p>
-                <Button variant="outline" className="w-full">
+                <Button variant="outline" className="w-full" onClick={handleExternalLinkClick}>
                   Watch Videos <ExternalLink className="ml-2 h-4 w-4" />
                 </Button>
               </div>
@@ -96,7 +102,7 @@ export default function Help() {
               </CardHeader>
               <CardContent>
                 <p className="text-sm text-muted-foreground mb-4">{topic.description}</p>
-                <Button variant="outline" size="sm">
+                <Button variant="outline" size="sm" onClick={handleExternalLinkClick}>
                   View Guide <ExternalLink className="ml-2 h-4 w-4" />
                 </Button>
               </CardContent>

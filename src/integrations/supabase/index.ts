@@ -28,6 +28,8 @@ export const supabaseIntegration = {
     useAuthState,
     useVoucherTypes, // Added useVoucherTypes
     useLedgerGroups, // Added useLedgerGroups
+    useUserSettings, // Added useUserSettings
+    useUpdateUserSettings, // Added useUpdateUserSettings
   },
   services: {
     ledgerService,
@@ -37,6 +39,7 @@ export const supabaseIntegration = {
     companyService,
     utilityService,
     reportService,
+    settingsService, // Added settingsService
   },
   auth: authService,
   realtime: realTimeService,

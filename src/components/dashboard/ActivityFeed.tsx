@@ -64,28 +64,8 @@ export function ActivityFeed() {
       });
 
       // System activities (placeholders for now)
-      newActivities.push(
-        {
-          id: 'system-1',
-          type: 'system',
-          action: 'Database Backup Completed',
-          description: 'Daily backup completed successfully',
-          timestamp: new Date().toLocaleString('en-IN'),
-          icon: <CheckCircle size={16} />,
-          color: 'text-success',
-          status: 'success',
-        },
-        {
-          id: 'system-2',
-          type: 'system',
-          action: 'GST Report Generated',
-          description: 'Monthly GST report ready for download',
-          timestamp: new Date().toLocaleString('en-IN'),
-          icon: <AlertCircle size={16} />,
-          color: 'text-warning',
-          status: 'warning',
-        }
-      );
+      // Removed hardcoded system activities to rely solely on user data or actual system logs.
+      // If real system activities are to be implemented, they should be fetched from a backend.
 
       // Sort by timestamp
       newActivities.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());

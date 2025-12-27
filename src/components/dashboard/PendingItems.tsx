@@ -1,4 +1,4 @@
-import { AlertCircle, Clock, FileWarning, ArrowRight } from 'lucide-react';
+import { AlertCircle, Clock, FileWarning, ArrowRight, CheckCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { useDashboardMetrics } from '@/integrations/supabase/hooks'; // Import useDashboardMetrics
@@ -48,17 +48,8 @@ export function PendingItems() {
         count: metrics.pendingInvoices 
       });
     }
-    // Add other dynamic pending items based on metrics or other data
-    // For example, if we had a way to track GST returns due:
-    // if (metrics.gstReturnsDueInDays < 7) {
-    //   pendingItems.push({ id: '2', title: 'GST Returns', description: 'GSTR-3B due soon', type: 'urgent' });
-    // }
-    // Placeholder for other items
-    pendingItems.push(
-      { id: '2', title: 'GST Returns', description: 'GSTR-3B due in 5 days', type: 'urgent' },
-      { id: '3', title: 'Bank Reconciliation', description: '12 unmatched transactions', type: 'info', count: 12 },
-      { id: '4', title: 'Stock Alerts', description: '3 items below reorder level', type: 'warning', count: 3 },
-    );
+    // Removed hardcoded pending items to rely solely on dynamic data from metrics or other backend sources.
+    // If real system activities are to be implemented, they should be fetched from a backend.
   }
 
   if (isLoading) {

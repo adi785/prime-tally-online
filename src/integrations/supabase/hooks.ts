@@ -3,13 +3,14 @@ import { supabase } from './client'
 import { toast } from 'sonner'
 import { authService } from './auth'
 import { companyService } from './services/companyService'
-import { Company, CreateLedgerRequest, UpdateCompanyRequest, UpdateLedgerRequest, CreateStockItemRequest, UpdateStockItemRequest, CreateVoucherRequest, UpdateVoucherRequest } from './types'
+import { Company, CreateLedgerRequest, UpdateCompanyRequest, UpdateLedgerRequest, CreateStockItemRequest, UpdateStockItemRequest, CreateVoucherRequest, UpdateVoucherRequest, UserSettings, UpdateUserSettingsRequest } from './types'
 import { ledgerService } from './services/ledgerService'
 import { stockService } from './services/stockService'
 import { voucherService } from './services/voucherService'
 import { dashboardService } from './services/dashboardService'
 import { reportService } from './services/reportService'
 import { utilityService } from './services/utilityService'
+import { settingsService } from './services/settingsService' // Import settingsService
 
 // Auth Hook
 export const useAuthState = () => {
@@ -323,6 +324,36 @@ export const useUpdateCompany = () => {
     },
   })
 }
+
+// User Settings Hooks
+export const useUserSettings = () => {
+  return useQuery<UserSettings | null, Error>({
+    queryKey: ['userSettings'],
+    queryFn: async () => {
+      const data = await settingsService.getUserSettings();
+      return data;
+    },
+    staleTime: Infinity, // Settings don't change often
+  });
+};
+
+export const useUpdateUserSettings = () => {
+  const queryClient = useQueryClient();
+  return useMutation<UserSettings, Error, UpdateUserSettingsRequest>({
+    mutationFn: async (updates) => {
+      const data = await settingsService.updateUserSettings(updates);
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['userSettings'] });
+      toast.success('Settings updated successfully');
+    },
+    onError: (error) => {
+      toast.error(`Failed to update settings: ${error.message}`);
+    },
+  });
+};
+
 
 // Report Hooks
 export const useBalanceSheet = () => {

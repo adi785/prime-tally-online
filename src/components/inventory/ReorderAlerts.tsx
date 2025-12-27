@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { AlertCircle } from 'lucide-react';
+import { useQueryClient } from '@tanstack/react-query'; // Import useQueryClient
 
 interface ReorderAlert {
   id: string;
@@ -23,6 +24,7 @@ export function ReorderAlerts() {
   const { data: stockItems = [], isLoading, error } = useStockItems();
   const [alerts, setAlerts] = useState<ReorderAlert[]>([]);
   const [filter, setFilter] = useState<'all' | 'critical' | 'warning'>('all');
+  const queryClient = useQueryClient(); // Initialize useQueryClient
 
   useEffect(() => {
     if (!stockItems || stockItems.length === 0) {
@@ -116,8 +118,7 @@ export function ReorderAlerts() {
 
   const handleRefresh = () => {
     toast.info('Refreshing stock levels...');
-    // Invalidate stockItems query to refetch data
-    // queryClient.invalidateQueries({ queryKey: ['stockItems'] });
+    queryClient.invalidateQueries({ queryKey: ['stockItems'] }); // Invalidate stockItems query to refetch data
   };
 
   const formatAmount = (amount: number) => {

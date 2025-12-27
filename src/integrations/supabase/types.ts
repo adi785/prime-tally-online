@@ -165,6 +165,24 @@ export interface UpdateCompanyRequest extends Partial<Company> {
   id: string;
 }
 
+// User Settings types
+export interface UserSettings {
+  id: string;
+  user_id: string;
+  notifications: boolean;
+  auto_backup: boolean;
+  dark_mode: boolean;
+  currency: string;
+  date_format: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface UpdateUserSettingsRequest extends Partial<Omit<UserSettings, 'id' | 'user_id' | 'created_at' | 'updated_at'>> {
+  id: string;
+}
+
+
 // Authentication types
 export interface AuthUser {
   id: string;
