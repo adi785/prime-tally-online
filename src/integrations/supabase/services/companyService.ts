@@ -4,10 +4,9 @@ import { Company, UpdateCompanyRequest } from '../types';
 export class CompanyService {
   async getCompany(): Promise<Company> {
     console.log('getCompany called');
-    const { data, error } = await supabase
-      .from('companies')
-      .select('*')
-      .single();
+    
+    // Use the Supabase function to get company info
+    const { data, error } = await supabase.rpc('get_company_info');
       
     if (error) {
       console.error('getCompany error:', error);
@@ -21,17 +20,26 @@ export class CompanyService {
   async updateCompany(data: UpdateCompanyRequest): Promise<Company> {
     console.log('updateCompany called with data:', data);
     
-    const { data: result, error } = await supabase
-      .from('companies')
-      .update(data)
-      .eq('id', data.id)
-      .select()
-      .single();
-      
+    // Use the Supabase function to update company
+    const { error } = await supabase.rpc('update_company', {
+      p_id: data.id,
+      p_name: data.name,
+      p_address: data.address,
+      p_gstin: data.gstin,
+      p_pan: data.pan,
+      p_phone: data.phone,
+      p_email: data.email,
+      p_financial_year_start: data.financial_year_start,
+      p_financial_year_end: data.financial_year_end
+    });
+    
     if (error) {
       console.error('updateCompany error:', error);
       throw error;
     }
+    
+    // Fetch the updated company
+    const { data: result } = await supabase.rpc('get_company_info');
     
     console.log('updateCompany success, result:', result);
     return result;

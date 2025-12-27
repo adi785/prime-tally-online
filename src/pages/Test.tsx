@@ -35,7 +35,7 @@ export default function Test() {
             <p>Count: {ledgers?.length || 0}</p>
             {showData && ledgers && (
               <pre className="mt-2 text-xs overflow-auto max-h-40">
-                {JSON.stringify(ledgers, null, 2)}
+                {JSON.stringify(ledgers.slice(0, 5), null, 2)}
               </pre>
             )}
           </CardContent>
@@ -62,7 +62,7 @@ export default function Test() {
             <p>Count: {stockItems?.length || 0}</p>
             {showData && stockItems && (
               <pre className="mt-2 text-xs overflow-auto max-h-40">
-                {JSON.stringify(stockItems, null, 2)}
+                {JSON.stringify(stockItems.slice(0, 5), null, 2)}
               </pre>
             )}
           </CardContent>

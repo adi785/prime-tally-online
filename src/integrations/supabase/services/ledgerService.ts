@@ -59,13 +59,13 @@ export class LedgerService {
         name: data.name,
         group_name: data.group,
         group_id: data.group_id,
-        opening_balance: data.opening_balance,
+        opening_balance: data.opening_balance || 0,
         address: data.address,
         phone: data.phone,
         gstin: data.gstin,
         email: data.email,
-        is_billwise: data.is_billwise,
-        is_inventory: data.is_inventory,
+        is_billwise: data.is_billwise || false,
+        is_inventory: data.is_inventory || false,
       }])
       .select()
       .single();
@@ -82,17 +82,34 @@ export class LedgerService {
   async updateLedger(id: string, data: UpdateLedgerRequest): Promise<Ledger> {
     console.log('updateLedger called with id:', id, 'data:', data);
     
-    const { data: result, error } = await supabase
-      .from('ledgers')
-      .update(data)
-      .eq('id', id)
-      .select()
-      .single();
-      
+    // Use the Supabase function to update ledger
+    const { error } = await supabase.rpc('update_ledger', {
+      p_id: id,
+      p_name: data.name,
+      p_group_name: data.group,
+      p_opening_balance: data.opening_balance || 0,
+      p_address: data.address,
+      p_phone: data.phone,
+      p_gstin: data.gstin,
+      p_email: data.email,
+      p_is_billwise: data.is_billwise || false,
+      p_is_inventory: data.is_inventory || false
+    });
+    
     if (error) {
       console.error('updateLedger error:', error);
       throw error;
     }
+    
+    // Fetch the updated ledger
+    const { data: result } = await supabase
+      .from('ledgers')
+      .select(`
+        *,
+        group:ledger_groups(name)
+      `)
+      .eq('id', id)
+      .single();
     
     console.log('updateLedger success, result:', result);
     return result;
