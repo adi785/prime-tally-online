@@ -20,6 +20,7 @@ import ReorderAlertsPage from "./pages/ReorderAlerts"
 import CompanyInfo from "./pages/CompanyInfo"
 import Settings from "./pages/Settings"
 import Help from "./pages/Help"
+import ResetPasswordPage from "./pages/ResetPassword"
 import { useAuthState } from "./integrations/supabase/hooks"
 
 const queryClient = new QueryClient({
@@ -44,7 +45,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />
   }
-  return <>{children}</>
+  return <>{children}</>;
 }
 
 function PublicRoute({ children }: { children: React.ReactNode }) {
@@ -59,7 +60,7 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
   if (isAuthenticated) {
     return <Navigate to="/dashboard" replace />
   }
-  return <>{children}</>
+  return <>{children}</>;
 }
 
 const App = () => (
@@ -80,90 +81,35 @@ const App = () => (
               <Signup />
             </PublicRoute>
           } />
-          
-          {/* Protected Routes */}
-          <Route path="/" element={<Navigate to="/dashboard" replace />} />
-          <Route path="/dashboard" element={
-            <ProtectedRoute>
-              <Index />
-            </ProtectedRoute>
+          <Route path="/reset-password" element={
+            <PublicRoute>
+              <ResetPasswordPage />
+            </PublicRoute>
           } />
           
-          {/* Main Sections */}
-          <Route path="/ledgers/*" element={
-            <ProtectedRoute>
-              <Ledgers />
-            </ProtectedRoute>
-          } />
-          <Route path="/vouchers/*" element={
-            <ProtectedRoute>
-              <Vouchers />
-            </ProtectedRoute>
-          } />
-          <Route path="/inventory/*" element={
-            <ProtectedRoute>
-              <Inventory />
-            </ProtectedRoute>
-          } />
-          <Route path="/reports/*" element={
-            <ProtectedRoute>
-              <Reports />
-            </ProtectedRoute>
-          } />
+          {/* Protected Routes with Index as Layout */}
+          <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>}>
+            <Route index element={<Navigate to="/dashboard" replace />} /> {/* Default protected route */}
+            <Route path="dashboard" element={<Dashboard />} />
+            <Route path="ledgers" element={<Ledgers />} />
+            <Route path="vouchers" element={<Vouchers />} />
+            <Route path="inventory" element={<Inventory />} />
+            <Route path="reports" element={<Reports />} />
+            <Route path="reports/balance-sheet" element={<BalanceSheetPage />} />
+            <Route path="reports/profit-loss" element={<ProfitLossPage />} />
+            <Route path="reports/trial-balance" element={<TrialBalancePage />} />
+            <Route path="reports/day-book" element={<DayBookPage />} />
+            <Route path="inventory/analysis" element={<StockAnalysisPage />} />
+            <Route path="inventory/reorder-alerts" element={<ReorderAlertsPage />} />
+            <Route path="company" element={<CompanyInfo />} />
+            <Route path="settings" element={<Settings />} />
+            <Route path="help" element={<Help />} />
+            {/* Catch-all for protected routes */}
+            <Route path="*" element={<Navigate to="/dashboard" replace />} />
+          </Route>
           
-          {/* Report Pages */}
-          <Route path="/reports/balance-sheet" element={
-            <ProtectedRoute>
-              <BalanceSheetPage />
-            </ProtectedRoute>
-          } />
-          <Route path="/reports/profit-loss" element={
-            <ProtectedRoute>
-              <ProfitLossPage />
-            </ProtectedRoute>
-          } />
-          <Route path="/reports/trial-balance" element={
-            <ProtectedRoute>
-              <TrialBalancePage />
-            </ProtectedRoute>
-          } />
-          <Route path="/reports/day-book" element={
-            <ProtectedRoute>
-              <DayBookPage />
-            </ProtectedRoute>
-          } />
-          
-          {/* Inventory Pages */}
-          <Route path="/inventory/analysis" element={
-            <ProtectedRoute>
-              <StockAnalysisPage />
-            </ProtectedRoute>
-          } />
-          <Route path="/inventory/reorder-alerts" element={
-            <ProtectedRoute>
-              <ReorderAlertsPage />
-            </ProtectedRoute>
-          } />
-          
-          {/* Settings and Info */}
-          <Route path="/company" element={
-            <ProtectedRoute>
-              <CompanyInfo />
-            </ProtectedRoute>
-          } />
-          <Route path="/settings" element={
-            <ProtectedRoute>
-              <Settings />
-            </ProtectedRoute>
-          } />
-          <Route path="/help" element={
-            <ProtectedRoute>
-              <Help />
-            </ProtectedRoute>
-          } />
-          
-          {/* Catch-all route */}
-          <Route path="*" element={<Navigate to="/dashboard" replace />} />
+          {/* Fallback for any unmatched public routes */}
+          <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
       </BrowserRouter>
     </TooltipProvider>

@@ -24,8 +24,8 @@ import {
   RefreshCw
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { useLocation, useNavigate } from 'react-router-dom'
-import { useCompany } from '@/integrations/supabase/hooks' // Import useCompany
+import { useLocation, useNavigate, NavLink as RouterNavLink } from 'react-router-dom' // Import RouterNavLink
+import { useCompany } from '@/integrations/supabase/hooks'
 
 interface MenuItem {
   id: string
@@ -191,7 +191,7 @@ export function TallySidebar({ activeSection }: TallySidebarProps) {
   const [expandedItems, setExpandedItems] = useState<string[]>(['vouchers', 'masters', 'reports'])
   const navigate = useNavigate()
   const location = useLocation()
-  const { data: company, isLoading: isCompanyLoading } = useCompany() // Fetch company data
+  const { data: company, isLoading: isCompanyLoading } = useCompany()
 
   const toggleExpand = (id: string) => {
     setExpandedItems(prev => 
@@ -201,43 +201,42 @@ export function TallySidebar({ activeSection }: TallySidebarProps) {
     )
   }
 
-  const handleNavigation = (path: string | undefined, e: React.MouseEvent) => {
-    e.preventDefault()
-    if (path) {
-      navigate(path)
-    }
-  }
-
   const renderMenuItem = (item: MenuItem, isChild = false) => {
     const hasChildren = item.children && item.children.length > 0
     const isExpanded = expandedItems.includes(item.id)
-    const isActive = location.pathname === item.path || 
+    
+    // Determine if the current item or any of its children are active
+    const isActive = item.path === location.pathname || 
+                     (hasChildren && item.children.some(child => location.pathname.startsWith(child.path || ''))) ||
                      (item.id === 'vouchers' && location.pathname.startsWith('/vouchers')) ||
+                     (item.id === 'masters' && (location.pathname.startsWith('/ledgers') || location.pathname.startsWith('/inventory'))) ||
                      (item.id === 'reports' && location.pathname.startsWith('/reports')) ||
-                     (item.id === 'inventory' && location.pathname.startsWith('/inventory')) ||
-                     (item.id === 'masters' && location.pathname.startsWith('/ledgers'))
+                     (item.id === 'inventory' && location.pathname.startsWith('/inventory'))
 
     return (
       <div key={item.id}>
-        <a 
-          href={item.path || `/${item.id}`} 
+        <RouterNavLink 
+          to={item.path || '#'} // Use RouterNavLink
           onClick={(e) => {
             if (hasChildren) {
               e.preventDefault()
               toggleExpand(item.id)
+            } else if (item.path) {
+              // Allow RouterNavLink to handle navigation for leaf nodes
             } else {
-              handleNavigation(item.path, e)
+              e.preventDefault(); // Prevent default for parent items without a direct path
             }
           }}
-          className={cn(
+          className={({ isActive: isNavLinkActive }) => cn(
             "w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-all duration-200",
             isChild ? "pl-10" : "pl-4",
-            isActive ? "bg-sidebar-accent text-sidebar-foreground border-l-2 border-sidebar-primary" : "text-sidebar-muted hover:bg-sidebar-accent/50 hover:text-sidebar-foreground border-l-2 border-transparent",
+            (isNavLinkActive || isActive) ? "bg-sidebar-accent text-sidebar-foreground border-l-2 border-sidebar-primary" : "text-sidebar-muted hover:bg-sidebar-accent/50 hover:text-sidebar-foreground border-l-2 border-transparent",
           )}
+          end={!hasChildren} // `end` prop ensures exact match for non-parent links
         >
           <span className={cn(
             "transition-colors",
-            isActive ? "text-sidebar-primary" : ""
+            (isActive) ? "text-sidebar-primary" : ""
           )}>
             {item.icon}
           </span>
@@ -250,7 +249,7 @@ export function TallySidebar({ activeSection }: TallySidebarProps) {
               {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
             </span>
           )}
-        </a>
+        </RouterNavLink>
         {hasChildren && isExpanded && (
           <div className="animate-fade-in">
             {item.children?.map(child => renderMenuItem(child, true))}
