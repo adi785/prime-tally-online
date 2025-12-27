@@ -17,18 +17,20 @@ class RealTimeService {
 
   // Ledger subscriptions
   subscribeToLedgers(
+    userId: string, // Added userId
     onInsert?: (data: Ledger) => void,
     onUpdate?: (data: Ledger) => void,
     onDelete?: (data: Ledger) => void
   ): RealTimeSubscription {
     const channel = supabase
-      .channel('ledgers')
+      .channel(`ledgers_for_user_${userId}`) // Unique channel per user
       .on(
         'postgres_changes',
         {
           event: '*',
           schema: 'public',
           table: 'ledgers',
+          filter: `user_id=eq.${userId}`, // Filter by user_id
         },
         (payload) => {
           const ledger = payload.new as Ledger;
@@ -47,7 +49,7 @@ class RealTimeService {
       )
       .subscribe();
 
-    const id = `ledgers-${Date.now()}`;
+    const id = `ledgers-${userId}-${Date.now()}`;
     const subscription = {
       unsubscribe: () => {
         supabase.removeChannel(channel);
@@ -60,19 +62,20 @@ class RealTimeService {
   }
 
   subscribeToLedger(
+    userId: string, // Added userId
     ledgerId: string,
     onUpdate?: (data: Ledger) => void,
     onDelete?: (data: Ledger) => void
   ): RealTimeSubscription {
     const channel = supabase
-      .channel(`ledger-${ledgerId}`)
+      .channel(`ledger_${ledgerId}_for_user_${userId}`) // Unique channel per user and ledger
       .on(
         'postgres_changes',
         {
           event: '*',
           schema: 'public',
           table: 'ledgers',
-          filter: `id=eq.${ledgerId}`,
+          filter: `id=eq.${ledgerId}&user_id=eq.${userId}`, // Filter by id and user_id
         },
         (payload) => {
           const ledger = payload.new as Ledger;
@@ -88,7 +91,7 @@ class RealTimeService {
       )
       .subscribe();
 
-    const id = `ledger-${ledgerId}-${Date.now()}`;
+    const id = `ledger-${ledgerId}-${userId}-${Date.now()}`;
     const subscription = {
       unsubscribe: () => {
         supabase.removeChannel(channel);
@@ -102,18 +105,20 @@ class RealTimeService {
 
   // Voucher subscriptions
   subscribeToVouchers(
+    userId: string, // Added userId
     onInsert?: (data: Voucher) => void,
     onUpdate?: (data: Voucher) => void,
     onDelete?: (data: Voucher) => void
   ): RealTimeSubscription {
     const channel = supabase
-      .channel('vouchers')
+      .channel(`vouchers_for_user_${userId}`) // Unique channel per user
       .on(
         'postgres_changes',
         {
           event: '*',
           schema: 'public',
           table: 'vouchers',
+          filter: `user_id=eq.${userId}`, // Filter by user_id
         },
         (payload) => {
           const voucher = payload.new as Voucher;
@@ -132,7 +137,7 @@ class RealTimeService {
       )
       .subscribe();
 
-    const id = `vouchers-${Date.now()}`;
+    const id = `vouchers-${userId}-${Date.now()}`;
     const subscription = {
       unsubscribe: () => {
         supabase.removeChannel(channel);
@@ -145,19 +150,20 @@ class RealTimeService {
   }
 
   subscribeToVoucher(
+    userId: string, // Added userId
     voucherId: string,
     onUpdate?: (data: Voucher) => void,
     onDelete?: (data: Voucher) => void
   ): RealTimeSubscription {
     const channel = supabase
-      .channel(`voucher-${voucherId}`)
+      .channel(`voucher_${voucherId}_for_user_${userId}`) // Unique channel per user and voucher
       .on(
         'postgres_changes',
         {
           event: '*',
           schema: 'public',
           table: 'vouchers',
-          filter: `id=eq.${voucherId}`,
+          filter: `id=eq.${voucherId}&user_id=eq.${userId}`, // Filter by id and user_id
         },
         (payload) => {
           const voucher = payload.new as Voucher;
@@ -173,7 +179,7 @@ class RealTimeService {
       )
       .subscribe();
 
-    const id = `voucher-${voucherId}-${Date.now()}`;
+    const id = `voucher-${voucherId}-${userId}-${Date.now()}`;
     const subscription = {
       unsubscribe: () => {
         supabase.removeChannel(channel);
@@ -187,18 +193,20 @@ class RealTimeService {
 
   // Stock subscriptions
   subscribeToStockItems(
+    userId: string, // Added userId
     onInsert?: (data: StockItem) => void,
     onUpdate?: (data: StockItem) => void,
     onDelete?: (data: StockItem) => void
   ): RealTimeSubscription {
     const channel = supabase
-      .channel('stock_items')
+      .channel(`stock_items_for_user_${userId}`) // Unique channel per user
       .on(
         'postgres_changes',
         {
           event: '*',
           schema: 'public',
           table: 'stock_items',
+          filter: `user_id=eq.${userId}`, // Filter by user_id
         },
         (payload) => {
           const stockItem = payload.new as StockItem;
@@ -217,7 +225,7 @@ class RealTimeService {
       )
       .subscribe();
 
-    const id = `stock-items-${Date.now()}`;
+    const id = `stock-items-${userId}-${Date.now()}`;
     const subscription = {
       unsubscribe: () => {
         supabase.removeChannel(channel);
@@ -230,19 +238,20 @@ class RealTimeService {
   }
 
   subscribeToStockItem(
+    userId: string, // Added userId
     stockItemId: string,
     onUpdate?: (data: StockItem) => void,
     onDelete?: (data: StockItem) => void
   ): RealTimeSubscription {
     const channel = supabase
-      .channel(`stock-item-${stockItemId}`)
+      .channel(`stock_item_${stockItemId}_for_user_${userId}`) // Unique channel per user and item
       .on(
         'postgres_changes',
         {
           event: '*',
           schema: 'public',
           table: 'stock_items',
-          filter: `id=eq.${stockItemId}`,
+          filter: `id=eq.${stockItemId}&user_id=eq.${userId}`, // Filter by id and user_id
         },
         (payload) => {
           const stockItem = payload.new as StockItem;
@@ -258,7 +267,7 @@ class RealTimeService {
       )
       .subscribe();
 
-    const id = `stock-item-${stockItemId}-${Date.now()}`;
+    const id = `stock-item-${stockItemId}-${userId}-${Date.now()}`;
     const subscription = {
       unsubscribe: () => {
         supabase.removeChannel(channel);
