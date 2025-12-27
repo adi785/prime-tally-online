@@ -65,7 +65,7 @@ export class StockService {
         quantity,
         rate,
         value: quantity * rate,
-        is_active: true,
+        is_active: true, // Ensure is_active is set on creation
       })
       .select()
       .single();
@@ -95,6 +95,7 @@ export class StockService {
         rate,
         value: quantity * rate,
         group_name: data.group_name,
+        // is_active is not typically updated here unless explicitly requested
       })
       .eq('id', id)
       .eq('user_id', userId)
@@ -113,7 +114,7 @@ export class StockService {
   async deleteStockItem(userId: string, id: string): Promise<void> {
     const { error } = await supabase
       .from('stock_items')
-      .update({ is_active: false })
+      .update({ is_active: false }) // Set is_active to false for soft delete
       .eq('id', id)
       .eq('user_id', userId);
 
