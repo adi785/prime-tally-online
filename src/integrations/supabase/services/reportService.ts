@@ -2,17 +2,8 @@ import { supabase } from '../client';
 import { Ledger, Voucher, VoucherItem } from '../types';
 
 export class ReportService {
-  private async getUserId(): Promise<string> {
-    const { data: { user }, error } = await supabase.auth.getUser();
-    if (error || !user) {
-      throw new Error('User not authenticated');
-    }
-    return user.id;
-  }
-
-  async getBalanceSheet(): Promise<any> {
+  async getBalanceSheet(userId: string): Promise<any> {
     console.log('getBalanceSheet called');
-    const userId = await this.getUserId();
 
     const { data: ledgers, error: ledgersError } = await supabase
       .from('ledgers')
@@ -38,7 +29,6 @@ export class ReportService {
 
     const ledgerMap = new Map<string, Ledger>(ledgers.map(l => [l.id, l as Ledger]));
 
-    // Group ledgers by category for Balance Sheet
     const currentAssets = ledgers.filter(l => ['Cash-in-Hand', 'Bank Accounts', 'Sundry Debtors'].includes(l.group?.name || ''));
     const fixedAssets = ledgers.filter(l => l.group?.name === 'Fixed Assets');
     const currentLiabilities = ledgers.filter(l => ['Sundry Creditors', 'Duties & Taxes'].includes(l.group?.name || ''));
@@ -84,10 +74,9 @@ export class ReportService {
       totalEquity += total;
     }
 
-    // Placeholder for Retained Earnings (would come from P&L)
     equity.push({
       name: 'Retained Earnings',
-      amount: 0 // This would be calculated from Profit & Loss
+      amount: 0
     });
 
     return {
@@ -100,9 +89,8 @@ export class ReportService {
     };
   }
 
-  async getProfitAndLoss(): Promise<any> {
+  async getProfitAndLoss(userId: string): Promise<any> {
     console.log('getProfitAndLoss called');
-    const userId = await this.getUserId();
 
     const { data: vouchers, error: vouchersError } = await supabase
       .from('vouchers')
@@ -200,9 +188,8 @@ export class ReportService {
     };
   }
 
-  async getTrialBalance(): Promise<any> {
+  async getTrialBalance(userId: string): Promise<any> {
     console.log('getTrialBalance called');
-    const userId = await this.getUserId();
 
     const { data: ledgers, error: ledgersError } = await supabase
       .from('ledgers')
@@ -241,9 +228,8 @@ export class ReportService {
     };
   }
 
-  async getDayBook(params: { startDate: string; endDate: string }): Promise<any> {
+  async getDayBook(userId: string, params: { startDate: string; endDate: string }): Promise<any> {
     console.log('getDayBook called with params:', params);
-    const userId = await this.getUserId();
 
     const { data: vouchers, error: vouchersError } = await supabase
       .from('vouchers')

@@ -10,7 +10,7 @@ import { voucherService } from './services/voucherService'
 import { dashboardService } from './services/dashboardService'
 import { reportService } from './services/reportService'
 import { utilityService } from './services/utilityService'
-import { settingsService } from './services/settingsService' // Import settingsService
+import { settingsService } from './services/settingsService'
 
 // Auth Hook
 export const useAuthState = () => {
@@ -29,7 +29,7 @@ export const useAuthState = () => {
     try {
       await authService.signOut()
       queryClient.setQueryData(['auth'], null)
-      queryClient.clear() // Clear all queries on sign out
+      queryClient.clear()
     } catch (error) {
       console.error('Sign out error:', error)
     }
@@ -43,12 +43,12 @@ export const useAuthState = () => {
   }
 }
 
-// Ledger Groups Hook
+// Ledger Groups Hook (does not depend on userId, public access)
 export const useLedgerGroups = () => {
   return useQuery({
     queryKey: ['ledgerGroups'],
     queryFn: async () => {
-      const data = await ledgerService.getLedgerGroups(); // Use service
+      const data = await ledgerService.getLedgerGroups();
       return data || []
     },
   })
@@ -56,77 +56,89 @@ export const useLedgerGroups = () => {
 
 // Ledger Hooks
 export const useLedgers = () => {
+  const { user } = useAuthState();
   return useQuery({
     queryKey: ['ledgers'],
     queryFn: async () => {
-      const data = await ledgerService.getLedgers(); // Use service
+      if (!user?.id) throw new Error('User not authenticated');
+      const data = await ledgerService.getLedgers(user.id);
       return data || []
     },
+    enabled: !!user?.id,
   })
 }
 
 export const useCreateLedger = () => {
   const queryClient = useQueryClient()
+  const { user } = useAuthState();
   
   return useMutation({
     mutationFn: async (newLedger: CreateLedgerRequest) => {
-      const data = await ledgerService.createLedger(newLedger); // Use service
+      if (!user?.id) throw new Error('User not authenticated');
+      const data = await ledgerService.createLedger(user.id, newLedger);
       return data
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['ledgers'] })
-      queryClient.invalidateQueries({ queryKey: ['dashboardMetrics'] }) // Invalidate dashboard metrics as ledgers affect them
+      queryClient.invalidateQueries({ queryKey: ['dashboardMetrics'] })
       toast.success('Ledger created successfully')
     },
     onError: (error) => {
       toast.error(`Failed to create ledger: ${error.message}`)
     },
+    enabled: !!user?.id,
   })
 }
 
 export const useUpdateLedger = () => {
   const queryClient = useQueryClient()
+  const { user } = useAuthState();
   
   return useMutation({
     mutationFn: async ({ id, ...updates }: UpdateLedgerRequest) => {
-      const data = await ledgerService.updateLedger(id!, updates); // Use service
+      if (!user?.id) throw new Error('User not authenticated');
+      const data = await ledgerService.updateLedger(user.id, id!, updates);
       return data
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['ledgers'] })
-      queryClient.invalidateQueries({ queryKey: ['dashboardMetrics'] }) // Invalidate dashboard metrics as ledgers affect them
+      queryClient.invalidateQueries({ queryKey: ['dashboardMetrics'] })
       toast.success('Ledger updated successfully')
     },
     onError: (error) => {
       toast.error(`Failed to update ledger: ${error.message}`)
     },
+    enabled: !!user?.id,
   })
 }
 
 export const useDeleteLedger = () => {
   const queryClient = useQueryClient()
+  const { user } = useAuthState();
   
   return useMutation({
     mutationFn: async (id: string) => {
-      await ledgerService.deleteLedger(id); // Use service
+      if (!user?.id) throw new Error('User not authenticated');
+      await ledgerService.deleteLedger(user.id, id);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['ledgers'] })
-      queryClient.invalidateQueries({ queryKey: ['dashboardMetrics'] }) // Invalidate dashboard metrics as ledgers affect them
+      queryClient.invalidateQueries({ queryKey: ['dashboardMetrics'] })
       toast.success('Ledger deleted successfully')
     },
     onError: (error) => {
       toast.error(`Failed to delete ledger: ${error.message}`)
     },
+    enabled: !!user?.id,
   })
 }
 
-// Voucher Types Hook
+// Voucher Types Hook (does not depend on userId, public access)
 export const useVoucherTypes = () => {
   return useQuery({
     queryKey: ['voucherTypes'],
     queryFn: async () => {
-      const data = await voucherService.getVoucherTypes(); // Use service
+      const data = await voucherService.getVoucherTypes();
       return data || []
     },
   })
@@ -134,103 +146,123 @@ export const useVoucherTypes = () => {
 
 // Voucher Hooks
 export const useVouchers = () => {
+  const { user } = useAuthState();
   return useQuery({
     queryKey: ['vouchers'],
     queryFn: async () => {
-      const data = await voucherService.getVouchers(); // Use service
+      if (!user?.id) throw new Error('User not authenticated');
+      const data = await voucherService.getVouchers(user.id);
       return data || []
     },
+    enabled: !!user?.id,
   })
 }
 
 export const useCreateVoucher = () => {
   const queryClient = useQueryClient()
+  const { user } = useAuthState();
   
   return useMutation({
     mutationFn: async (newVoucher: CreateVoucherRequest) => {
-      const data = await voucherService.createVoucher(newVoucher); // Use service
+      if (!user?.id) throw new Error('User not authenticated');
+      const data = await voucherService.createVoucher(user.id, newVoucher);
       return data
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['vouchers'] })
-      queryClient.invalidateQueries({ queryKey: ['dashboardMetrics'] }) // Invalidate dashboard metrics as vouchers affect them
-      queryClient.invalidateQueries({ queryKey: ['ledgers'] }) // Vouchers update ledger balances
+      queryClient.invalidateQueries({ queryKey: ['dashboardMetrics'] })
+      queryClient.invalidateQueries({ queryKey: ['ledgers'] })
       toast.success('Voucher created successfully')
     },
     onError: (error) => {
       toast.error(`Failed to create voucher: ${error.message}`)
     },
+    enabled: !!user?.id,
   })
 }
 
 export const useUpdateVoucher = () => {
   const queryClient = useQueryClient()
+  const { user } = useAuthState();
   
   return useMutation({
     mutationFn: async ({ id, ...updates }: UpdateVoucherRequest) => {
-      const data = await voucherService.updateVoucher(id!, updates); // Use service
+      if (!user?.id) throw new Error('User not authenticated');
+      const data = await voucherService.updateVoucher(user.id, id!, updates);
       return data
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['vouchers'] })
-      queryClient.invalidateQueries({ queryKey: ['dashboardMetrics'] }) // Invalidate dashboard metrics as vouchers affect them
-      queryClient.invalidateQueries({ queryKey: ['ledgers'] }) // Vouchers update ledger balances
+      queryClient.invalidateQueries({ queryKey: ['dashboardMetrics'] })
+      queryClient.invalidateQueries({ queryKey: ['ledgers'] })
       toast.success('Voucher updated successfully')
     },
     onError: (error) => {
       toast.error(`Failed to update voucher: ${error.message}`)
     },
+    enabled: !!user?.id,
   })
 }
 
 export const useDeleteVoucher = () => {
   const queryClient = useQueryClient()
+  const { user } = useAuthState();
   
   return useMutation({
     mutationFn: async (id: string) => {
-      await voucherService.deleteVoucher(id); // Use service
+      if (!user?.id) throw new Error('User not authenticated');
+      await voucherService.deleteVoucher(user.id, id);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['vouchers'] })
-      queryClient.invalidateQueries({ queryKey: ['dashboardMetrics'] }) // Invalidate dashboard metrics as vouchers affect them
-      queryClient.invalidateQueries({ queryKey: ['ledgers'] }) // Vouchers update ledger balances
+      queryClient.invalidateQueries({ queryKey: ['dashboardMetrics'] })
+      queryClient.invalidateQueries({ queryKey: ['ledgers'] })
       toast.success('Voucher deleted successfully')
     },
     onError: (error) => {
       toast.error(`Failed to delete voucher: ${error.message}`)
     },
+    enabled: !!user?.id,
   })
 }
 
 // Dashboard Metrics Hook
 export const useDashboardMetrics = () => {
+  const { user } = useAuthState();
   return useQuery({
     queryKey: ['dashboardMetrics'],
     queryFn: async () => {
-      const data = await dashboardService.getDashboardMetrics() // Use service
+      if (!user?.id) throw new Error('User not authenticated');
+      const data = await dashboardService.getDashboardMetrics(user.id)
       return data
     },
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    enabled: !!user?.id,
+    staleTime: 5 * 60 * 1000,
   })
 }
 
 // Stock Items Hooks
 export const useStockItems = () => {
+  const { user } = useAuthState();
   return useQuery({
     queryKey: ['stockItems'],
     queryFn: async () => {
-      const data = await stockService.getStockItems(); // Use service
+      if (!user?.id) throw new Error('User not authenticated');
+      const data = await stockService.getStockItems(user.id);
       return data || []
     },
+    enabled: !!user?.id,
   })
 }
 
 export const useCreateStockItem = () => {
   const queryClient = useQueryClient()
+  const { user } = useAuthState();
   
   return useMutation({
     mutationFn: async (newStockItem: CreateStockItemRequest) => {
-      const data = await stockService.createStockItem(newStockItem); // Use service
+      if (!user?.id) throw new Error('User not authenticated');
+      const data = await stockService.createStockItem(user.id, newStockItem);
       return data
     },
     onSuccess: () => {
@@ -240,15 +272,18 @@ export const useCreateStockItem = () => {
     onError: (error) => {
       toast.error(`Failed to create stock item: ${error.message}`)
     },
+    enabled: !!user?.id,
   })
 }
 
 export const useUpdateStockItem = () => {
   const queryClient = useQueryClient()
+  const { user } = useAuthState();
   
   return useMutation({
     mutationFn: async ({ id, ...updates }: UpdateStockItemRequest) => {
-      const data = await stockService.updateStockItem(id!, updates); // Use service
+      if (!user?.id) throw new Error('User not authenticated');
+      const data = await stockService.updateStockItem(user.id, id!, updates);
       return data
     },
     onSuccess: () => {
@@ -258,15 +293,18 @@ export const useUpdateStockItem = () => {
     onError: (error) => {
       toast.error(`Failed to update stock item: ${error.message}`)
     },
+    enabled: !!user?.id,
   })
 }
 
 export const useDeleteStockItem = () => {
   const queryClient = useQueryClient()
+  const { user } = useAuthState();
   
   return useMutation({
     mutationFn: async (id: string) => {
-      await stockService.deleteStockItem(id); // Use service
+      if (!user?.id) throw new Error('User not authenticated');
+      await stockService.deleteStockItem(user.id, id);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['stockItems'] })
@@ -275,26 +313,32 @@ export const useDeleteStockItem = () => {
     onError: (error) => {
       toast.error(`Failed to delete stock item: ${error.message}`)
     },
+    enabled: !!user?.id,
   })
 }
 
 // Company Hooks
 export const useCompany = () => {
+  const { user } = useAuthState();
   return useQuery<Company | null, Error>({
     queryKey: ['company'],
     queryFn: async () => {
-      const data = await companyService.getCompany()
+      if (!user?.id) throw new Error('User not authenticated');
+      const data = await companyService.getCompany(user.id)
       return data
     },
-    staleTime: Infinity, // Company info doesn't change often
+    enabled: !!user?.id,
+    staleTime: Infinity,
   })
 }
 
 export const useCreateCompany = () => {
   const queryClient = useQueryClient();
+  const { user } = useAuthState();
   return useMutation<Company, Error, Omit<Company, 'id' | 'created_at' | 'updated_at' | 'user_id'>>({
     mutationFn: async (newCompany) => {
-      const data = await companyService.createCompany(newCompany);
+      if (!user?.id) throw new Error('User not authenticated');
+      const data = await companyService.createCompany(user.id, newCompany);
       return data;
     },
     onSuccess: () => {
@@ -304,15 +348,18 @@ export const useCreateCompany = () => {
     onError: (error) => {
       toast.error(`Failed to create company: ${error.message}`);
     },
+    enabled: !!user?.id,
   });
 };
 
 export const useUpdateCompany = () => {
   const queryClient = useQueryClient()
+  const { user } = useAuthState();
   
   return useMutation<Company, Error, UpdateCompanyRequest>({
     mutationFn: async (updates) => {
-      const data = await companyService.updateCompany(updates)
+      if (!user?.id) throw new Error('User not authenticated');
+      const data = await companyService.updateCompany(user.id, updates)
       return data
     },
     onSuccess: (data) => {
@@ -322,26 +369,32 @@ export const useUpdateCompany = () => {
     onError: (error) => {
       toast.error(`Failed to update company information: ${error.message}`)
     },
+    enabled: !!user?.id,
   })
 }
 
 // User Settings Hooks
 export const useUserSettings = () => {
+  const { user } = useAuthState();
   return useQuery<UserSettings | null, Error>({
     queryKey: ['userSettings'],
     queryFn: async () => {
-      const data = await settingsService.getUserSettings();
+      if (!user?.id) throw new Error('User not authenticated');
+      const data = await settingsService.getUserSettings(user.id);
       return data;
     },
-    staleTime: Infinity, // Settings don't change often
+    enabled: !!user?.id,
+    staleTime: Infinity,
   });
 };
 
 export const useUpdateUserSettings = () => {
   const queryClient = useQueryClient();
+  const { user } = useAuthState();
   return useMutation<UserSettings, Error, UpdateUserSettingsRequest>({
     mutationFn: async (updates) => {
-      const data = await settingsService.updateUserSettings(updates);
+      if (!user?.id) throw new Error('User not authenticated');
+      const data = await settingsService.updateUserSettings(user.id, updates);
       return data;
     },
     onSuccess: () => {
@@ -351,39 +404,60 @@ export const useUpdateUserSettings = () => {
     onError: (error) => {
       toast.error(`Failed to update settings: ${error.message}`);
     },
+    enabled: !!user?.id,
   });
 };
 
 
 // Report Hooks
 export const useBalanceSheet = () => {
+  const { user } = useAuthState();
   return useQuery({
     queryKey: ['balanceSheet'],
-    queryFn: async () => reportService.getBalanceSheet(),
+    queryFn: async () => {
+      if (!user?.id) throw new Error('User not authenticated');
+      return reportService.getBalanceSheet(user.id);
+    },
+    enabled: !!user?.id,
     staleTime: 5 * 60 * 1000,
   });
 };
 
 export const useProfitAndLoss = () => {
+  const { user } = useAuthState();
   return useQuery({
     queryKey: ['profitLoss'],
-    queryFn: async () => reportService.getProfitAndLoss(),
+    queryFn: async () => {
+      if (!user?.id) throw new Error('User not authenticated');
+      return reportService.getProfitAndLoss(user.id);
+    },
+    enabled: !!user?.id,
     staleTime: 5 * 60 * 1000,
   });
 };
 
 export const useTrialBalance = () => {
+  const { user } = useAuthState();
   return useQuery({
     queryKey: ['trialBalance'],
-    queryFn: async () => reportService.getTrialBalance(),
+    queryFn: async () => {
+      if (!user?.id) throw new Error('User not authenticated');
+      return reportService.getTrialBalance(user.id);
+    },
+    enabled: !!user?.id,
     staleTime: 5 * 60 * 1000,
   });
 };
 
 export const useDayBook = (params: { startDate: string; endDate: string }) => {
+  const { user } = useAuthState();
   return useQuery({
     queryKey: ['dayBook', params],
-    queryFn: async () => reportService.getDayBook(params),
+    queryFn: async () => {
+      if (!user?.id) throw new Error('User not authenticated');
+      return reportService.getDayBook(user.id, params);
+    },
+    enabled: !!user?.id,
     staleTime: 5 * 60 * 1000,
   });
 };

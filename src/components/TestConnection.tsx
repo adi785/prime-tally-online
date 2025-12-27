@@ -2,33 +2,34 @@ import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useAuthState } from '@/integrations/supabase/hooks';
 
 export function TestConnection() {
   const [testResult, setTestResult] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const { user } = useAuthState();
 
   const testConnection = async () => {
     setIsLoading(true);
     setTestResult(null);
     
     try {
-      // Get current user
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
-      if (userError) throw userError;
-
       const userId = user?.id;
 
-      // Test table access with user_id filter
+      if (!userId) {
+        throw new Error('User not authenticated for testing data access.');
+      }
+
       const { data: ledgers, error: ledgersError } = await supabase
         .from('ledgers')
         .select('count(*)', { count: 'exact' })
-        .eq('user_id', userId) // Filter by user_id
+        .eq('user_id', userId)
         .limit(1);
       
       const { data: companies, error: companiesError } = await supabase
         .from('companies')
         .select('count(*)', { count: 'exact' })
-        .eq('user_id', userId) // Filter by user_id
+        .eq('user_id', userId)
         .limit(1);
 
       setTestResult({
@@ -54,7 +55,7 @@ export function TestConnection() {
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle>Test Supabase Connection</CardTitle>
-          <Button variant="outline" size="sm" onClick={testConnection} disabled={isLoading}>
+          <Button variant="outline" size="sm" onClick={testConnection} disabled={isLoading || !user}>
             {isLoading ? 'Testing...' : 'Test Connection'}
           </Button>
         </div>

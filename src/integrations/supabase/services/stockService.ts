@@ -7,23 +7,11 @@ import {
 } from '../types';
 
 export class StockService {
-  private async getUserId(): Promise<string> {
-    const { data: { user }, error } = await supabase.auth.getUser();
-    if (error || !user) {
-      throw new Error('User not authenticated');
-    }
-    return user.id;
-  }
-
-  // ==============================
-  // READ: Multiple Stock Items
-  // ==============================
-  async getStockItems(params?: StockQueryParams): Promise<StockItem[]> {
-    const userId = await this.getUserId();
+  async getStockItems(userId: string, params?: StockQueryParams): Promise<StockItem[]> {
     let query = supabase
       .from('stock_items')
       .select('*')
-      .eq('user_id', userId) // Filter by user_id
+      .eq('user_id', userId)
       .eq('is_active', true)
       .order('name', { ascending: true });
 
@@ -45,16 +33,12 @@ export class StockService {
     return data ?? [];
   }
 
-  // ==============================
-  // READ: Single Stock Item
-  // ==============================
-  async getStockItem(id: string): Promise<StockItem | null> {
-    const userId = await this.getUserId();
+  async getStockItem(userId: string, id: string): Promise<StockItem | null> {
     const { data, error } = await supabase
       .from('stock_items')
       .select('*')
       .eq('id', id)
-      .eq('user_id', userId) // Filter by user_id
+      .eq('user_id', userId)
       .eq('is_active', true)
       .maybeSingle();
 
@@ -66,13 +50,10 @@ export class StockService {
     return data;
   }
 
-  // ==============================
-  // CREATE
-  // ==============================
   async createStockItem(
+    userId: string,
     data: CreateStockItemRequest
   ): Promise<StockItem> {
-    const userId = await this.getUserId();
     const quantity = data.quantity ?? 0;
     const rate = data.rate ?? 0;
 
@@ -80,7 +61,7 @@ export class StockService {
       .from('stock_items')
       .insert({
         ...data,
-        user_id: userId, // Add user_id
+        user_id: userId,
         quantity,
         rate,
         value: quantity * rate,
@@ -97,14 +78,11 @@ export class StockService {
     return result;
   }
 
-  // ==============================
-  // UPDATE
-  // ==============================
   async updateStockItem(
+    userId: string,
     id: string,
     data: UpdateStockItemRequest
   ): Promise<StockItem> {
-    const userId = await this.getUserId();
     const quantity = data.quantity ?? 0;
     const rate = data.rate ?? 0;
 
@@ -119,7 +97,7 @@ export class StockService {
         group_name: data.group_name,
       })
       .eq('id', id)
-      .eq('user_id', userId) // Filter by user_id
+      .eq('user_id', userId)
       .eq('is_active', true)
       .select()
       .maybeSingle();
@@ -132,16 +110,12 @@ export class StockService {
     return result;
   }
 
-  // ==============================
-  // DELETE (Soft Delete – ERP Safe)
-  // ==============================
-  async deleteStockItem(id: string): Promise<void> {
-    const userId = await this.getUserId();
+  async deleteStockItem(userId: string, id: string): Promise<void> {
     const { error } = await supabase
       .from('stock_items')
       .update({ is_active: false })
       .eq('id', id)
-      .eq('user_id', userId); // Filter by user_id
+      .eq('user_id', userId);
 
     if (error) {
       console.error('deleteStockItem failed:', error);

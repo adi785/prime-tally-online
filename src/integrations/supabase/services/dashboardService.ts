@@ -2,20 +2,10 @@ import { supabase } from '../client';
 import { DashboardMetricsResponse } from '../types';
 
 export class DashboardService {
-  private async getUserId(): Promise<string> {
-    const { data: { user }, error } = await supabase.auth.getUser();
-    if (error || !user) {
-      throw new Error('User not authenticated');
-    }
-    return user.id;
-  }
-
-  async getDashboardMetrics(): Promise<DashboardMetricsResponse> {
+  async getDashboardMetrics(userId: string): Promise<DashboardMetricsResponse> {
     console.log('getDashboardMetrics called');
-    const userId = await this.getUserId();
     
     try {
-      // Use the Supabase function to get dashboard metrics, passing user_id
       const { data, error } = await supabase.rpc('get_dashboard_metrics', { p_user_id: userId });
       
       if (error) {
@@ -23,7 +13,6 @@ export class DashboardService {
         throw error;
       }
       
-      // Transform the result to match our DashboardMetrics interface
       const result: DashboardMetricsResponse = {
         totalSales: data.totalSales || 0,
         totalPurchases: data.totalPurchases || 0,

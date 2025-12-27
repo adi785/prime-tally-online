@@ -2,17 +2,8 @@ import { supabase } from '../client';
 import { UserSettings, UpdateUserSettingsRequest } from '../types';
 
 export class SettingsService {
-  private async getUserId(): Promise<string> {
-    const { data: { user }, error } = await supabase.auth.getUser();
-    if (error || !user) {
-      throw new Error('User not authenticated');
-    }
-    return user.id;
-  }
-
-  async getUserSettings(): Promise<UserSettings | null> {
+  async getUserSettings(userId: string): Promise<UserSettings | null> {
     console.log('getUserSettings called');
-    const userId = await this.getUserId();
     
     const { data, error } = await supabase
       .from('user_settings')
@@ -29,9 +20,8 @@ export class SettingsService {
     return data;
   }
 
-  async updateUserSettings(data: UpdateUserSettingsRequest): Promise<UserSettings> {
+  async updateUserSettings(userId: string, data: UpdateUserSettingsRequest): Promise<UserSettings> {
     console.log('updateUserSettings called with data:', data);
-    const userId = await this.getUserId();
     
     const { id, ...updates } = data;
 
@@ -39,7 +29,7 @@ export class SettingsService {
       .from('user_settings')
       .update(updates)
       .eq('id', id)
-      .eq('user_id', userId) // Ensure user can only update their own settings
+      .eq('user_id', userId)
       .select()
       .single();
       
