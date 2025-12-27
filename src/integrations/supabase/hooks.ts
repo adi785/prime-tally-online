@@ -33,6 +33,22 @@ export const useAuthState = () => {
   }
 }
 
+// Ledger Groups Hook
+export const useLedgerGroups = () => {
+  return useQuery({
+    queryKey: ['ledgerGroups'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('ledger_groups')
+        .select('*')
+        .order('name')
+      
+      if (error) throw error
+      return data || []
+    },
+  })
+}
+
 // Ledger Hooks
 export const useLedgers = () => {
   return useQuery({
@@ -40,7 +56,10 @@ export const useLedgers = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('ledgers')
-        .select('*')
+        .select(`
+          *,
+          group:ledger_groups(name)
+        `)
         .order('name')
       
       if (error) throw error
