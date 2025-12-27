@@ -7,15 +7,6 @@ import { toast } from 'sonner';
 import { useVoucherTypes } from '@/integrations/supabase/hooks';
 import { useNavigate } from 'react-router-dom'; // Import useNavigate
 
-interface QuickAction {
-  id: VoucherType | string;
-  label: string;
-  icon: React.ReactNode;
-  shortcut: string;
-  color: string;
-  bgColor: string;
-}
-
 // Define a mapping for icons and colors based on voucher type names
 const voucherTypeDisplayConfig: Record<string, { icon: React.ReactNode; color: string; bgColor: string; shortcut?: string }> = {
   sales: { icon: <ArrowUpFromLine size={20} />, shortcut: 'F8', color: 'text-success', bgColor: 'bg-success/10 hover:bg-success/20' },
@@ -32,6 +23,15 @@ const otherQuickActions: Omit<QuickAction, 'color' | 'bgColor'>[] = [
   { id: 'ledger', label: 'Ledger', icon: <BookOpen size={20} />, shortcut: 'Alt+G' },
   { id: 'reports', label: 'Reports', icon: <FileText size={20} />, shortcut: 'Alt+R' },
 ];
+
+interface QuickAction {
+  id: VoucherType | string;
+  label: string;
+  icon: React.ReactNode;
+  shortcut: string;
+  color: string;
+  bgColor: string;
+}
 
 interface QuickActionsProps {
   onVoucherCreate: (type: VoucherType) => void;
@@ -74,6 +74,8 @@ export function QuickActions({ onVoucherCreate }: QuickActionsProps) {
       </div>
     );
   }
+
+  // Removed error handling since error variable is not defined
 
   const allQuickActions: QuickAction[] = [
     ...dbVoucherTypes.map(type => ({

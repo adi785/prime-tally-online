@@ -1,6 +1,5 @@
 import { AlertCircle, Clock, FileWarning, ArrowRight, CheckCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { toast } from 'sonner';
 import { useDashboardMetrics } from '@/integrations/supabase/hooks'; // Import useDashboardMetrics
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 

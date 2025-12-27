@@ -1,8 +1,11 @@
 import { useRef } from 'react'
 import { X, Printer, Download, Mail, Copy } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { InvoiceTemplate } from './InvoiceTemplate'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import { toast } from 'sonner'
+import { InvoiceTemplate } from './InvoiceTemplate'
+import { cn } from '@/lib/utils'
 
 interface InvoicePreviewModalProps {
   voucher: any
@@ -15,7 +18,10 @@ export function InvoicePreviewModal({ voucher, isOpen, onClose }: InvoicePreview
 
   const handlePrint = () => {
     const content = printRef.current
-    if (!content) return
+    if (!content) {
+      toast.error('Invoice content not found')
+      return
+    }
 
     const printWindow = window.open('', '_blank')
     if (!printWindow) {
@@ -164,7 +170,7 @@ export function InvoicePreviewModal({ voucher, isOpen, onClose }: InvoicePreview
         <div className="px-6 py-4 flex items-center justify-between border-b border-border bg-muted/50">
           <div>
             <h2 className="text-lg font-semibold text-foreground">Invoice Preview</h2>
-            <p className="text-sm text-muted-foreground">{voucher.voucher_number} • {voucher.party_ledger?.name}</p>
+            <p className="text-sm text-muted-foreground">{voucher.voucher_number} • {voucher.party?.name}</p>
           </div>
           <div className="flex items-center gap-2">
             <Button variant="outline" size="sm" onClick={handleCopyLink} className="gap-2">

@@ -147,7 +147,6 @@ export function VoucherList() {
           </button>
           {dbVoucherTypes.map((type) => { // Use dbVoucherTypes here
             const config = getVoucherDisplayConfig(type.name);
-            const Icon = config.icon;
             const count = vouchers.filter(v => v.type?.name === type.name).length;
             return (
               <button
@@ -159,7 +158,7 @@ export function VoucherList() {
                     : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
-                <Icon size={16} />
+                <config.icon size={16} />
                 {type.name.replace('-', ' ')}
                 <span className="ml-2 bg-muted px-2 py-0.5 rounded-full text-xs">
                   {count}

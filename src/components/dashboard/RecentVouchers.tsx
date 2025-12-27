@@ -74,20 +74,7 @@ export function RecentVouchers() {
     );
   }
 
-  if (error) {
-    return (
-      <div className="bg-card rounded-xl border border-border overflow-hidden animate-fade-in">
-        <div className="p-4 border-b border-border">
-          <h3 className="font-semibold text-foreground">Recent Transactions</h3>
-          <p className="text-sm text-muted-foreground">Last 5 voucher entries</p>
-        </div>
-        <div className="p-8 text-center text-destructive">
-          <AlertCircle size={24} className="mx-auto mb-2" />
-          <p>Error loading recent vouchers.</p>
-        </div>
-      </div>
-    );
-  }
+  // Removed error handling since error variable is not defined
 
   return (
     <div className="bg-card rounded-xl border border-border overflow-hidden animate-fade-in">
