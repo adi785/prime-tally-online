@@ -5,9 +5,10 @@ export class CompanyService {
   async getCompany(userId: string): Promise<Company | null> {
     console.log('getCompany called');
     
+    // The get_company_info RPC function does not take user_id as an argument.
+    // RLS on the 'companies' table will automatically filter for the current user.
     const { data, error } = await supabase.rpc('get_company_info')
-      .eq('user_id', userId)
-      .maybeSingle();
+      .maybeSingle(); // Use maybeSingle as there might be no company for the user
 
     if (error) {
       console.error('getCompany error:', error);
@@ -31,8 +32,7 @@ export class CompanyService {
       p_email: data.email,
       p_financial_year_start: data.financial_year_start,
       p_financial_year_end: data.financial_year_end
-    })
-    .eq('user_id', userId);
+    }); // RLS will ensure only the user's company is updated
     
     if (error) {
       console.error('updateCompany error:', error);
@@ -40,7 +40,6 @@ export class CompanyService {
     }
     
     const { data: result, error: fetchError } = await supabase.rpc('get_company_info')
-      .eq('user_id', userId)
       .maybeSingle();
 
     if (fetchError || !result) {
