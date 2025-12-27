@@ -1,117 +1,136 @@
 import { supabase } from '../client';
-import { StockItem, CreateStockItemRequest, UpdateStockItemRequest, StockQueryParams } from '../types';
+import {
+  StockItem,
+  CreateStockItemRequest,
+  UpdateStockItemRequest,
+  StockQueryParams,
+} from '../types';
 
 export class StockService {
+  // ==============================
+  // READ: Multiple Stock Items
+  // ==============================
   async getStockItems(params?: StockQueryParams): Promise<StockItem[]> {
-    console.log('getStockItems called with params:', params);
-    
-    let query = supabase.from('stock_items').select('*');
-    
+    let query = supabase
+      .from('stock_items')
+      .select('*')
+      .eq('is_active', true)
+      .order('name', { ascending: true });
+
     if (params?.search) {
       query = query.ilike('name', `%${params.search}%`);
     }
-    
-    if (params?.group) {
-      query = query.eq('group_name', params.group);
+
+    if (params?.groupId) {
+      query = query.eq('group_id', params.groupId);
     }
-    
-    const { data, error } = await query.order('name', { ascending: true });
-    
+
+    const { data, error } = await query;
+
     if (error) {
-      console.error('getStockItems error:', error);
+      console.error('getStockItems failed:', error);
       throw error;
     }
-    
-    console.log('getStockItems success, data:', data);
-    return data || [];
+
+    return data ?? [];
   }
 
-  async getStockItem(id: string): Promise<StockItem> {
-    console.log('getStockItem called with id:', id);
-    
+  // ==============================
+  // READ: Single Stock Item
+  // ==============================
+  async getStockItem(id: string): Promise<StockItem | null> {
     const { data, error } = await supabase
       .from('stock_items')
       .select('*')
       .eq('id', id)
-      .single();
-      
+      .eq('is_active', true)
+      .maybeSingle();
+
     if (error) {
-      console.error('getStockItem error:', error);
+      console.error('getStockItem failed:', error);
       throw error;
     }
-    
-    console.log('getStockItem success, data:', data);
+
     return data;
   }
 
-  async createStockItem(data: CreateStockItemRequest): Promise<StockItem> {
-    console.log('createStockItem called with data:', data);
-    
+  // ==============================
+  // CREATE
+  // ==============================
+  async createStockItem(
+    data: CreateStockItemRequest
+  ): Promise<StockItem> {
+    const quantity = data.quantity ?? 0;
+    const rate = data.rate ?? 0;
+
     const { data: result, error } = await supabase
       .from('stock_items')
-      .insert([{
+      .insert({
         name: data.name,
         unit: data.unit,
-        quantity: data.quantity,
-        rate: data.rate,
-        value: data.value,
-        group_name: data.group_name,
-      }])
+        quantity,
+        rate,
+        value: quantity * rate,
+        group_id: data.group_id,
+        is_active: true,
+      })
       .select()
       .single();
-      
-    if (error) {
-      console.error('createStockItem error:', error);
-      throw error;
+
+    if (error || !result) {
+      console.error('createStockItem failed:', error);
+      throw error ?? new Error('Stock item creation failed');
     }
-    
-    console.log('createStockItem success, result:', result);
+
     return result;
   }
 
-  async updateStockItem(id: string, data: UpdateStockItemRequest): Promise<StockItem> {
-    console.log('updateStockItem called with id:', id, 'data:', data);
-    
-    // Use the Supabase function to update stock item
-    const { error } = await supabase.rpc('update_stock_item', {
-      p_id: id,
-      p_name: data.name,
-      p_unit: data.unit,
-      p_quantity: data.quantity,
-      p_rate: data.rate,
-      p_group_name: data.group_name
-    });
-    
-    if (error) {
-      console.error('updateStockItem error:', error);
-      throw error;
-    }
-    
-    // Fetch the updated stock item
-    const { data: result } = await supabase
+  // ==============================
+  // UPDATE
+  // ==============================
+  async updateStockItem(
+    id: string,
+    data: UpdateStockItemRequest
+  ): Promise<StockItem> {
+    const quantity = data.quantity ?? 0;
+    const rate = data.rate ?? 0;
+
+    const { data: result, error } = await supabase
       .from('stock_items')
-      .select('*')
+      .update({
+        name: data.name,
+        unit: data.unit,
+        quantity,
+        rate,
+        value: quantity * rate,
+        group_id: data.group_id,
+      })
       .eq('id', id)
-      .single();
-    
-    console.log('updateStockItem success, result:', result);
+      .eq('is_active', true)
+      .select()
+      .maybeSingle();
+
+    if (error || !result) {
+      console.error('updateStockItem failed:', error);
+      throw error ?? new Error('Stock item not found or update blocked');
+    }
+
     return result;
   }
 
+  // ==============================
+  // DELETE (Soft Delete – ERP Safe)
+  // ==============================
   async deleteStockItem(id: string): Promise<void> {
-    console.log('deleteStockItem called with id:', id);
-    
     const { error } = await supabase
       .from('stock_items')
-      .delete()
+      .update({ is_active: false })
       .eq('id', id);
-      
+
     if (error) {
-      console.error('deleteStockItem error:', error);
+      console.error('deleteStockItem failed:', error);
       throw error;
     }
-    
-    console.log('deleteStockItem success');
   }
 }
 

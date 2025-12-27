@@ -1,169 +1,214 @@
 import { supabase } from '../client';
-import { Ledger, CreateLedgerRequest, UpdateLedgerRequest, LedgerQueryParams } from '../types';
+import {
+  Ledger,
+  CreateLedgerRequest,
+  UpdateLedgerRequest,
+  LedgerQueryParams,
+} from '../types';
 
 export class LedgerService {
+  // ==============================
+  // READ: Multiple Ledgers
+  // ==============================
   async getLedgers(params?: LedgerQueryParams): Promise<Ledger[]> {
-    console.log('getLedgers called with params:', params);
-    
-    let query = supabase.from('ledgers').select(`
-      *,
-      group:ledger_groups(name)
-    `);
-    
+    let query = supabase
+      .from('ledgers')
+      .select(`
+        *,
+        group:ledger_groups(id, name)
+      `)
+      .eq('is_active', true)
+      .order('name', { ascending: true });
+
     if (params?.search) {
       query = query.ilike('name', `%${params.search}%`);
     }
-    
-    if (params?.group) {
-      query = query.eq('group_name', params.group);
+
+    if (params?.groupId) {
+      query = query.eq('group_id', params.groupId);
     }
-    
-    const { data, error } = await query.order('name', { ascending: true });
-    
+
+    const { data, error } = await query;
+
     if (error) {
-      console.error('getLedgers error:', error);
+      console.error('getLedgers failed:', error);
       throw error;
     }
-    
-    console.log('getLedgers success, data:', data);
-    return data || [];
+
+    // Transform the data to match our interface
+    return (data ?? []).map(ledger => ({
+      ...ledger,
+      group_name: ledger.group?.name || ledger.group_name,
+      group_id: ledger.group?.id || ledger.group_id,
+      group: ledger.group?.name || ledger.group_name,
+    }));
   }
 
-  async getLedger(id: string): Promise<Ledger> {
-    console.log('getLedger called with id:', id);
-    
+  // ==============================
+  // READ: Single Ledger
+  // ==============================
+  async getLedger(id: string): Promise<Ledger | null> {
     const { data, error } = await supabase
       .from('ledgers')
       .select(`
         *,
-        group:ledger_groups(name)
+        group:ledger_groups(id, name)
       `)
       .eq('id', id)
-      .single();
-      
+      .eq('is_active', true)
+      .maybeSingle();
+
     if (error) {
-      console.error('getLedger error:', error);
+      console.error('getLedger failed:', error);
       throw error;
     }
-    
-    console.log('getLedger success, data:', data);
-    return data;
+
+    if (!data) return null;
+
+    // Transform the data to match our interface
+    return {
+      ...data,
+      group_name: data.group?.name || data.group_name,
+      group_id: data.group?.id || data.group_id,
+      group: data.group?.name || data.group_name,
+    };
   }
 
+  // ==============================
+  // CREATE
+  // ==============================
   async createLedger(data: CreateLedgerRequest): Promise<Ledger> {
-    console.log('createLedger called with data:', data);
-    
     const { data: result, error } = await supabase
       .from('ledgers')
-      .insert([{
+      .insert({
         name: data.name,
-        group_name: data.group,
         group_id: data.group_id,
-        opening_balance: data.opening_balance || 0,
-        address: data.address,
-        phone: data.phone,
-        gstin: data.gstin,
-        email: data.email,
-        is_billwise: data.is_billwise || false,
-        is_inventory: data.is_inventory || false,
-      }])
-      .select()
+        opening_balance: data.opening_balance ?? 0,
+        address: data.address ?? null,
+        phone: data.phone ?? null,
+        gstin: data.gstin ?? null,
+        email: data.email ?? null,
+        is_billwise: data.is_billwise ?? false,
+        is_inventory: data.is_inventory ?? false,
+        is_active: true,
+      })
+      .select(`
+        *,
+        group:ledger_groups(id, name)
+      `)
       .single();
-      
-    if (error) {
-      console.error('createLedger error:', error);
-      throw error;
+
+    if (error || !result) {
+      console.error('createLedger failed:', error);
+      throw error ?? new Error('Ledger creation failed');
     }
-    
-    console.log('createLedger success, result:', result);
-    return result;
+
+    // Transform the data to match our interface
+    return {
+      ...result,
+      group_name: result.group?.name || result.group_name,
+      group_id: result.group?.id || result.group_id,
+      group: result.group?.name || result.group_name,
+    };
   }
 
+  // ==============================
+  // UPDATE
+  // ==============================
   async updateLedger(id: string, data: UpdateLedgerRequest): Promise<Ledger> {
-    console.log('updateLedger called with id:', id, 'data:', data);
-    
-    // Use the Supabase function to update ledger
-    const { error } = await supabase.rpc('update_ledger', {
-      p_id: id,
-      p_name: data.name,
-      p_group_name: data.group,
-      p_opening_balance: data.opening_balance || 0,
-      p_address: data.address,
-      p_phone: data.phone,
-      p_gstin: data.gstin,
-      p_email: data.email,
-      p_is_billwise: data.is_billwise || false,
-      p_is_inventory: data.is_inventory || false
-    });
-    
+    const { data: result, error } = await supabase
+      .from('ledgers')
+      .update({
+        name: data.name,
+        group_id: data.group_id,
+        opening_balance: data.opening_balance ?? 0,
+        address: data.address ?? null,
+        phone: data.phone ?? null,
+        gstin: data.gstin ?? null,
+        email: data.email ?? null,
+        is_billwise: data.is_billwise ?? false,
+        is_inventory: data.is_inventory ?? false,
+      })
+      .eq('id', id)
+      .eq('is_active', true)
+      .select(`
+        *,
+        group:ledger_groups(id, name)
+      `)
+      .maybeSingle();
+
+    if (error || !result) {
+      console.error('updateLedger failed:', error);
+      throw error ?? new Error('Ledger not found or update blocked');
+    }
+
+    // Transform the data to match our interface
+    return {
+      ...result,
+      group_name: result.group?.name || result.group_name,
+      group_id: result.group?.id || result.group_id,
+      group: result.group?.name || result.group_name,
+    };
+  }
+
+  // ==============================
+  // DELETE (Soft Delete – ERP Safe)
+  // ==============================
+  async deleteLedger(id: string): Promise<void> {
+    const { error } = await supabase
+      .from('ledgers')
+      .update({ is_active: false })
+      .eq('id', id);
+
     if (error) {
-      console.error('updateLedger error:', error);
+      console.error('deleteLedger failed:', error);
       throw error;
     }
-    
-    // Fetch the updated ledger
-    const { data: result } = await supabase
+  }
+
+  // ==============================
+  // SEARCH (Consistent Shape)
+  // ==============================
+  async searchLedgers(search: string): Promise<Ledger[]> {
+    const { data, error } = await supabase
       .from('ledgers')
       .select(`
         *,
-        group:ledger_groups(name)
+        group:ledger_groups(id, name)
       `)
-      .eq('id', id)
-      .single();
-    
-    console.log('updateLedger success, result:', result);
-    return result;
-  }
-
-  async deleteLedger(id: string): Promise<void> {
-    console.log('deleteLedger called with id:', id);
-    
-    const { error } = await supabase
-      .from('ledgers')
-      .delete()
-      .eq('id', id);
-      
-    if (error) {
-      console.error('deleteLedger error:', error);
-      throw error;
-    }
-    
-    console.log('deleteLedger success');
-  }
-
-  async searchLedgers(query: string): Promise<Ledger[]> {
-    console.log('searchLedgers called with query:', query);
-    
-    const { data, error } = await supabase
-      .from('ledgers')
-      .select('*')
-      .ilike('name', `%${query}%`)
+      .eq('is_active', true)
+      .ilike('name', `%${search}%`)
       .order('name', { ascending: true });
-      
+
     if (error) {
-      console.error('searchLedgers error:', error);
+      console.error('searchLedgers failed:', error);
       throw error;
     }
-    
-    console.log('searchLedgers success, data:', data);
-    return data || [];
+
+    // Transform the data to match our interface
+    return (data ?? []).map(ledger => ({
+      ...ledger,
+      group_name: ledger.group?.name || ledger.group_name,
+      group_id: ledger.group?.id || ledger.group_id,
+      group: ledger.group?.name || ledger.group_name,
+    }));
   }
 
+  // ==============================
+  // LEDGER GROUPS
+  // ==============================
   async getLedgerGroups(): Promise<Array<{ id: string; name: string }>> {
-    console.log('getLedgerGroups called');
-    
     const { data, error } = await supabase
       .from('ledger_groups')
       .select('id, name')
       .order('name', { ascending: true });
-      
+
     if (error) {
-      console.error('getLedgerGroups error:', error);
+      console.error('getLedgerGroups failed:', error);
       throw error;
     }
-    
-    console.log('getLedgerGroups success, data:', data);
-    return data || [];
+
+    return data ?? [];
   }
 }
 
