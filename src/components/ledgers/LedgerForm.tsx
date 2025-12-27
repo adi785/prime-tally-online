@@ -10,6 +10,7 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { Ledger, LedgerGroup } from '@/types/tally';
 import { useCreateLedger, useUpdateLedger } from '@/integrations/supabase/hooks';
+import { supabase } from '@/integrations/supabase/client';
 
 interface LedgerFormProps {
   isOpen: boolean;
@@ -107,16 +108,18 @@ export function LedgerForm({ isOpen, onClose, ledger, onSave }: LedgerFormProps)
     setIsSubmitting(true);
     
     try {
-      // Get group_id from ledger_groups table
-      const groupResponse = await fetch('/rest/v1/ledger_groups?name=eq.' + formData.group, {
-        headers: {
-          'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY || '',
-          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY || ''}`,
-        }
-      });
-      
-      const groupData = await groupResponse.json();
-      const groupId = groupData[0]?.id || null;
+      // Get group_id from ledger_groups table using Supabase client
+      const { data: groupData, error: groupError } = await supabase
+        .from('ledger_groups')
+        .select('id')
+        .eq('name', formData.group)
+        .single();
+
+      if (groupError && groupError.code !== 'PGRST116') { // PGRST116 means no rows found
+        throw groupError;
+      }
+
+      const groupId = groupData?.id || null;
       
       const ledgerData: Omit<Ledger, 'id' | 'current_balance'> = {
         name: formData.name.trim(),
