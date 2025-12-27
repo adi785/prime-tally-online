@@ -90,39 +90,24 @@ export const authService = {
     }
   },
 
-  async getCurrentUser(): Promise<AuthUser | null> {
-    try {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return null
-      return {
-        id: user.id,
-        email: user.email || '',
-        displayName: user.user_metadata?.display_name,
-        avatarUrl: user.user_metadata?.avatar_url,
-      }
-    } catch (error) {
-      console.error('Get current user error:', error)
-      return null
+  getCurrentUser(): AuthUser | null {
+    const { data: { user } } = supabase.auth.getUser()
+    if (!user) return null
+    return {
+      id: user.id,
+      email: user.email || '',
+      displayName: user.user_metadata?.display_name,
+      avatarUrl: user.user_metadata?.avatar_url,
     }
   },
 
-  async isAuthenticated(): Promise<boolean> {
-    try {
-      const { data: { user } } = await supabase.auth.getUser()
-      return !!user
-    } catch (error) {
-      console.error('Is authenticated error:', error)
-      return false
-    }
+  isAuthenticated(): boolean {
+    const { data: { user } } = supabase.auth.getUser()
+    return !!user
   },
 
-  async getJWTToken(): Promise<string | null> {
-    try {
-      const { data } = await supabase.auth.getSession()
-      return data?.session?.access_token || null
-    } catch (error) {
-      console.error('Get JWT token error:', error)
-      return null
-    }
+  getJWTToken(): string | null {
+    const { data } = supabase.auth.getSession()
+    return data?.session?.access_token || null
   },
 }
