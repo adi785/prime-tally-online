@@ -19,8 +19,8 @@ export class StockService {
       query = query.ilike('name', `%${params.search}%`);
     }
 
-    if (params?.groupId) {
-      query = query.eq('group_id', params.groupId);
+    if (params?.group) {
+      query = query.eq('group_name', params.group);
     }
 
     const { data, error } = await query;

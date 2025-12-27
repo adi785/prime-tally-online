@@ -16,7 +16,7 @@ export class CompanyService {
     }
     
     console.log('getCompany success, data:', data);
-    return data;
+    return data as Company | null;
   }
 
   async updateCompany(userId: string, data: UpdateCompanyRequest): Promise<Company> {
@@ -48,7 +48,7 @@ export class CompanyService {
     }
     
     console.log('updateCompany success, result:', result);
-    return result;
+    return result as Company;
   }
 
   async createCompany(userId: string, data: Omit<Company, 'id' | 'created_at' | 'updated_at' | 'user_id'>): Promise<Company> {
@@ -66,7 +66,7 @@ export class CompanyService {
     }
     
     console.log('createCompany success, result:', result);
-    return result;
+    return result as Company;
   }
 }
 
