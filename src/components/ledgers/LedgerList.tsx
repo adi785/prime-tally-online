@@ -41,6 +41,13 @@ export function LedgerList() {
 
   console.log('LedgerList data:', { ledgers, isLoading, error });
 
+  // Debug: Log the actual ledger data structure
+  useEffect(() => {
+    if (ledgers && ledgers.length > 0) {
+      console.log('First ledger structure:', JSON.stringify(ledgers[0], null, 2));
+    }
+  }, [ledgers]);
+
   const filteredLedgers = ledgers?.filter(ledger => {
     const matchesSearch = ledger.name.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesGroup = selectedGroup === 'all' || ledger.group === selectedGroup;
@@ -53,11 +60,13 @@ export function LedgerList() {
   };
 
   const handleEditLedger = (ledger: Ledger) => {
+    console.log('Editing ledger:', ledger);
     setEditingLedger(ledger);
     setIsFormOpen(true);
   };
 
   const handleSaveLedger = (ledgerData: Omit<Ledger, 'id' | 'currentBalance'>) => {
+    console.log('Saving ledger:', ledgerData);
     if (editingLedger) {
       updateLedger({ id: editingLedger.id, ...ledgerData });
     } else {
@@ -87,6 +96,7 @@ export function LedgerList() {
   const groups = Object.values(groupLabels);
 
   if (error) {
+    console.error('LedgerList error:', error);
     return (
       <div className="p-6 space-y-6">
         <div className="text-center py-8">
@@ -95,6 +105,7 @@ export function LedgerList() {
           </div>
           <h3 className="text-lg font-semibold text-foreground mb-2">Error Loading Ledgers</h3>
           <p className="text-muted-foreground">Failed to load ledgers. Please try again.</p>
+          <p className="text-sm text-destructive mt-2">Error: {error.message}</p>
           <Button onClick={() => window.location.reload()} className="mt-4">
             Retry
           </Button>
