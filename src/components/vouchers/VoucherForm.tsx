@@ -40,7 +40,7 @@ interface LineItem {
 
 export function VoucherForm({ type, isOpen, onClose, onSave, voucher }: VoucherFormProps) {
   const { data: ledgers = [], isLoading: isLedgersLoading } = useLedgers()
-  const { data: voucherTypes = [] } = useVoucherTypes()
+  const { data: dbVoucherTypes = [], isLoading: isVoucherTypesLoading } = useVoucherTypes() // Use dbVoucherTypes
   const { mutate: createVoucher, isPending: isCreating } = useCreateVoucher()
   const { mutate: updateVoucher, isPending: isUpdating } = useUpdateVoucher()
   
@@ -92,7 +92,10 @@ export function VoucherForm({ type, isOpen, onClose, onSave, voucher }: VoucherF
     let filteredLedgers: Ledger[] = [];
     let label = '';
 
-    switch (type) {
+    // Use dbVoucherTypes to get the actual voucher type name
+    const currentVoucherTypeName = dbVoucherTypes.find(vt => vt.name === type)?.name || type;
+
+    switch (currentVoucherTypeName) {
       case 'sales':
         if (itemType === 'debit') {
           label = 'Debit Party Account (Sundry Debtors)';
@@ -196,7 +199,7 @@ export function VoucherForm({ type, isOpen, onClose, onSave, voucher }: VoucherF
     
     try {
       // Find the voucher type ID
-      const selectedVoucherType = voucherTypes.find((vt: any) => vt.name === type)
+      const selectedVoucherType = dbVoucherTypes.find((vt: any) => vt.name === type) // Use dbVoucherTypes
       if (!selectedVoucherType) {
         throw new Error('Voucher type not found');
       }

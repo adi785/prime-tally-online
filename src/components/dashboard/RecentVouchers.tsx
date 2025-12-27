@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { useVouchers } from '@/integrations/supabase/hooks';
+import { useVouchers, useVoucherTypes } from '@/integrations/supabase/hooks'; // Import useVoucherTypes
 import { cn } from '@/lib/utils';
-import { ArrowUpFromLine, ArrowDownToLine, Wallet, CreditCard, Printer, Edit } from 'lucide-react'; // Added Edit icon
+import { ArrowUpFromLine, ArrowDownToLine, Wallet, CreditCard, Printer, Edit, FileText } from 'lucide-react'; // Added FileText as default icon
 import { Button } from '@/components/ui/button';
 import { VoucherType } from '@/types/tally';
 import { VoucherForm } from '@/components/vouchers/VoucherForm';
@@ -10,19 +10,21 @@ import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 
-const voucherTypeConfig: Record<VoucherType, { icon: React.ReactNode; color: string; bgColor: string }> = {
+// Define a mapping for icons and colors based on voucher type names
+const voucherTypeDisplayConfig: Record<string, { icon: React.ReactNode; color: string; bgColor: string }> = {
   sales: { icon: <ArrowUpFromLine size={14} />, color: 'text-success', bgColor: 'bg-success/10' },
   purchase: { icon: <ArrowDownToLine size={14} />, color: 'text-warning', bgColor: 'bg-warning/10' },
   receipt: { icon: <Wallet size={14} />, color: 'text-tally-blue', bgColor: 'bg-tally-blue/10' },
   payment: { icon: <CreditCard size={14} />, color: 'text-destructive', bgColor: 'bg-destructive/10' },
-  journal: { icon: <ArrowUpFromLine size={14} />, color: 'text-muted-foreground', bgColor: 'bg-muted' },
-  contra: { icon: <ArrowUpFromLine size={14} />, color: 'text-muted-foreground', bgColor: 'bg-muted' },
+  journal: { icon: <FileText size={14} />, color: 'text-tally-purple', bgColor: 'bg-tally-purple/10' }, // Changed to FileText
+  contra: { icon: <FileText size={14} />, color: 'text-muted-foreground', bgColor: 'bg-muted' }, // Changed to FileText
   'credit-note': { icon: <ArrowUpFromLine size={14} />, color: 'text-success', bgColor: 'bg-success/10' },
   'debit-note': { icon: <ArrowDownToLine size={14} />, color: 'text-warning', bgColor: 'bg-warning/10' },
 };
 
 export function RecentVouchers() {
   const { data: vouchers = [], isLoading } = useVouchers();
+  const { data: dbVoucherTypes = [], isLoading: isDbVoucherTypesLoading } = useVoucherTypes(); // Fetch voucher types from DB
   const [selectedVoucherForPreview, setSelectedVoucherForPreview] = useState<any>(null);
   const [voucherForm, setVoucherForm] = useState<{ isOpen: boolean; type: VoucherType | null; voucher: any | null }>({
     isOpen: false,
@@ -54,19 +56,48 @@ export function RecentVouchers() {
     setVoucherForm({ isOpen: false, type: null, voucher: null });
   };
 
+  const getVoucherDisplayConfig = (typeName: string) => {
+    return voucherTypeDisplayConfig[typeName] || { icon: <FileText size={14} />, color: 'text-muted-foreground', bgColor: 'bg-muted' };
+  };
+
+  if (isLoading || isDbVoucherTypesLoading) { // Include dbVoucherTypes loading
+    return (
+      <div className="bg-card rounded-xl border border-border overflow-hidden animate-fade-in">
+        <div className="p-4 border-b border-border">
+          <h3 className="font-semibold text-foreground">Recent Transactions</h3>
+          <p className="text-sm text-muted-foreground">Last 5 voucher entries</p>
+        </div>
+        <div className="p-8 text-center">
+          <LoadingSpinner />
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-card rounded-xl border border-border overflow-hidden animate-fade-in">
+        <div className="p-4 border-b border-border">
+          <h3 className="font-semibold text-foreground">Recent Transactions</h3>
+          <p className="text-sm text-muted-foreground">Last 5 voucher entries</p>
+        </div>
+        <div className="p-8 text-center text-destructive">
+          <AlertCircle size={24} className="mx-auto mb-2" />
+          <p>Error loading recent vouchers.</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="bg-card rounded-xl border border-border overflow-hidden animate-fade-in">
       <div className="p-4 border-b border-border">
         <h3 className="font-semibold text-foreground">Recent Transactions</h3>
-        <p className="text-sm text-muted-foreground">Last 5 voucher entries</p>
+        <p className="text-sm text-muted-foreground">Latest actions and updates</p>
       </div>
       
       <div className="divide-y divide-border">
-        {isLoading ? (
-          <div className="p-8 text-center">
-            <LoadingSpinner />
-          </div>
-        ) : vouchers.length === 0 ? (
+        {vouchers.length === 0 ? (
           <div className="p-8 text-center">
             <div className="text-muted-foreground mb-4">
               <AlertCircle size={32} className="mx-auto mb-2 opacity-50" />
@@ -76,8 +107,8 @@ export function RecentVouchers() {
           </div>
         ) : (
           vouchers.slice(0, 5).map((voucher, index) => {
-            const config = voucherTypeConfig[voucher.type?.name as VoucherType];
-            const isIncome = ['sales', 'receipt', 'credit-note'].includes(voucher.type?.name);
+            const config = getVoucherDisplayConfig(voucher.type?.name || '');
+            const isIncome = ['sales', 'receipt', 'credit-note'].includes(voucher.type?.name || '');
             
             return (
               <div 

@@ -29,14 +29,20 @@ export class VoucherService {
         .from('voucher_types')
         .select('id')
         .eq('name', params.type)
-        .single();
+        .maybeSingle(); // Changed to maybeSingle()
 
-      if (typeError || !voucherType) {
-        console.warn(`Voucher type '${params.type}' not found. Skipping filter.`);
-        // If the type is not found, we can choose to skip the filter or throw an error.
-        // For now, we'll skip the filter to avoid breaking the query entirely.
-      } else {
+      if (typeError) {
+        console.error(`Error fetching voucher type '${params.type}':`, typeError);
+        throw typeError;
+      }
+
+      if (voucherType) {
         query = query.eq('type_id', voucherType.id);
+      } else {
+        // If voucherType is null (not found), it means no vouchers of that type exist or the type name is invalid.
+        // To ensure no vouchers are returned for a non-existent type, we can add a condition that will always be false.
+        console.warn(`Voucher type '${params.type}' not found in database. No vouchers will be returned for this filter.`);
+        query = query.eq('id', '00000000-0000-0000-0000-000000000000'); // A UUID that will never match
       }
     }
 
