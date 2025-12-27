@@ -28,13 +28,12 @@ export function VoucherList() {
   const [editingVoucher, setEditingVoucher] = useState<any>(null) // State to hold voucher being edited
   const [selectedVoucherForPreview, setSelectedVoucherForPreview] = useState<any>(null)
 
-  const { data: vouchers = [], isLoading, error } = useVouchers()
+  const { data: vouchers = [], isLoading, error } = useVouchers({ type: selectedType === 'all' ? undefined : selectedType })
   const { mutate: deleteVoucher, isPending: isDeleting } = useDeleteVoucher()
   const navigate = useNavigate()
 
   const filteredVouchers = vouchers.filter(voucher => 
-    voucher.party_ledger?.name?.toLowerCase().includes(searchQuery.toLowerCase()) &&
-    (selectedType === 'all' || voucher.type?.name === selectedType)
+    voucher.party?.name?.toLowerCase().includes(searchQuery.toLowerCase())
   )
 
   const handleDelete = (id: string) => {
@@ -241,7 +240,7 @@ export function VoucherList() {
                     </span>
                   </TableCell>
                   <TableCell className="px-4 py-3">
-                    <p className="font-medium text-foreground">{voucher.party_ledger?.name}</p>
+                    <p className="font-medium text-foreground">{voucher.party?.name}</p>
                   </TableCell>
                   <TableCell className="px-4 py-3">
                     <span className="text-sm text-muted-foreground">{formatDate(voucher.date)}</span>

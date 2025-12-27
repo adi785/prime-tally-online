@@ -3,7 +3,7 @@ import { supabase } from './client'
 import { toast } from 'sonner'
 import { authService } from './auth'
 import { companyService } from './services/companyService'
-import { Company, CreateLedgerRequest, UpdateCompanyRequest, UpdateLedgerRequest, CreateStockItemRequest, UpdateStockItemRequest, CreateVoucherRequest, UpdateVoucherRequest, UserSettings, UpdateUserSettingsRequest } from './types'
+import { Company, CreateLedgerRequest, UpdateCompanyRequest, UpdateLedgerRequest, CreateStockItemRequest, UpdateStockItemRequest, CreateVoucherRequest, UpdateVoucherRequest, UserSettings, UpdateUserSettingsRequest, LedgerQueryParams, VoucherQueryParams } from './types'
 import { ledgerService } from './services/ledgerService'
 import { stockService } from './services/stockService'
 import { voucherService } from './services/voucherService'
@@ -55,13 +55,13 @@ export const useLedgerGroups = () => {
 }
 
 // Ledger Hooks
-export const useLedgers = () => {
+export const useLedgers = (params?: LedgerQueryParams) => {
   const { user } = useAuthState();
   return useQuery({
-    queryKey: ['ledgers'],
+    queryKey: ['ledgers', params], // Include params in query key
     queryFn: async () => {
       if (!user?.id) throw new Error('User not authenticated');
-      const data = await ledgerService.getLedgers(user.id);
+      const data = await ledgerService.getLedgers(user.id, params);
       return data || []
     },
     enabled: !!user?.id,
@@ -145,13 +145,13 @@ export const useVoucherTypes = () => {
 }
 
 // Voucher Hooks
-export const useVouchers = () => {
+export const useVouchers = (params?: VoucherQueryParams) => {
   const { user } = useAuthState();
   return useQuery({
-    queryKey: ['vouchers'],
+    queryKey: ['vouchers', params], // Include params in query key
     queryFn: async () => {
       if (!user?.id) throw new Error('User not authenticated');
-      const data = await voucherService.getVouchers(user.id);
+      const data = await voucherService.getVouchers(user.id, params);
       return data || []
     },
     enabled: !!user?.id,
@@ -449,7 +449,7 @@ export const useTrialBalance = () => {
   });
 };
 
-export const useDayBook = (params: { startDate: string; endDate: string }) => {
+export const useDayBook = (params: { startDate: string; endDate: string; type?: string }) => {
   const { user } = useAuthState();
   return useQuery({
     queryKey: ['dayBook', params],

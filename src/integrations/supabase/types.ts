@@ -37,8 +37,7 @@ export interface Ledger {
 
 export interface CreateLedgerRequest {
   name: string;
-  group: string;
-  group_id: string;
+  group_id: string; // Changed from 'group' to 'group_id'
   opening_balance: number;
   address?: string;
   phone?: string;
@@ -229,13 +228,13 @@ export interface ValidationError extends ApiError {
 // Query types
 export interface LedgerQueryParams {
   search?: string;
-  group?: string;
+  groupId?: string; // Changed from 'group' to 'groupId'
   page?: number;
   limit?: number;
 }
 
 export interface VoucherQueryParams {
-  type?: string;
+  type?: string; // Changed from 'typeId' to 'type' (string name)
   startDate?: string;
   endDate?: string;
   party?: string;

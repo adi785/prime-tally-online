@@ -23,8 +23,21 @@ export class VoucherService {
       .eq('is_active', true)
       .order('date', { ascending: false });
 
-    if (params?.typeId) {
-      query = query.eq('type_id', params.typeId);
+    if (params?.type && params.type !== 'all') {
+      // First, get the type_id from the voucher_types table using the name
+      const { data: voucherType, error: typeError } = await supabase
+        .from('voucher_types')
+        .select('id')
+        .eq('name', params.type)
+        .single();
+
+      if (typeError || !voucherType) {
+        console.warn(`Voucher type '${params.type}' not found. Skipping filter.`);
+        // If the type is not found, we can choose to skip the filter or throw an error.
+        // For now, we'll skip the filter to avoid breaking the query entirely.
+      } else {
+        query = query.eq('type_id', voucherType.id);
+      }
     }
 
     if (params?.startDate && params?.endDate) {
