@@ -5,15 +5,15 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { toast } from 'sonner'
-import { useNavigate } from 'react-router-dom'
+import { StockForm } from './StockForm'
 
 export function StockList() {
   const [searchQuery, setSearchQuery] = useState('')
+  const [isFormOpen, setIsFormOpen] = useState(false)
   const { data: stockItems = [], isLoading } = useStockItems()
   const { mutate: createStockItem } = useCreateStockItem()
   const { mutate: updateStockItem } = useUpdateStockItem()
   const { mutate: deleteStockItem } = useDeleteStockItem()
-  const navigate = useNavigate()
 
   const filteredItems = stockItems.filter(item => 
     item.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -26,9 +26,11 @@ export function StockList() {
   }
 
   const handleCreate = () => {
-    // Navigate to stock item creation page or open a modal
-    toast.info('Add Stock Item functionality would open here')
-    // For now, we'll just show a toast - in a real app, this would open a form
+    setIsFormOpen(true)
+  }
+
+  const handleSave = () => {
+    setIsFormOpen(false)
   }
 
   const formatAmount = (amount: number) => {
@@ -150,6 +152,15 @@ export function StockList() {
           </TableBody>
         </Table>
       </div>
+      
+      {/* Stock Form Modal */}
+      {isFormOpen && (
+        <StockForm 
+          isOpen={isFormOpen} 
+          onClose={() => setIsFormOpen(false)} 
+          onSave={handleSave}
+        />
+      )}
     </div>
   )
 }

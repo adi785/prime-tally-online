@@ -1,19 +1,20 @@
 import { useState } from 'react'
-import { useLedgers, useCreateLedger, useUpdateLedger, useDeleteLedger } from '@/integrations/supabase/hooks'
+import { useLedgers, useCreateLedger, useUpdateLedger, useDeleteLedger, useLedgerGroups } from '@/integrations/supabase/hooks'
 import { Search, Plus, Edit, Trash2 } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { toast } from 'sonner'
-import { useNavigate } from 'react-router-dom'
+import { LedgerForm } from './LedgerForm'
 
 export function LedgerList() {
   const [searchQuery, setSearchQuery] = useState('')
+  const [isFormOpen, setIsFormOpen] = useState(false)
   const { data: ledgers = [], isLoading } = useLedgers()
+  const { data: groups = [] } = useLedgerGroups()
   const { mutate: createLedger } = useCreateLedger()
   const { mutate: updateLedger } = useUpdateLedger()
   const { mutate: deleteLedger } = useDeleteLedger()
-  const navigate = useNavigate()
 
   const filteredLedgers = ledgers.filter(ledger => 
     ledger.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -26,9 +27,11 @@ export function LedgerList() {
   }
 
   const handleCreate = () => {
-    // Navigate to ledger creation page or open a modal
-    toast.info('Create Ledger functionality would open here')
-    // For now, we'll just show a toast - in a real app, this would open a form
+    setIsFormOpen(true)
+  }
+
+  const handleSave = () => {
+    setIsFormOpen(false)
   }
 
   const formatAmount = (amount: number) => {
@@ -112,7 +115,9 @@ export function LedgerList() {
                     </div>
                   </TableCell>
                   <TableCell className="px-4 py-3">
-                    <span className="text-sm text-muted-foreground capitalize">{ledger.group_name?.replace('-', ' ')}</span>
+                    <span className="text-sm text-muted-foreground capitalize">
+                      {ledger.group?.name?.replace('-', ' ') || ledger.group_name?.replace('-', ' ')}
+                    </span>
                   </TableCell>
                   <TableCell className="px-4 py-3 text-right">
                     <span className="font-mono text-sm">
@@ -145,6 +150,15 @@ export function LedgerList() {
           </TableBody>
         </Table>
       </div>
+      
+      {/* Ledger Form Modal */}
+      {isFormOpen && (
+        <LedgerForm 
+          isOpen={isFormOpen} 
+          onClose={() => setIsFormOpen(false)} 
+          onSave={handleSave}
+        />
+      )}
     </div>
   )
 }
