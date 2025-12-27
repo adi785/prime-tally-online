@@ -1,6 +1,6 @@
 import { forwardRef } from 'react'
 import { QRCodeSVG } from 'qrcode.react'
-import { useCompany } from '@/integrations/supabase/hooks' // Import useCompany hook
+import { useCompany } from '@/integrations/supabase/hooks'; // Import useCompany hook
 import { toast } from 'sonner'
 
 interface InvoiceTemplateProps {
