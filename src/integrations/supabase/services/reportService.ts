@@ -92,10 +92,23 @@ export class ReportService {
   async getProfitAndLoss(userId: string): Promise<any> {
     console.log('getProfitAndLoss called');
 
+    // Fetch voucher types to map names to IDs
+    const { data: voucherTypes, error: voucherTypesError } = await supabase
+      .from('voucher_types')
+      .select('id, name');
+
+    if (voucherTypesError) {
+      console.error('getProfitAndLoss voucher types error:', voucherTypesError);
+      throw voucherTypesError;
+    }
+
+    const salesTypeId = voucherTypes?.find(vt => vt.name === 'sales')?.id;
+    const purchaseTypeId = voucherTypes?.find(vt => vt.name === 'purchase')?.id;
+
     const { data: vouchers, error: vouchersError } = await supabase
       .from('vouchers')
       .select(`
-        id, type, total_amount, date,
+        id, type_id, total_amount, date,
         items:voucher_items(ledger_id, amount, type)
       `)
       .eq('user_id', userId)
@@ -127,9 +140,9 @@ export class ReportService {
     let indirectExpenses = 0;
 
     vouchers.forEach(v => {
-      if (v.type === 'sales') {
+      if (v.type_id === salesTypeId) { // Use type_id here
         totalSales += v.total_amount;
-      } else if (v.type === 'purchase') {
+      } else if (v.type_id === purchaseTypeId) { // Use type_id here
         totalPurchases += v.total_amount;
       }
     });
@@ -228,14 +241,15 @@ export class ReportService {
     };
   }
 
-  async getDayBook(userId: string, params: { startDate: string; endDate: string }): Promise<any> {
+  async getDayBook(userId: string, params: { startDate: string; endDate: string; type?: string }): Promise<any> {
     console.log('getDayBook called with params:', params);
 
-    const { data: vouchers, error: vouchersError } = await supabase
+    let query = supabase
       .from('vouchers')
       .select(`
-        id, voucher_number, type, date, narration, total_amount,
+        id, voucher_number, type_id, date, narration, total_amount,
         party_ledger:ledgers(name),
+        type:voucher_types(name),
         items:voucher_items(ledger_id, amount, type, ledger:ledgers(name))
       `)
       .eq('user_id', userId)
@@ -243,6 +257,23 @@ export class ReportService {
       .gte('date', params.startDate)
       .lte('date', params.endDate)
       .order('date', { ascending: true });
+
+    if (params.type && params.type !== 'all') {
+      // Need to get the type_id from the name
+      const { data: voucherType, error: typeError } = await supabase
+        .from('voucher_types')
+        .select('id')
+        .eq('name', params.type)
+        .single();
+
+      if (typeError || !voucherType) {
+        console.error('getDayBook voucher type lookup error:', typeError);
+        throw typeError ?? new Error('Voucher type not found for filtering');
+      }
+      query = query.eq('type_id', voucherType.id);
+    }
+
+    const { data: vouchers, error: vouchersError } = await query;
 
     if (vouchersError) {
       console.error('getDayBook vouchers error:', vouchersError);
@@ -256,7 +287,7 @@ export class ReportService {
         transactions.push({
           date: voucher.date,
           voucherNumber: voucher.voucher_number,
-          voucherType: voucher.type.toUpperCase(),
+          voucherType: voucher.type?.name?.toUpperCase() || 'N/A', // Use voucher.type?.name
           particulars: item.ledger?.name || 'N/A',
           debit: item.type === 'debit' ? item.amount : 0,
           credit: item.type === 'credit' ? item.amount : 0,
