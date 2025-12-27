@@ -1,71 +1,71 @@
-import { forwardRef } from 'react';
-import { QRCodeSVG } from 'qrcode.react';
-import { company } from '@/data/mockData';
-import { Voucher } from '@/types/tally';
-import { toast } from 'sonner';
+import { forwardRef } from 'react'
+import { QRCodeSVG } from 'qrcode.react'
+import { company } from '@/data/mockData'
+import { Voucher } from '@/types/tally'
+import { toast } from 'sonner'
 
 interface InvoiceTemplateProps {
-  voucher: Voucher;
+  voucher: Voucher
   invoiceDetails?: {
     items: Array<{
-      description: string;
-      hsn: string;
-      quantity: number;
-      rate: number;
-      amount: number;
-      gstRate: number;
-    }>;
-    subtotal: number;
-    cgst: number;
-    sgst: number;
-    igst: number;
-    total: number;
-    amountInWords: string;
-  };
+      description: string
+      hsn: string
+      quantity: number
+      rate: number
+      amount: number
+      gstRate: number
+    }>
+    subtotal: number
+    cgst: number
+    sgst: number
+    igst: number
+    total: number
+    amountInWords: string
+  }
 }
 
 export const InvoiceTemplate = forwardRef<HTMLDivElement, InvoiceTemplateProps>(
   ({ voucher, invoiceDetails }, ref) => {
     const defaultItems = [
-      { description: 'Product/Service as per voucher', hsn: '9983', quantity: 1, rate: voucher.totalAmount, amount: voucher.totalAmount, gstRate: 18 }
-    ];
+      { description: 'Product/Service as per voucher', hsn: '9983', quantity: 1, rate: voucher.total_amount, amount: voucher.total_amount, gstRate: 18 }
+    ]
 
-    const items = invoiceDetails?.items || defaultItems;
-    const subtotal = invoiceDetails?.subtotal || voucher.totalAmount;
-    const cgst = invoiceDetails?.cgst || Math.round(subtotal * 0.09);
-    const sgst = invoiceDetails?.sgst || Math.round(subtotal * 0.09);
-    const total = invoiceDetails?.total || subtotal + cgst + sgst;
+    const items = invoiceDetails?.items || defaultItems
+    const subtotal = invoiceDetails?.subtotal || voucher.total_amount
+    const cgst = invoiceDetails?.cgst || Math.round(subtotal * 0.09)
+    const sgst = invoiceDetails?.sgst || Math.round(subtotal * 0.09)
+    const total = invoiceDetails?.total || subtotal + cgst + sgst
 
     const formatAmount = (amount: number) => {
       return new Intl.NumberFormat('en-IN', {
         minimumFractionDigits: 2,
         maximumFractionDigits: 2,
-      }).format(amount);
-    };
+      }).format(amount)
+    }
 
     const numberToWords = (num: number): string => {
       const ones = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten',
-        'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
-      const tens = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+        'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen']
+      const tens = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety']
 
-      if (num === 0) return 'Zero';
-      if (num < 20) return ones[num];
-      if (num < 100) return tens[Math.floor(num / 10)] + (num % 10 ? ' ' + ones[num % 10] : '');
-      if (num < 1000) return ones[Math.floor(num / 100)] + ' Hundred' + (num % 100 ? ' ' + numberToWords(num % 100) : '');
-      if (num < 100000) return numberToWords(Math.floor(num / 1000)) + ' Thousand' + (num % 1000 ? ' ' + numberToWords(num % 1000) : '');
-      if (num < 10000000) return numberToWords(Math.floor(num / 100000)) + ' Lakh' + (num % 100000 ? ' ' + numberToWords(num % 100000) : '');
-      return numberToWords(Math.floor(num / 10000000)) + ' Crore' + (num % 10000000 ? ' ' + numberToWords(num % 10000000) : '');
-    };
+      if (num === 0) return 'Zero'
+      if (num < 20) return ones[num]
+      if (num < 100) return tens[Math.floor(num / 10)] + (num % 10 ? ' ' + ones[num % 10] : '')
+      if (num < 1000) return ones[Math.floor(num / 100)] + ' Hundred' + (num % 100 ? ' ' + numberToWords(num % 100) : '')
+      if (num < 100000) return numberToWords(Math.floor(num / 1000)) + ' Thousand' + (num % 1000 ? ' ' + numberToWords(num % 1000) : '')
+      if (num < 10000000) return numberToWords(Math.floor(num / 100000)) + ' Lakh' + (num % 100000 ? ' ' + numberToWords(num % 100000) : '')
+      return numberToWords(Math.floor(num / 10000000)) + ' Crore' + (num % 10000000 ? ' ' + numberToWords(num % 10000000) : '')
+    }
 
-    const amountInWords = invoiceDetails?.amountInWords || `Rupees ${numberToWords(Math.floor(total))} Only`;
+    const amountInWords = invoiceDetails?.amountInWords || `Rupees ${numberToWords(Math.floor(total))} Only`
 
     const qrData = JSON.stringify({
       sellerGstin: company.gstin,
-      invoiceNo: voucher.voucherNumber,
+      invoiceNo: voucher.voucher_number,
       invoiceDate: voucher.date,
       invoiceValue: total,
       irn: `IRN${voucher.id}${Date.now()}`,
-    });
+    })
 
     return (
       <div ref={ref} className="bg-white text-black p-8 max-w-[210mm] mx-auto font-sans text-sm print:p-6">
@@ -102,7 +102,7 @@ export const InvoiceTemplate = forwardRef<HTMLDivElement, InvoiceTemplateProps>(
             <div className="grid grid-cols-2 gap-2 text-sm">
               <div>
                 <p className="font-semibold text-gray-500 text-xs uppercase">Invoice No.</p>
-                <p className="font-bold">{voucher.voucherNumber}</p>
+                <p className="font-bold">{voucher.voucher_number}</p>
               </div>
               <div>
                 <p className="font-semibold text-gray-500 text-xs uppercase">Date</p>
@@ -189,7 +189,7 @@ export const InvoiceTemplate = forwardRef<HTMLDivElement, InvoiceTemplateProps>(
         </div>
 
         {/* Footer Section */}
-        <div className="grid grid-cols-3 gap-4 border-t border-gray-300 pt-4">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 border-t border-gray-300 pt-4">
           {/* QR Code */}
           <div className="flex flex-col items-center">
             <QRCodeSVG value={qrData} size={80} level="M" />
@@ -231,8 +231,8 @@ export const InvoiceTemplate = forwardRef<HTMLDivElement, InvoiceTemplateProps>(
           <p>This is a computer-generated invoice and does not require a physical signature.</p>
         </div>
       </div>
-    );
+    )
   }
-);
+)
 
-InvoiceTemplate.displayName = 'InvoiceTemplate';
+InvoiceTemplate.displayName = 'InvoiceTemplate'

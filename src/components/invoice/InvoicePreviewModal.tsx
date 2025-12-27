@@ -1,27 +1,27 @@
-import { useRef } from 'react';
-import { X, Printer, Download, Mail, Copy } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { InvoiceTemplate } from './InvoiceTemplate';
-import { Voucher } from '@/types/tally';
-import { toast } from 'sonner';
+import { useRef } from 'react'
+import { X, Printer, Download, Mail, Copy } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { InvoiceTemplate } from './InvoiceTemplate'
+import { Voucher } from '@/types/tally'
+import { toast } from 'sonner'
 
 interface InvoicePreviewModalProps {
-  voucher: Voucher;
-  isOpen: boolean;
-  onClose: () => void;
+  voucher: Voucher
+  isOpen: boolean
+  onClose: () => void
 }
 
 export function InvoicePreviewModal({ voucher, isOpen, onClose }: InvoicePreviewModalProps) {
-  const printRef = useRef<HTMLDivElement>(null);
+  const printRef = useRef<HTMLDivElement>(null)
 
   const handlePrint = () => {
-    const content = printRef.current;
-    if (!content) return;
+    const content = printRef.current
+    if (!content) return
 
-    const printWindow = window.open('', '_blank');
+    const printWindow = window.open('', '_blank')
     if (!printWindow) {
-      toast.error('Please allow popups to print the invoice');
-      return;
+      toast.error('Please allow popups to print the invoice')
+      return
     }
 
     printWindow.document.write(`
@@ -128,34 +128,34 @@ export function InvoicePreviewModal({ voucher, isOpen, onClose }: InvoicePreview
           </div>
         </body>
       </html>
-    `);
+    `)
 
-    printWindow.document.close();
-    printWindow.focus();
+    printWindow.document.close()
+    printWindow.focus()
     
     setTimeout(() => {
-      printWindow.print();
-      printWindow.close();
-    }, 250);
+      printWindow.print()
+      printWindow.close()
+    }, 250)
 
-    toast.success('Invoice sent to printer');
-  };
+    toast.success('Invoice sent to printer')
+  }
 
   const handleDownloadPDF = () => {
-    handlePrint();
-    toast.info('Use "Save as PDF" option in the print dialog');
-  };
+    handlePrint()
+    toast.info('Use "Save as PDF" option in the print dialog')
+  }
 
   const handleEmail = () => {
-    toast.info('Email functionality requires backend integration');
-  };
+    toast.info('Email functionality requires backend integration')
+  }
 
   const handleCopyLink = () => {
-    navigator.clipboard.writeText(`${window.location.origin}/invoice/${voucher.id}`);
-    toast.success('Invoice link copied to clipboard');
-  };
+    navigator.clipboard.writeText(`${window.location.origin}/invoice/${voucher.id}`)
+    toast.success('Invoice link copied to clipboard')
+  }
 
-  if (!isOpen) return null;
+  if (!isOpen) return null
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 animate-fade-in">
@@ -164,7 +164,7 @@ export function InvoicePreviewModal({ voucher, isOpen, onClose }: InvoicePreview
         <div className="px-6 py-4 flex items-center justify-between border-b border-border bg-muted/50">
           <div>
             <h2 className="text-lg font-semibold text-foreground">Invoice Preview</h2>
-            <p className="text-sm text-muted-foreground">{voucher.voucherNumber} • {voucher.partyName}</p>
+            <p className="text-sm text-muted-foreground">{voucher.voucherNumber} • {voucher.party_name}</p>
           </div>
           <div className="flex items-center gap-2">
             <Button variant="outline" size="sm" onClick={handleCopyLink} className="gap-2">
@@ -203,5 +203,5 @@ export function InvoicePreviewModal({ voucher, isOpen, onClose }: InvoicePreview
         </div>
       </div>
     </div>
-  );
+  )
 }

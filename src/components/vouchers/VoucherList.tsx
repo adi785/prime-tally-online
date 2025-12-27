@@ -1,27 +1,19 @@
 import { useState } from 'react'
 import { useVouchers, useCreateVoucher, useUpdateVoucher, useDeleteVoucher } from '@/integrations/supabase/hooks'
-import { Search, Plus, Edit, Trash2, ArrowUpFromLine, ArrowDownToLine, Wallet, CreditCard, Receipt, Calculator } from 'lucide-react'
+import { Search, Plus, Edit, Trash2, Printer } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { toast } from 'sonner'
 import { useNavigate } from 'react-router-dom'
 import { VoucherForm } from './VoucherForm'
-
-const voucherTypes = [
-  { id: 'sales', label: 'Sales', icon: ArrowUpFromLine, color: 'text-success', bgColor: 'bg-success/10' },
-  { id: 'purchase', label: 'Purchase', icon: ArrowDownToLine, color: 'text-warning', bgColor: 'bg-warning/10' },
-  { id: 'receipt', label: 'Receipt', icon: Wallet, color: 'text-tally-blue', bgColor: 'bg-tally-blue/10' },
-  { id: 'payment', label: 'Payment', icon: CreditCard, color: 'text-destructive', bgColor: 'bg-destructive/10' },
-  { id: 'journal', label: 'Journal', icon: Receipt, color: 'text-muted-foreground', bgColor: 'bg-muted' },
-  { id: 'contra', label: 'Contra', icon: Calculator, color: 'text-muted-foreground', bgColor: 'bg-muted' },
-]
+import { InvoicePreviewModal } from '@/components/invoice/InvoicePreviewModal'
 
 export function VoucherList() {
   const [searchQuery, setSearchQuery] = useState('')
-  const [selectedType, setSelectedType] = useState('sales')
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [voucherType, setVoucherType] = useState('sales')
+  const [selectedVoucher, setSelectedVoucher] = useState<any>(null)
   const { data: vouchers = [], isLoading } = useVouchers()
   const { mutate: createVoucher } = useCreateVoucher()
   const { mutate: updateVoucher } = useUpdateVoucher()
@@ -29,8 +21,7 @@ export function VoucherList() {
   const navigate = useNavigate()
 
   const filteredVouchers = vouchers.filter(voucher => 
-    voucher.party_ledger?.name?.toLowerCase().includes(searchQuery.toLowerCase()) &&
-    (selectedType === 'all' || voucher.type === selectedType)
+    voucher.party_ledger?.name?.toLowerCase().includes(searchQuery.toLowerCase())
   )
 
   const handleDelete = (id: string) => {
@@ -47,6 +38,10 @@ export function VoucherList() {
   const handleSaveVoucher = (voucherData: any) => {
     createVoucher(voucherData)
     setIsFormOpen(false)
+  }
+
+  const handlePreviewInvoice = (voucher: any) => {
+    setSelectedVoucher(voucher)
   }
 
   const formatAmount = (amount: number) => {
@@ -84,43 +79,6 @@ export function VoucherList() {
         </div>
       </div>
       
-      {/* Voucher Type Tabs */}
-      <div className="bg-card rounded-xl border border-border p-4">
-        <div className="flex items-center gap-4 overflow-x-auto">
-          <button
-            onClick={() => setSelectedType('all')}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-              selectedType === 'all' 
-                ? 'bg-primary text-primary-foreground' 
-                : 'text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            All Types
-          </button>
-          {voucherTypes.map((type) => {
-            const Icon = type.icon
-            const count = vouchers.filter(v => v.type === type.id).length
-            return (
-              <button
-                key={type.id}
-                onClick={() => setSelectedType(type.id)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                  selectedType === type.id 
-                    ? 'bg-primary text-primary-foreground' 
-                    : 'text-muted-foreground hover:text-foreground'
-                }`}
-              >
-                <Icon size={16} />
-                {type.label}
-                <span className="ml-2 bg-muted px-2 py-0.5 rounded-full text-xs">
-                  {count}
-                </span>
-              </button>
-            )
-          })}
-        </div>
-      </div>
-      
       {/* Filters */}
       <div className="flex items-center gap-4">
         <div className="relative flex-1 max-w-md">
@@ -136,17 +94,6 @@ export function VoucherList() {
       
       {/* Voucher Table */}
       <div className="bg-card rounded-xl border border-border overflow-hidden">
-        <div className="p-4 border-b border-border">
-          <div className="flex items-center justify-between">
-            <h3 className="font-semibold text-foreground">
-              {selectedType === 'all' ? 'All Vouchers' : `${voucherTypes.find(v => v.id === selectedType)?.label} Vouchers`}
-            </h3>
-            <span className="text-sm text-muted-foreground">
-              {filteredVouchers.length} {selectedType === 'all' ? 'vouchers' : 'entries'}
-            </span>
-          </div>
-        </div>
-        
         <Table>
           <TableHeader>
             <TableRow className="bg-table-header border-b border-table-border">
@@ -173,10 +120,10 @@ export function VoucherList() {
                   <div className="text-muted-foreground mb-4">
                     <Plus size={32} className="mx-auto mb-2 opacity-50" />
                   </div>
-                  <p className="text-muted-foreground">No {selectedType === 'all' ? 'vouchers' : voucherTypes.find(v => v.id === selectedType)?.label.toLowerCase()} vouchers found.</p>
-                  <p className="text-sm text-muted-foreground mt-1">Create your first {selectedType === 'all' ? 'voucher' : voucherTypes.find(v => v.id === selectedType)?.label.toLowerCase()} voucher to get started.</p>
-                  <Button variant="outline" className="mt-4" onClick={() => handleCreate(selectedType === 'all' ? 'sales' : selectedType)}>
-                    Create {selectedType === 'all' ? 'First Voucher' : `${voucherTypes.find(v => v.id === selectedType)?.label} Voucher`}
+                  <p className="text-muted-foreground">No vouchers found.</p>
+                  <p className="text-sm text-muted-foreground mt-1">Create your first voucher to get started.</p>
+                  <Button variant="outline" className="mt-4" onClick={() => handleCreate('sales')}>
+                    Create First Voucher
                   </Button>
                 </TableCell>
               </TableRow>
@@ -187,13 +134,7 @@ export function VoucherList() {
                     <p className="font-medium text-foreground">{voucher.voucher_number}</p>
                   </TableCell>
                   <TableCell className="px-4 py-3">
-                    <span className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold ${
-                      voucherTypes.find(v => v.id === voucher.type)?.bgColor || 'bg-muted'
-                    } ${
-                      voucherTypes.find(v => v.id === voucher.type)?.color || 'text-foreground'
-                    }`}>
-                      {voucher.type.toUpperCase()}
-                    </span>
+                    <span className="text-sm text-muted-foreground capitalize">{voucher.type}</span>
                   </TableCell>
                   <TableCell className="px-4 py-3">
                     <p className="font-medium text-foreground">{voucher.party_ledger?.name}</p>
@@ -208,6 +149,14 @@ export function VoucherList() {
                   </TableCell>
                   <TableCell className="px-4 py-3 text-center">
                     <div className="flex items-center justify-center gap-1">
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-8 w-8"
+                        onClick={() => handlePreviewInvoice(voucher)}
+                      >
+                        <Printer size={14} />
+                      </Button>
                       <Button variant="ghost" size="icon" className="h-8 w-8">
                         <Edit size={14} />
                       </Button>
@@ -235,6 +184,15 @@ export function VoucherList() {
           isOpen={isFormOpen} 
           onClose={() => setIsFormOpen(false)} 
           onSave={handleSaveVoucher}
+        />
+      )}
+
+      {/* Invoice Preview Modal */}
+      {selectedVoucher && (
+        <InvoicePreviewModal
+          voucher={selectedVoucher}
+          isOpen={!!selectedVoucher}
+          onClose={() => setSelectedVoucher(null)}
         />
       )}
     </div>
