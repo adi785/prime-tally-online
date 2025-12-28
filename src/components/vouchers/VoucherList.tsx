@@ -38,7 +38,7 @@ export function VoucherList() {
   const navigate = useNavigate()
 
   const filteredVouchers = vouchers.filter(voucher => 
-    voucher.party?.name?.toLowerCase().includes(searchQuery.toLowerCase())
+    voucher.party_name?.toLowerCase().includes(searchQuery.toLowerCase())
   )
 
   const handleDelete = (id: string) => {
@@ -54,7 +54,7 @@ export function VoucherList() {
   }
 
   const handleEdit = (voucher: any) => {
-    setCurrentVoucherType(voucher.type?.name || 'sales') // Use voucher.type.name
+    setCurrentVoucherType(voucher.type || 'sales')
     setEditingVoucher(voucher)
     setIsFormOpen(true)
   }
@@ -147,7 +147,7 @@ export function VoucherList() {
           </button>
           {dbVoucherTypes.map((type) => { // Use dbVoucherTypes here
             const config = getVoucherDisplayConfig(type.name);
-            const count = vouchers.filter(v => v.type?.name === type.name).length;
+            const count = vouchers.filter(v => v.type === type.name).length;
             return (
               <button
                 key={type.id}
@@ -230,7 +230,7 @@ export function VoucherList() {
               </TableRow>
             ) : (
               filteredVouchers.map((voucher) => {
-                const config = getVoucherDisplayConfig(voucher.type?.name || '');
+                const config = getVoucherDisplayConfig(voucher.type || '');
                 return (
                   <TableRow key={voucher.id} className="hover:bg-table-row-hover transition-colors">
                     <TableCell className="px-4 py-3">
@@ -242,11 +242,11 @@ export function VoucherList() {
                       } ${
                         config.color
                       }`}>
-                        {voucher.type?.name.toUpperCase()}
+                        {voucher.type?.toUpperCase()}
                       </span>
                     </TableCell>
                     <TableCell className="px-4 py-3">
-                      <p className="font-medium text-foreground">{voucher.party?.name}</p>
+                      <p className="font-medium text-foreground">{voucher.party_name}</p>
                     </TableCell>
                     <TableCell className="px-4 py-3">
                       <span className="text-sm text-muted-foreground">{formatDate(voucher.date)}</span>
