@@ -1,5 +1,5 @@
 import { supabase } from '../client';
-import { Company, UpdateCompanyRequest } from '../types';
+import { Company, UpdateCompanyRequest } from '../customTypes';
 
 export class CompanyService {
   async getCompany(userId: string): Promise<Company | null> {

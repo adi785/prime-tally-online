@@ -3,8 +3,44 @@ export * from './client';
 export * from './hooks';
 export * from './auth';
 export * from './services';
-export * from './types';
+export * from './customTypes';
 export * from './realtime';
+
+import { supabase } from './client';
+import {
+  useLedgers,
+  useCreateLedger,
+  useUpdateLedger,
+  useDeleteLedger,
+  useVouchers,
+  useCreateVoucher,
+  useUpdateVoucher,
+  useDeleteVoucher,
+  useDashboardMetrics,
+  useStockItems,
+  useCreateStockItem,
+  useUpdateStockItem,
+  useDeleteStockItem,
+  useCompany,
+  useUpdateCompany,
+  useAuthState,
+  useVoucherTypes,
+  useLedgerGroups,
+  useUserSettings,
+  useUpdateUserSettings,
+} from './hooks';
+import {
+  ledgerService,
+  voucherService,
+  dashboardService,
+  stockService,
+  companyService,
+  utilityService,
+  reportService,
+  settingsService,
+} from './services';
+import { authService } from './auth';
+import { realTimeService } from './realtime';
 
 // Export the main integration object
 export const supabaseIntegration = {
@@ -21,15 +57,15 @@ export const supabaseIntegration = {
     useDashboardMetrics,
     useStockItems,
     useCreateStockItem,
-    useUpdateStockItem, // Added useUpdateStockItem
-    useDeleteStockItem, // Added useDeleteStockItem
+    useUpdateStockItem,
+    useDeleteStockItem,
     useCompany,
     useUpdateCompany,
     useAuthState,
-    useVoucherTypes, // Added useVoucherTypes
-    useLedgerGroups, // Added useLedgerGroups
-    useUserSettings, // Added useUserSettings
-    useUpdateUserSettings, // Added useUpdateUserSettings
+    useVoucherTypes,
+    useLedgerGroups,
+    useUserSettings,
+    useUpdateUserSettings,
   },
   services: {
     ledgerService,
@@ -39,7 +75,7 @@ export const supabaseIntegration = {
     companyService,
     utilityService,
     reportService,
-    settingsService, // Added settingsService
+    settingsService,
   },
   auth: authService,
   realtime: realTimeService,

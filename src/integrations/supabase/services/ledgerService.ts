@@ -4,18 +4,14 @@ import {
   CreateLedgerRequest,
   UpdateLedgerRequest,
   LedgerQueryParams,
-} from '../types';
+} from '../customTypes';
 
 export class LedgerService {
   async getLedgers(userId: string, params?: LedgerQueryParams): Promise<Ledger[]> {
     let query = supabase
       .from('ledgers')
-      .select(`
-        *,
-        group:ledger_groups(id, name)
-      `)
+      .select('*')
       .eq('user_id', userId)
-      .eq('is_active', true)
       .order('name', { ascending: true });
 
     if (params?.search) {
@@ -23,7 +19,7 @@ export class LedgerService {
     }
 
     if (params?.groupId) {
-      query = query.eq('group_id', params.groupId);
+      query = query.eq('group_name', params.groupId);
     }
 
     const { data, error } = await query;
@@ -33,24 +29,15 @@ export class LedgerService {
       throw error;
     }
 
-    return (data ?? []).map(ledger => ({
-      ...ledger,
-      group_name: ledger.group?.name || ledger.group_name,
-      group_id: ledger.group?.id || ledger.group_id,
-      group: ledger.group?.name || ledger.group_name,
-    }));
+    return data ?? [];
   }
 
   async getLedger(userId: string, id: string): Promise<Ledger | null> {
     const { data, error } = await supabase
       .from('ledgers')
-      .select(`
-        *,
-        group:ledger_groups(id, name)
-      `)
+      .select('*')
       .eq('id', id)
       .eq('user_id', userId)
-      .eq('is_active', true)
       .maybeSingle();
 
     if (error) {
@@ -58,35 +45,26 @@ export class LedgerService {
       throw error;
     }
 
-    if (!data) return null;
-
-    return {
-      ...data,
-      group_name: data.group?.name || data.group_name,
-      group_id: data.group?.id || data.group_id,
-      group: data.group?.name || data.group_name,
-    };
+    return data;
   }
 
   async createLedger(userId: string, data: CreateLedgerRequest): Promise<Ledger> {
     const { data: result, error } = await supabase
       .from('ledgers')
       .insert({
-        ...data,
+        name: data.name,
+        group_name: data.group_id, // group_id is actually group_name from the form
         user_id: userId,
         opening_balance: data.opening_balance ?? 0,
+        current_balance: data.opening_balance ?? 0,
         address: data.address ?? null,
         phone: data.phone ?? null,
         gstin: data.gstin ?? null,
         email: data.email ?? null,
         is_billwise: data.is_billwise ?? false,
         is_inventory: data.is_inventory ?? false,
-        is_active: true,
       })
-      .select(`
-        *,
-        group:ledger_groups(id, name)
-      `)
+      .select()
       .single();
 
     if (error || !result) {
@@ -94,12 +72,7 @@ export class LedgerService {
       throw error ?? new Error('Ledger creation failed');
     }
 
-    return {
-      ...result,
-      group_name: result.group?.name || result.group_name,
-      group_id: result.group?.id || result.group_id,
-      group: result.group?.name || result.group_name,
-    };
+    return result;
   }
 
   async updateLedger(userId: string, id: string, data: UpdateLedgerRequest): Promise<Ledger> {
@@ -107,7 +80,7 @@ export class LedgerService {
       .from('ledgers')
       .update({
         name: data.name,
-        group_id: data.group_id,
+        group_name: data.group_id, // group_id is actually group_name from the form
         opening_balance: data.opening_balance ?? 0,
         address: data.address ?? null,
         phone: data.phone ?? null,
@@ -118,11 +91,7 @@ export class LedgerService {
       })
       .eq('id', id)
       .eq('user_id', userId)
-      .eq('is_active', true)
-      .select(`
-        *,
-        group:ledger_groups(id, name)
-      `)
+      .select()
       .maybeSingle();
 
     if (error || !result) {
@@ -130,18 +99,13 @@ export class LedgerService {
       throw error ?? new Error('Ledger not found or update blocked');
     }
 
-    return {
-      ...result,
-      group_name: result.group?.name || result.group_name,
-      group_id: result.group?.id || result.group_id,
-      group: result.group?.name || result.group_name,
-    };
+    return result;
   }
 
   async deleteLedger(userId: string, id: string): Promise<void> {
     const { error } = await supabase
       .from('ledgers')
-      .update({ is_active: false })
+      .delete()
       .eq('id', id)
       .eq('user_id', userId);
 
@@ -154,12 +118,8 @@ export class LedgerService {
   async searchLedgers(userId: string, search: string): Promise<Ledger[]> {
     const { data, error } = await supabase
       .from('ledgers')
-      .select(`
-        *,
-        group:ledger_groups(id, name)
-      `)
+      .select('*')
       .eq('user_id', userId)
-      .eq('is_active', true)
       .ilike('name', `%${search}%`)
       .order('name', { ascending: true });
 
@@ -168,26 +128,27 @@ export class LedgerService {
       throw error;
     }
 
-    return (data ?? []).map(ledger => ({
-      ...ledger,
-      group_name: ledger.group?.name || ledger.group_name,
-      group_id: ledger.group?.id || ledger.group_id,
-      group: ledger.group?.name || ledger.group_name,
-    }));
+    return data ?? [];
   }
 
   async getLedgerGroups(): Promise<Array<{ id: string; name: string }>> {
-    const { data, error } = await supabase
-      .from('ledger_groups')
-      .select('id, name')
-      .order('name', { ascending: true });
-
-    if (error) {
-      console.error('getLedgerGroups failed:', error);
-      throw error;
-    }
-
-    return data ?? [];
+    // Since there's no ledger_groups table, return predefined groups
+    const groups = [
+      { id: 'Sundry Debtors', name: 'Sundry Debtors' },
+      { id: 'Sundry Creditors', name: 'Sundry Creditors' },
+      { id: 'Bank Accounts', name: 'Bank Accounts' },
+      { id: 'Cash-in-Hand', name: 'Cash-in-Hand' },
+      { id: 'Capital Account', name: 'Capital Account' },
+      { id: 'Fixed Assets', name: 'Fixed Assets' },
+      { id: 'Direct Incomes', name: 'Direct Incomes' },
+      { id: 'Indirect Incomes', name: 'Indirect Incomes' },
+      { id: 'Direct Expenses', name: 'Direct Expenses' },
+      { id: 'Indirect Expenses', name: 'Indirect Expenses' },
+      { id: 'Duties & Taxes', name: 'Duties & Taxes' },
+      { id: 'Sales Accounts', name: 'Sales Accounts' },
+      { id: 'Purchase Accounts', name: 'Purchase Accounts' },
+    ];
+    return groups;
   }
 }
 

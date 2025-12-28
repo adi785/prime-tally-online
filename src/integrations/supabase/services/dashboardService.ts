@@ -1,5 +1,20 @@
 import { supabase } from '../client';
-import { DashboardMetricsResponse } from '../types';
+import { DashboardMetrics } from '../customTypes';
+
+interface DashboardMetricsResponse {
+  totalSales: number;
+  totalPurchases: number;
+  totalReceivables: number;
+  totalPayables: number;
+  cashInHand: number;
+  bankBalance: number;
+  todayTransactions: number;
+  pendingInvoices: number;
+  period: {
+    start: string;
+    end: string;
+  };
+}
 
 export class DashboardService {
   async getDashboardMetrics(userId: string): Promise<DashboardMetricsResponse> {

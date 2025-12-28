@@ -1,5 +1,5 @@
 import { supabase } from '../client';
-import { UserSettings, UpdateUserSettingsRequest } from '../types';
+import { UserSettings, UpdateUserSettingsRequest } from '../customTypes';
 
 export class SettingsService {
   async getUserSettings(userId: string): Promise<UserSettings | null> {
