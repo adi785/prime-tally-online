@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate, useLocation } from 'react-router-dom'
+import { useNavigate, useLocation, useSearchParams } from 'react-router-dom' // Import useSearchParams
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -10,6 +10,7 @@ import { authService } from '@/integrations/supabase/auth'
 export function AuthLayout() {
   const navigate = useNavigate()
   const location = useLocation()
+  const [searchParams] = useSearchParams() // Initialize useSearchParams
   const [isLoading, setIsLoading] = useState(false)
   const [formData, setFormData] = useState({
     email: searchParams.get('email') || '',
