@@ -23,11 +23,7 @@ export default function ResetPassword() {
 
     try {
       if (formData.password !== formData.confirmPassword) {
-        toast({
-          title: "Passwords don't match",
-          description: "Please make sure both passwords are identical.",
-          variant: "destructive",
-        });
+        toast.error("Passwords don't match. Please make sure both passwords are identical.");
         return;
       }
 
@@ -37,19 +33,12 @@ export default function ResetPassword() {
 
       if (error) throw error;
       
-      toast({
-        title: "Password Updated",
-        description: "Your password has been successfully updated.",
-      });
+      toast.success("Password updated successfully!");
 
       navigate('/dashboard');
     } catch (error) {
       console.error('Password reset error:', error);
-      toast({
-        title: "Reset Failed",
-        description: "Please try again or contact support.",
-        variant: "destructive",
-      });
+      toast.error("Password reset failed. Please try again or contact support.");
     } finally {
       setIsLoading(false);
     }

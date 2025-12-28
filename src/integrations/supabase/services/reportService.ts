@@ -1,5 +1,5 @@
 import { supabase } from '../client';
-import { Ledger, Voucher, VoucherItem } from '../types';
+import { Ledger, Voucher, VoucherItem } from '../customTypes';
 
 // Helper type for the raw data returned from the ledgers select query
 interface RawLedgerData {

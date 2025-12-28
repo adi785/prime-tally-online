@@ -49,7 +49,7 @@ export function RecentVouchers() {
   };
 
   const handleEditVoucher = (voucher: any) => {
-    setVoucherForm({ isOpen: true, type: voucher.type?.name, voucher });
+    setVoucherForm({ isOpen: true, type: voucher.type as VoucherType, voucher });
   };
 
   const handleSaveVoucher = () => {
@@ -94,8 +94,8 @@ export function RecentVouchers() {
           </div>
         ) : (
           vouchers.slice(0, 5).map((voucher, index) => {
-            const config = getVoucherDisplayConfig(voucher.type?.name || '');
-            const isIncome = ['sales', 'receipt', 'credit-note'].includes(voucher.type?.name || '');
+            const config = getVoucherDisplayConfig(voucher.type || '');
+            const isIncome = ['sales', 'receipt', 'credit-note'].includes(voucher.type || '');
             
             return (
               <div 
@@ -114,13 +114,13 @@ export function RecentVouchers() {
                   
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <p className="font-medium text-foreground truncate">{voucher.party?.name}</p>
+                      <p className="font-medium text-foreground truncate">{voucher.party_name}</p>
                       <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded">
                         {voucher.voucher_number}
                       </span>
                     </div>
                     <p className="text-sm text-muted-foreground capitalize">
-                      {voucher.type?.name.replace('-', ' ')} • {formatDate(voucher.date)}
+                      {(voucher.type || '').replace('-', ' ')} • {formatDate(voucher.date)}
                     </p>
                   </div>
                   

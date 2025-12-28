@@ -40,8 +40,8 @@ export function ActivityFeed() {
         newActivities.push({
           id: `voucher-${voucher.id}`,
           type: 'voucher',
-          action: `${voucher.type?.name.toUpperCase()} Voucher Created`,
-          description: `${voucher.party?.name || 'N/A'} - ₹${(voucher.total_amount ?? 0).toLocaleString('en-IN')}`,
+          action: `${voucher.type || 'VOUCHER'} Created`,
+          description: `${voucher.party_name || 'N/A'} - ₹${(voucher.total_amount ?? 0).toLocaleString('en-IN')}`,
           timestamp: new Date(voucher.date).toLocaleString('en-IN'),
           icon: <DollarSign size={16} />,
           color: 'text-success',

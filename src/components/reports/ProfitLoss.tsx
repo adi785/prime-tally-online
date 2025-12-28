@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { useProfitAndLoss, useCompany } from '@/integrations/supabase/hooks'; // Use useProfitAndLoss and useCompany
+import { useProfitAndLoss, useCompany } from '@/integrations/supabase/hooks';
 import { cn } from '@/lib/utils';
-import { Download, Printer, Calendar } from 'lucide-react';
+import { Download, Printer, Calendar, TrendingUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';

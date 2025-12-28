@@ -4,7 +4,7 @@ import {
   CreateStockItemRequest,
   UpdateStockItemRequest,
   StockQueryParams,
-} from '../types';
+} from '../customTypes';
 
 export class StockService {
   async getStockItems(userId: string, params?: StockQueryParams): Promise<StockItem[]> {
@@ -12,15 +12,14 @@ export class StockService {
       .from('stock_items')
       .select('*')
       .eq('user_id', userId)
-      .eq('is_active', true)
       .order('name', { ascending: true });
 
     if (params?.search) {
       query = query.ilike('name', `%${params.search}%`);
     }
 
-    if (params?.group) { // Changed from groupId to group
-      query = query.eq('group_name', params.group); // Assuming group refers to group_name
+    if (params?.group) {
+      query = query.eq('group_name', params.group);
     }
 
     const { data, error } = await query;
@@ -39,7 +38,6 @@ export class StockService {
       .select('*')
       .eq('id', id)
       .eq('user_id', userId)
-      .eq('is_active', true)
       .maybeSingle();
 
     if (error) {
@@ -60,12 +58,14 @@ export class StockService {
     const { data: result, error } = await supabase
       .from('stock_items')
       .insert({
-        ...data,
+        name: data.name,
+        group_name: data.group_name ?? 'Primary',
+        unit: data.unit ?? 'Nos',
         user_id: userId,
         quantity,
         rate,
         value: quantity * rate,
-        is_active: true,
+        reorder_level: data.reorder_level ?? 0,
       })
       .select()
       .single();
@@ -95,10 +95,10 @@ export class StockService {
         rate,
         value: quantity * rate,
         group_name: data.group_name,
+        reorder_level: data.reorder_level,
       })
       .eq('id', id)
       .eq('user_id', userId)
-      .eq('is_active', true)
       .select()
       .maybeSingle();
 
@@ -113,7 +113,7 @@ export class StockService {
   async deleteStockItem(userId: string, id: string): Promise<void> {
     const { error } = await supabase
       .from('stock_items')
-      .update({ is_active: false })
+      .delete()
       .eq('id', id)
       .eq('user_id', userId);
 

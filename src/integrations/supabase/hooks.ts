@@ -3,7 +3,20 @@ import { supabase } from './client'
 import { toast } from 'sonner'
 import { authService } from './auth'
 import { companyService } from './services/companyService'
-import { Company, CreateLedgerRequest, UpdateCompanyRequest, UpdateLedgerRequest, CreateStockItemRequest, UpdateStockItemRequest, CreateVoucherRequest, UpdateVoucherRequest, UserSettings, UpdateUserSettingsRequest, LedgerQueryParams, VoucherQueryParams } from './types'
+import { 
+  Company, 
+  CreateLedgerRequest, 
+  UpdateCompanyRequest, 
+  UpdateLedgerRequest, 
+  CreateStockItemRequest, 
+  UpdateStockItemRequest, 
+  CreateVoucherRequest, 
+  UpdateVoucherRequest, 
+  UserSettings, 
+  UpdateUserSettingsRequest, 
+  LedgerQueryParams, 
+  VoucherQueryParams 
+} from './customTypes'
 import { ledgerService } from './services/ledgerService'
 import { stockService } from './services/stockService'
 import { voucherService } from './services/voucherService'
