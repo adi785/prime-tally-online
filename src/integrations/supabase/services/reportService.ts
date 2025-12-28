@@ -1,15 +1,42 @@
 import { supabase } from '../client';
 import { Ledger, Voucher, VoucherItem } from '../types';
 
+// Helper type for the raw data returned from the ledgers select query
+interface RawLedgerData {
+  id: string;
+  name: string;
+  current_balance: number;
+  group: { id: string; name: string; } | null; // This is how Supabase returns joined single objects
+}
+
+// Helper type for the raw data returned from the vouchers select query in getDayBook
+interface RawVoucherData {
+  id: string;
+  voucher_number: string;
+  type_id: string;
+  date: string;
+  narration: string | null;
+  total_amount: number;
+  party_ledger: { name: string; } | null;
+  type: { name: string; } | null;
+  items: Array<{
+    ledger_id: string;
+    amount: number;
+    type: 'debit' | 'credit';
+    ledger: { name: string; } | null;
+  }>;
+}
+
+
 export class ReportService {
   async getBalanceSheet(userId: string): Promise<any> {
     console.log('getBalanceSheet called');
 
-    const { data: ledgers, error: ledgersError } = await supabase
+    const { data: rawLedgers, error: ledgersError } = await supabase
       .from('ledgers')
       .select(`
         id, name, current_balance,
-        group:ledger_groups(name)
+        group:ledger_groups(id, name)
       `)
       .eq('user_id', userId)
       .eq('is_active', true);
@@ -19,6 +46,17 @@ export class ReportService {
       throw ledgersError;
     }
 
+    // Map raw data to a consistent Ledger-like structure for internal use
+    const ledgers: Ledger[] = (rawLedgers || []).map((l: RawLedgerData) => ({
+      id: l.id,
+      name: l.name,
+      current_balance: l.current_balance,
+      group_name: l.group?.name || 'N/A',
+      group_id: l.group?.id || '',
+      opening_balance: 0, // Default value as it's not selected
+      // Add other required Ledger properties with default/null values if not selected
+    }));
+
     const assets: any[] = [];
     const liabilities: any[] = [];
     const equity: any[] = [];
@@ -27,14 +65,12 @@ export class ReportService {
     let totalLiabilities = 0;
     let totalEquity = 0;
 
-    const ledgerMap = new Map<string, Ledger>(ledgers.map(l => [l.id, l as Ledger]));
+    const currentAssets = ledgers.filter(l => ['Cash-in-Hand', 'Bank Accounts', 'Sundry Debtors'].includes(l.group_name));
+    const fixedAssets = ledgers.filter(l => l.group_name === 'Fixed Assets');
+    const currentLiabilities = ledgers.filter(l => ['Sundry Creditors', 'Duties & Taxes'].includes(l.group_name));
+    const capitalAccount = ledgers.filter(l => l.group_name === 'Capital Account');
 
-    const currentAssets = ledgers.filter(l => ['Cash-in-Hand', 'Bank Accounts', 'Sundry Debtors'].includes(l.group?.name || ''));
-    const fixedAssets = ledgers.filter(l => l.group?.name === 'Fixed Assets');
-    const currentLiabilities = ledgers.filter(l => ['Sundry Creditors', 'Duties & Taxes'].includes(l.group?.name || ''));
-    const capitalAccount = ledgers.filter(l => l.group?.name === 'Capital Account');
-
-    const calculateCategoryTotal = (items: any[]) => items.reduce((sum, item) => sum + item.current_balance, 0);
+    const calculateCategoryTotal = (items: Ledger[]) => items.reduce((sum, item) => sum + item.current_balance, 0);
 
     if (currentAssets.length > 0) {
       const total = calculateCategoryTotal(currentAssets);
@@ -92,7 +128,6 @@ export class ReportService {
   async getProfitAndLoss(userId: string): Promise<any> {
     console.log('getProfitAndLoss called');
 
-    // Fetch voucher types to map names to IDs
     const { data: voucherTypes, error: voucherTypesError } = await supabase
       .from('voucher_types')
       .select('id, name');
@@ -119,11 +154,11 @@ export class ReportService {
       throw vouchersError;
     }
 
-    const { data: ledgers, error: ledgersError } = await supabase
+    const { data: rawLedgers, error: ledgersError } = await supabase
       .from('ledgers')
       .select(`
         id, name, current_balance,
-        group:ledger_groups(name)
+        group:ledger_groups(id, name)
       `)
       .eq('user_id', userId)
       .eq('is_active', true);
@@ -133,6 +168,15 @@ export class ReportService {
       throw ledgersError;
     }
 
+    const ledgers: Ledger[] = (rawLedgers || []).map((l: RawLedgerData) => ({
+      id: l.id,
+      name: l.name,
+      current_balance: l.current_balance,
+      group_name: l.group?.name || 'N/A',
+      group_id: l.group?.id || '',
+      opening_balance: 0, // Default value as it's not selected
+    }));
+
     let totalSales = 0;
     let totalPurchases = 0;
     let otherIncome = 0;
@@ -140,19 +184,19 @@ export class ReportService {
     let indirectExpenses = 0;
 
     vouchers.forEach(v => {
-      if (v.type_id === salesTypeId) { // Use type_id here
+      if (v.type_id === salesTypeId) {
         totalSales += v.total_amount;
-      } else if (v.type_id === purchaseTypeId) { // Use type_id here
+      } else if (v.type_id === purchaseTypeId) {
         totalPurchases += v.total_amount;
       }
     });
 
     ledgers.forEach(l => {
-      if (l.group?.name === 'Indirect Incomes') {
+      if (l.group_name === 'Indirect Incomes') {
         otherIncome += l.current_balance;
-      } else if (l.group?.name === 'Direct Expenses') {
+      } else if (l.group_name === 'Direct Expenses') {
         directExpenses += Math.abs(l.current_balance);
-      } else if (l.group?.name === 'Indirect Expenses') {
+      } else if (l.group_name === 'Indirect Expenses') {
         indirectExpenses += Math.abs(l.current_balance);
       }
     });
@@ -178,12 +222,12 @@ export class ReportService {
       },
       {
         category: 'Direct Expenses',
-        items: ledgers.filter(l => l.group?.name === 'Direct Expenses').map(l => ({ name: l.name, amount: Math.abs(l.current_balance) })),
+        items: ledgers.filter(l => l.group_name === 'Direct Expenses').map(l => ({ name: l.name, amount: Math.abs(l.current_balance) })),
         total: directExpenses
       },
       {
         category: 'Indirect Expenses',
-        items: ledgers.filter(l => l.group?.name === 'Indirect Expenses').map(l => ({ name: l.name, amount: Math.abs(l.current_balance) })),
+        items: ledgers.filter(l => l.group_name === 'Indirect Expenses').map(l => ({ name: l.name, amount: Math.abs(l.current_balance) })),
         total: indirectExpenses
       }
     ];
@@ -204,11 +248,11 @@ export class ReportService {
   async getTrialBalance(userId: string): Promise<any> {
     console.log('getTrialBalance called');
 
-    const { data: ledgers, error: ledgersError } = await supabase
+    const { data: rawLedgers, error: ledgersError } = await supabase
       .from('ledgers')
       .select(`
         id, name, current_balance,
-        group:ledger_groups(name)
+        group:ledger_groups(id, name)
       `)
       .eq('user_id', userId)
       .eq('is_active', true)
@@ -219,13 +263,22 @@ export class ReportService {
       throw ledgersError;
     }
 
+    const ledgers: Ledger[] = (rawLedgers || []).map((l: RawLedgerData) => ({
+      id: l.id,
+      name: l.name,
+      current_balance: l.current_balance,
+      group_name: l.group?.name || 'N/A',
+      group_id: l.group?.id || '',
+      opening_balance: 0, // Default value as it's not selected
+    }));
+
     const trialBalanceLedgers = ledgers.map(ledger => {
       const debit = ledger.current_balance > 0 ? ledger.current_balance : 0;
       const credit = ledger.current_balance < 0 ? Math.abs(ledger.current_balance) : 0;
       
       return {
         name: ledger.name,
-        group: ledger.group?.name || 'N/A',
+        group: ledger.group_name || 'N/A',
         debit,
         credit
       };
@@ -259,7 +312,6 @@ export class ReportService {
       .order('date', { ascending: true });
 
     if (params.type && params.type !== 'all') {
-      // Need to get the type_id from the name
       const { data: voucherType, error: typeError } = await supabase
         .from('voucher_types')
         .select('id')
@@ -273,7 +325,7 @@ export class ReportService {
       query = query.eq('type_id', voucherType.id);
     }
 
-    const { data: vouchers, error: vouchersError } = await query;
+    const { data: rawVouchers, error: vouchersError } = await query;
 
     if (vouchersError) {
       console.error('getDayBook vouchers error:', vouchersError);
@@ -282,12 +334,12 @@ export class ReportService {
 
     const transactions: any[] = [];
 
-    vouchers.forEach(voucher => {
+    (rawVouchers || []).forEach((voucher: RawVoucherData) => {
       voucher.items.forEach(item => {
         transactions.push({
           date: voucher.date,
           voucherNumber: voucher.voucher_number,
-          voucherType: voucher.type?.name?.toUpperCase() || 'N/A', // Use voucher.type?.name
+          voucherType: voucher.type?.name?.toUpperCase() || 'N/A',
           particulars: item.ledger?.name || 'N/A',
           debit: item.type === 'debit' ? item.amount : 0,
           credit: item.type === 'credit' ? item.amount : 0,

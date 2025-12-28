@@ -1,12 +1,6 @@
 import { supabase } from './client'
 import { toast } from 'sonner'
-
-export interface AuthUser {
-  id: string
-  email: string
-  displayName?: string
-  avatarUrl?: string
-}
+import { AuthUser } from './types' // Import AuthUser from types
 
 export const authService = {
   async signIn(email: string, password: string): Promise<void> {
@@ -90,8 +84,8 @@ export const authService = {
     }
   },
 
-  getCurrentUser(): AuthUser | null {
-    const { data: { user } } = supabase.auth.getUser()
+  async getCurrentUser(): Promise<AuthUser | null> { // Made async
+    const { data: { user } } = await supabase.auth.getUser() // Await here
     if (!user) return null
     return {
       id: user.id,
@@ -101,13 +95,13 @@ export const authService = {
     }
   },
 
-  isAuthenticated(): boolean {
-    const { data: { user } } = supabase.auth.getUser()
+  async isAuthenticated(): Promise<boolean> { // Made async
+    const { data: { user } } = await supabase.auth.getUser() // Await here
     return !!user
   },
 
-  getJWTToken(): string | null {
-    const { data } = supabase.auth.getSession()
+  async getJWTToken(): Promise<string | null> { // Made async
+    const { data } = await supabase.auth.getSession() // Await here
     return data?.session?.access_token || null
   },
 }

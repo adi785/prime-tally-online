@@ -19,8 +19,8 @@ export class StockService {
       query = query.ilike('name', `%${params.search}%`);
     }
 
-    if (params?.groupId) {
-      query = query.eq('group_id', params.groupId);
+    if (params?.group) { // Changed from groupId to group
+      query = query.eq('group_name', params.group); // Assuming group refers to group_name
     }
 
     const { data, error } = await query;
@@ -65,7 +65,7 @@ export class StockService {
         quantity,
         rate,
         value: quantity * rate,
-        is_active: true, // Ensure is_active is set on creation
+        is_active: true,
       })
       .select()
       .single();
@@ -95,7 +95,6 @@ export class StockService {
         rate,
         value: quantity * rate,
         group_name: data.group_name,
-        // is_active is not typically updated here unless explicitly requested
       })
       .eq('id', id)
       .eq('user_id', userId)
@@ -114,7 +113,7 @@ export class StockService {
   async deleteStockItem(userId: string, id: string): Promise<void> {
     const { error } = await supabase
       .from('stock_items')
-      .update({ is_active: false }) // Set is_active to false for soft delete
+      .update({ is_active: false })
       .eq('id', id)
       .eq('user_id', userId);
 

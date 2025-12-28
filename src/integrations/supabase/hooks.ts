@@ -86,7 +86,7 @@ export const useCreateLedger = () => {
     onError: (error) => {
       toast.error(`Failed to create ledger: ${error.message}`)
     },
-    enabled: !!user?.id,
+    // Removed enabled: !!user?.id
   })
 }
 
@@ -97,7 +97,7 @@ export const useUpdateLedger = () => {
   return useMutation({
     mutationFn: async ({ id, ...updates }: UpdateLedgerRequest) => {
       if (!user?.id) throw new Error('User not authenticated');
-      const data = await ledgerService.updateLedger(user.id, id!, updates);
+      const data = await ledgerService.updateLedger(user.id, id, updates); // Removed '!' from id
       return data
     },
     onSuccess: () => {
@@ -108,7 +108,7 @@ export const useUpdateLedger = () => {
     onError: (error) => {
       toast.error(`Failed to update ledger: ${error.message}`)
     },
-    enabled: !!user?.id,
+    // Removed enabled: !!user?.id
   })
 }
 
@@ -129,7 +129,7 @@ export const useDeleteLedger = () => {
     onError: (error) => {
       toast.error(`Failed to delete ledger: ${error.message}`)
     },
-    enabled: !!user?.id,
+    // Removed enabled: !!user?.id
   })
 }
 
@@ -177,7 +177,7 @@ export const useCreateVoucher = () => {
     onError: (error) => {
       toast.error(`Failed to create voucher: ${error.message}`)
     },
-    enabled: !!user?.id,
+    // Removed enabled: !!user?.id
   })
 }
 
@@ -188,7 +188,7 @@ export const useUpdateVoucher = () => {
   return useMutation({
     mutationFn: async ({ id, ...updates }: UpdateVoucherRequest) => {
       if (!user?.id) throw new Error('User not authenticated');
-      const data = await voucherService.updateVoucher(user.id, id!, updates);
+      const data = await voucherService.updateVoucher(user.id, id, updates); // Removed '!' from id
       return data
     },
     onSuccess: () => {
@@ -200,7 +200,7 @@ export const useUpdateVoucher = () => {
     onError: (error) => {
       toast.error(`Failed to update voucher: ${error.message}`)
     },
-    enabled: !!user?.id,
+    // Removed enabled: !!user?.id
   })
 }
 
@@ -222,7 +222,7 @@ export const useDeleteVoucher = () => {
     onError: (error) => {
       toast.error(`Failed to delete voucher: ${error.message}`)
     },
-    enabled: !!user?.id,
+    // Removed enabled: !!user?.id
   })
 }
 
@@ -272,7 +272,7 @@ export const useCreateStockItem = () => {
     onError: (error) => {
       toast.error(`Failed to create stock item: ${error.message}`)
     },
-    enabled: !!user?.id,
+    // Removed enabled: !!user?.id
   })
 }
 
@@ -283,7 +283,7 @@ export const useUpdateStockItem = () => {
   return useMutation({
     mutationFn: async ({ id, ...updates }: UpdateStockItemRequest) => {
       if (!user?.id) throw new Error('User not authenticated');
-      const data = await stockService.updateStockItem(user.id, id!, updates);
+      const data = await stockService.updateStockItem(user.id, id, updates); // Removed '!' from id
       return data
     },
     onSuccess: () => {
@@ -293,7 +293,7 @@ export const useUpdateStockItem = () => {
     onError: (error) => {
       toast.error(`Failed to update stock item: ${error.message}`)
     },
-    enabled: !!user?.id,
+    // Removed enabled: !!user?.id
   })
 }
 
@@ -313,7 +313,7 @@ export const useDeleteStockItem = () => {
     onError: (error) => {
       toast.error(`Failed to delete stock item: ${error.message}`)
     },
-    enabled: !!user?.id,
+    // Removed enabled: !!user?.id
   })
 }
 
@@ -348,7 +348,7 @@ export const useCreateCompany = () => {
     onError: (error) => {
       toast.error(`Failed to create company: ${error.message}`);
     },
-    enabled: !!user?.id,
+    // Removed enabled: !!user?.id
   });
 };
 
@@ -369,7 +369,7 @@ export const useUpdateCompany = () => {
     onError: (error) => {
       toast.error(`Failed to update company information: ${error.message}`)
     },
-    enabled: !!user?.id,
+    // Removed enabled: !!user?.id
   })
 }
 
@@ -404,7 +404,7 @@ export const useUpdateUserSettings = () => {
     onError: (error) => {
       toast.error(`Failed to update settings: ${error.message}`);
     },
-    enabled: !!user?.id,
+    // Removed enabled: !!user?.id
   });
 };
 
